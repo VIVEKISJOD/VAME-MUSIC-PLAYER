@@ -1,8 +1,8 @@
 name: Build APK
 on:
-  workflow_dispatch:
   push:
-    branches: [main]
+    branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -10,31 +10,41 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Unzip project
-        run: unzip -o project.zip -d ameos
+      - name: Unzip newest AmeosMusic zip
+        run: |
+          set -e
+          ZIP=$(ls AmeosMusic_step*.zip | sort -V | tail -1)
+          echo "Using $ZIP"
+          mkdir src
+          unzip -q "$ZIP" -d src
 
       - uses: actions/setup-java@v4
         with:
-          java-version: 17
           distribution: temurin
+          java-version: 17
 
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: 8.10.2
+          gradle-version: 8.9
 
       - name: Build release APK
-        working-directory: ameos
-        run: gradle assembleRelease --no-daemon --stacktrace
+        working-directory: src
+        run: gradle :app:assembleRelease --no-daemon
 
-      - name: Sign APK
-        working-directory: ameos
+      - name: Sign APK with throwaway key
+        working-directory: src
         run: |
-          BT=/usr/local/lib/android/sdk/build-tools/$(ls /usr/local/lib/android/sdk/build-tools | sort -V | tail -n 1)
-          keytool -genkeypair -keystore ci.jks -storepass android123 -keypass android123 -alias key0 -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Ameos"
-          $BT/zipalign -p 4 app/build/outputs/apk/release/app-release-unsigned.apk aligned.apk
-          $BT/apksigner sign --ks ci.jks --ks-pass pass:android123 --key-pass pass:android123 --out AmeOS-Music.apk aligned.apk
+          set -e
+          SDK=$ANDROID_HOME
+          BT=$(ls $SDK/build-tools | sort -V | tail -1)
+          UNSIGNED=$(find app/build/outputs/apk/release -name "*.apk" | head -1)
+          keytool -genkeypair -keystore ci.jks -alias ameos -keyalg RSA -keysize 2048 \
+            -validity 10000 -storepass ameos123 -keypass ameos123 -dname "CN=Ameos"
+          $SDK/build-tools/$BT/zipalign -f -p 4 "$UNSIGNED" aligned.apk
+          $SDK/build-tools/$BT/apksigner sign --ks ci.jks --ks-pass pass:ameos123 \
+            --key-pass pass:ameos123 --out AmeosMusic.apk aligned.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: app
-          path: ameos/AmeOS-Music.apka
+          name: AmeosMusic-apk
+          path: src/AmeosMusic.apk
