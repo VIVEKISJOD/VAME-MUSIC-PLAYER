@@ -1,0 +1,18 @@
+# build output
+build/
+.gradle/
+*.apk
+*.aab
+
+# keys and secrets - never upload these
+*.jks
+*.keystore
+local.properties
+google-services.json
+
+# editor files
+.idea/
+*.iml
+.vscode/
+.DS_Store
+captures/

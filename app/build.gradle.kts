@@ -12,8 +12,8 @@ android {
         applicationId = "com.ameos.music"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.1"
+        versionCode = 16
+        versionName = "0.9.0"
     }
 
     buildTypes {
@@ -69,5 +69,5 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
-    implementation("com.github.TeamNewPipe:NewPipeExtractor:v0.24.6")
+    implementation("com.github.TeamNewPipe:NewPipeExtractor:v0.26.5")
 }
