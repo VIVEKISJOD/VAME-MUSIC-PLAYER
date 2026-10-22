@@ -206,7 +206,7 @@ fun SettingsScreen(vm: MainViewModel) {
 
             SectionLabel("About")
             Text(
-                "VAME Music v0.9.4 - made by vxvekggs",
+                "VAME Music v0.9.5 - made by vxvekggs",
                 fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White
             )
             Spacer(Modifier.height(10.dp))

@@ -1129,6 +1129,28 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var updateInfo by mutableStateOf<Updater.Info?>(null)
     var showUpdate by mutableStateOf(false)
     var updateStatus by mutableStateOf("")
+    var updateProgress by mutableIntStateOf(-1) // -1 = not downloading, 0..100 = downloading
+    var updateError by mutableStateOf<String?>(null)
+
+    fun startUpdate(app: android.content.Context, info: Updater.Info) {
+        if (updateProgress >= 0) return
+        if (Updater.needsInstallPermission(app)) return
+        updateError = null
+        updateProgress = 0
+        viewModelScope.launch {
+            try {
+                val f = Updater.downloadApk(app, info) { updateProgress = it }
+                updateProgress = -1
+                showUpdate = false
+                Updater.install(app, f)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                updateProgress = -1
+                updateError = "Download failed: " + (e.message ?: e.javaClass.simpleName)
+            }
+        }
+    }
 
     init {
         checkUpdate(false)
