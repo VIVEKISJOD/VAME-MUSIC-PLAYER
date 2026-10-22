@@ -1124,4 +1124,35 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             importBusy = false
         }
     }
+
+    // ---------- app updates (new GitHub Release) ----------
+    var updateInfo by mutableStateOf<Updater.Info?>(null)
+    var showUpdate by mutableStateOf(false)
+    var updateStatus by mutableStateOf("")
+
+    init {
+        checkUpdate(false)
+    }
+
+    fun checkUpdate(manual: Boolean) {
+        viewModelScope.launch {
+            if (manual) updateStatus = "Checking..."
+            val app = getApplication<Application>()
+            try {
+                val info = Updater.latest()
+                val cur = Updater.currentVersion(app)
+                if (info != null && Updater.isNewer(info.version, cur)) {
+                    updateInfo = info
+                    showUpdate = true
+                    updateStatus = "Update " + info.version + " is available"
+                } else if (manual) {
+                    updateStatus = "You are on the latest version (" + cur + ")"
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                if (manual) updateStatus = "Could not check: " + (e.message ?: e.javaClass.simpleName)
+            }
+        }
+    }
 }

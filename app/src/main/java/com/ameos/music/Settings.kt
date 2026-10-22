@@ -198,9 +198,15 @@ fun SettingsScreen(vm: MainViewModel) {
                 "Clear listening history", "Resets Last played and Your Type suggestions."
             ) { vm.clearHistory() }
 
+            SectionLabel("Updates")
+            ActionRow(
+                "Check for updates",
+                if (vm.updateStatus.isEmpty()) "Looks for a newer VAME on GitHub" else vm.updateStatus
+            ) { vm.checkUpdate(true) }
+
             SectionLabel("About")
             Text(
-                "VAME Music v0.9.0 - made by vxvekggs",
+                "VAME Music v0.9.2 - made by vxvekggs",
                 fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White
             )
             Spacer(Modifier.height(10.dp))

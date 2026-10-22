@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -446,6 +447,43 @@ private fun <T> TwoColumn(list: List<T>, cell: @Composable (T, Modifier) -> Unit
     }
 }
 
+// grid with big tiles: 2 columns on a phone, 4 on a tablet
+@Composable
+private fun <T> BigGrid(list: List<T>, cell: @Composable (T, Modifier) -> Unit) {
+    val cols = if (LocalConfiguration.current.screenWidthDp >= 600) 4 else 2
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        list.chunked(cols).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                row.forEach { c -> cell(c, Modifier.weight(1f)) }
+                repeat(cols - row.size) { Spacer(Modifier.weight(1f)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BigTile(
+    modifier: Modifier, title: String, sub: String, cover: String?, onClick: () -> Unit
+) {
+    Column(modifier.clip(RoundedCornerShape(18.dp)).clickable { onClick() }) {
+        Box(Modifier.fillMaxWidth().aspectRatio(1f)) {
+            Cover(cover, Modifier.fillMaxSize(), RoundedCornerShape(18.dp))
+            if (cover == null) {
+                Icon(
+                    Icons.Filled.LibraryMusic, null, tint = Color(0x55FFFFFF),
+                    modifier = Modifier.align(Alignment.Center).size(44.dp)
+                )
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
+            maxLines = 1, overflow = TextOverflow.Ellipsis
+        )
+        Text(sub, fontSize = 12.sp, color = Color(0xFF8C7C7E), maxLines = 1)
+    }
+}
+
 @Composable
 private fun LibItem(
     modifier: Modifier, title: String, sub: String?, cover: String?,
@@ -468,7 +506,6 @@ private fun LibItem(
 fun LibraryScreen(vm: MainViewModel) {
     val artists = vm.likedArtists.take(6)
     val songs = vm.liked.take(3)
-    val plItems: List<Playlist?> = vm.playlists.map { it }.plus(listOf<Playlist?>(null))
     LazyColumn(contentPadding = ScreenPad) {
         item { ScreenTitle("Library") }
         item {
@@ -498,49 +535,54 @@ fun LibraryScreen(vm: MainViewModel) {
         }
         item { SectionLabel("Playlists") }
         item {
-            TwoColumn(plItems) { p, m ->
-                if (p == null) {
-                    Column(m) {
-                        Row(
-                            Modifier.clickable {
-                                vm.editPlaylistId = null
-                                vm.pendingSong = null
-                                vm.showPlaylistDialog = true
-                            },
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                Modifier.size(46.dp).clip(RoundedCornerShape(10.dp)).background(Color(0x22FFFFFF)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Filled.Add, null, tint = Color.White)
-                            }
-                            Spacer(Modifier.width(10.dp))
-                            Text("New playlist", fontSize = 15.sp, color = Color.White)
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    Modifier
+                        .weight(1f)
+                        .pressScale()
+                        .clip(RoundedCornerShape(50))
+                        .background(Color(0x22FFFFFF))
+                        .clickable {
+                            vm.editPlaylistId = null
+                            vm.pendingSong = null
+                            vm.showPlaylistDialog = true
                         }
-                        Spacer(Modifier.height(10.dp))
-                        Row(
-                            Modifier.clickable {
-                                vm.importStatus = ""
-                                vm.importedId = null
-                                vm.showImportDialog = true
-                            },
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                Modifier.size(46.dp).clip(RoundedCornerShape(10.dp)).background(Color(0x22FFFFFF)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Filled.FileDownload, null, tint = Color.White)
-                            }
-                            Spacer(Modifier.width(10.dp))
-                            Text("Import playlist", fontSize = 15.sp, color = Color.White)
+                        .padding(vertical = 13.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Filled.Add, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("New playlist", fontSize = 14.sp, color = Color.White)
+                }
+                Row(
+                    Modifier
+                        .weight(1f)
+                        .pressScale()
+                        .clip(RoundedCornerShape(50))
+                        .background(Color(0x22FFFFFF))
+                        .clickable {
+                            vm.importStatus = ""
+                            vm.importedId = null
+                            vm.showImportDialog = true
                         }
-                    }
-                } else {
-                    LibItem(m.pressScale(), p.name, p.songs.size.toString() + " songs", p.shownCover()) {
-                        vm.openPlaylist(p.id)
-                    }
+                        .padding(vertical = 13.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Filled.FileDownload, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Import playlist", fontSize = 14.sp, color = Color.White)
+                }
+            }
+        }
+        if (vm.playlists.isNotEmpty()) {
+            item {
+                Spacer(Modifier.height(14.dp))
+                BigGrid(vm.playlists.toList()) { p, m ->
+                    BigTile(
+                        m.pressScale(), p.name, p.songs.size.toString() + " songs", p.shownCover()
+                    ) { vm.openPlaylist(p.id) }
                 }
             }
         }

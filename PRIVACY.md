@@ -11,12 +11,13 @@ removes everything.
 - **YouTube / YouTube Music** (through NewPipeExtractor): to search, get song details and stream audio.
 - **Cover images** from the servers that host them.
 - **LRCLIB** (lrclib.net): the song title, artist and length are sent to look up lyrics.
+- **GitHub** (api.github.com): to check if a newer VAME release exists. Nothing about you is sent.
 - **Spotify** (open.spotify.com): only when you import a Spotify playlist link. The public playlist page is read.
 
 These services have their own privacy policies and can see your IP address like any website would.
 
 ## Permissions
-Internet, notifications, Bluetooth connection (to show and pick Bluetooth outputs), foreground service
+Internet, notifications, Bluetooth connection (to show and pick Bluetooth outputs), install apps (only to install VAME updates you accept), foreground service
 and wake lock (to keep music playing), and an optional battery-optimization shortcut.
 
 Questions? Contact @vxvekggs on Instagram.

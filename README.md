@@ -28,12 +28,13 @@ See [CHANGELOG.md](CHANGELOG.md) for everything, version by version.
 
 ## Install
 
-1. Open the **Actions** tab, tap the latest green run, and download the **VAME-debug-apk** file at the bottom.
-2. Unzip it and install the APK (allow "install from unknown sources" when Android asks).
-
-Or grab the APK from the **Releases** page when one is published.
+1. Open the **Releases** page (right side of this repo) and download the newest `VAME-x.y.z.apk`.
+2. Open it and install (allow "install from unknown sources" when Android asks).
 
 Needs Android 8.0 (API 26) or newer.
+
+**Updates:** VAME checks for a new release when you open it (and in Settings > Check for updates).
+When one is out, tap **Update now** and it downloads and installs over your old version. Your playlists and likes stay.
 
 ## Build it yourself
 

@@ -81,13 +81,7 @@ fun PlaylistScreen(vm: MainViewModel) {
                 IconButton(onClick = { vm.closePlaylist() }) {
                     Icon(Icons.Filled.ArrowBack, null, tint = Color.White)
                 }
-                Cover(pl.shownCover(), Modifier.size(44.dp), RoundedCornerShape(12.dp))
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    pl.name, fontSize = 22.sp, fontWeight = FontWeight.SemiBold,
-                    color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
+                Spacer(Modifier.weight(1f))
                 IconButton(onClick = {
                     vm.editPlaylistId = pl.id
                     vm.pendingSong = null
@@ -95,6 +89,25 @@ fun PlaylistScreen(vm: MainViewModel) {
                 }) {
                     Icon(Icons.Filled.Edit, null, tint = Color.White)
                 }
+            }
+
+            // big cover with the name under it
+            Column(
+                Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Cover(
+                    pl.shownCover(),
+                    Modifier.fillMaxWidth(0.55f).widthIn(max = 240.dp).aspectRatio(1f),
+                    RoundedCornerShape(22.dp)
+                )
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    pl.name, fontSize = 24.sp, fontWeight = FontWeight.Bold,
+                    color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+                Text(pl.songs.size.toString() + " songs", fontSize = 13.sp, color = PDim)
             }
 
             Row(

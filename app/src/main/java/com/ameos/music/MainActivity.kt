@@ -79,6 +79,7 @@ fun AmeosRoot(vm: MainViewModel) {
     // on Search / Your Type / Library, Back goes to Home (Home itself leaves the app).
     // This is registered first, so open pages and sheets still close before it.
     BackHandler(enabled = vm.tab != 0) { vm.tab = 0 }
+    if (vm.showUpdate && vm.updateInfo != null) UpdateDialog(vm)
     Box(
         Modifier
             .fillMaxSize()
