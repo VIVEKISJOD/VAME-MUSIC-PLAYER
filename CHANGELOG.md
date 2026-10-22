@@ -1,4 +1,11 @@
-# VAME Music - full changelog (up to zip step19, v0.9.4, 22 Oct 2026)
+# VAME Music - full changelog (up to zip step21, v0.9.6, 22 Oct 2026)
+
+## step21 (v0.9.6)
+- Test update: checks that VAME can update itself with the new download bar. Nothing else changed.
+
+## step20 (v0.9.5)
+- Fixed: the update download no longer gets stuck on "Waiting to connect". VAME now downloads the update itself, with a progress bar in the update box, then opens the installer.
+- New: if the download fails, the box shows the reason and a Try again button.
 
 ## step19 (v0.9.4)
 - Changed: Now Playing now matches your screenshot: full-width artwork at the top that fades into the background, big title with artist under it, star and 3-dot menu on the right.
