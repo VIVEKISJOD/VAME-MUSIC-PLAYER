@@ -85,7 +85,8 @@ fun ArtistScreen(vm: MainViewModel) {
                             Modifier
                                 .size(170.dp)
                                 .border(1.dp, Color(0x33FF6B7A), CircleShape),
-                            CircleShape
+                            CircleShape,
+                            hiRes = true
                         )
                         Spacer(Modifier.height(14.dp))
                         Text(

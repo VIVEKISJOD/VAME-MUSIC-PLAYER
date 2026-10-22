@@ -99,7 +99,8 @@ fun PlaylistScreen(vm: MainViewModel) {
                 Cover(
                     pl.shownCover(),
                     Modifier.fillMaxWidth(0.55f).widthIn(max = 240.dp).aspectRatio(1f),
-                    RoundedCornerShape(22.dp)
+                    RoundedCornerShape(22.dp),
+                    hiRes = true
                 )
                 Spacer(Modifier.height(12.dp))
                 Text(

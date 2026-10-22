@@ -90,17 +90,41 @@ fun Modifier.glass(shape: Shape, top: Color = Color(0xCC2A1A1D), bottom: Color =
         .background(Brush.verticalGradient(listOf(top, bottom)))
         .border(1.dp, GlassEdge, shape)
 
+private val ytThumbRe = Regex("^(https?://i\\.ytimg\\.com/vi(?:_webp)?/[^/]+/)[A-Za-z0-9_]+\\.(?:jpg|webp)(?:\\?.*)?$")
+private val lhSizeRe = Regex("=(?:w\\d+-h\\d+|s\\d+)[^/]*$")
+
+// Sharper version of a cover link (used for big covers): Google art up to 1080px,
+// YouTube video thumbnails in max resolution.
+fun hiResCover(url: String?): String? {
+    if (url == null) return null
+    if (url.contains("googleusercontent.com") || url.contains("ggpht.com")) {
+        return if (lhSizeRe.containsMatchIn(url)) url.replace(lhSizeRe, "=w1080-h1080-l90-rj") else url
+    }
+    val m = ytThumbRe.find(url)
+    if (m != null) return m.groupValues[1] + "maxresdefault.jpg"
+    return url
+}
+
 @Composable
-fun Cover(url: String?, modifier: Modifier = Modifier, shape: Shape = RoundedCornerShape(12.dp)) {
+fun Cover(
+    url: String?,
+    modifier: Modifier = Modifier,
+    shape: Shape = RoundedCornerShape(12.dp),
+    hiRes: Boolean = false
+) {
+    // if the sharp link does not exist, fall back to the normal one
+    var failed by remember(url) { mutableStateOf(false) }
+    val data = if (hiRes && !failed) hiResCover(url) else url
     Box(modifier.clip(shape).background(Color(0xFF2A1215))) {
-        if (url != null) {
+        if (data != null) {
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data(url)
+                    .data(data)
                     .crossfade(300)
                     .build(),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
+                onError = { failed = true },
                 modifier = Modifier.fillMaxSize()
             )
         }

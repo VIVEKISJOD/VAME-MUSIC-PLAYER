@@ -102,7 +102,7 @@ fun HomeScreen(vm: MainViewModel) {
                         .border(1.dp, Color(0x33FF6B7A), RoundedCornerShape(24.dp))
                         .clickable { vm.play(hero, vm.recommended) }
                 ) {
-                    Cover(hero.cover, Modifier.fillMaxSize(), RoundedCornerShape(0.dp))
+                    Cover(hero.cover, Modifier.fillMaxSize(), RoundedCornerShape(0.dp), hiRes = true)
                     Box(
                         Modifier.fillMaxSize().background(
                             Brush.verticalGradient(listOf(Color.Transparent, Color(0xCC200A0E)))
@@ -191,7 +191,7 @@ fun HomeScreen(vm: MainViewModel) {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(lastAlbums) { s ->
                     Column(Modifier.width(150.dp).pressScale().clickable { vm.play(s, lastAlbums) }) {
-                        Cover(s.cover, Modifier.size(150.dp), RoundedCornerShape(16.dp))
+                        Cover(s.cover, Modifier.size(150.dp), RoundedCornerShape(16.dp), hiRes = true)
                         Text(s.title, fontSize = 14.sp, color = Color.White, maxLines = 1,
                             overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
                         Text(s.artist, fontSize = 12.sp,
@@ -278,7 +278,7 @@ private fun GenreTileView(tile: GenreTile, color: Color, modifier: Modifier, onC
 @Composable
 fun AlbumCard(a: Album, vm: MainViewModel) {
     Column(Modifier.width(140.dp).pressScale().clickable { vm.openAlbum(a) }) {
-        Cover(a.cover, Modifier.size(140.dp), RoundedCornerShape(16.dp))
+        Cover(a.cover, Modifier.size(140.dp), RoundedCornerShape(16.dp), hiRes = true)
         Text(a.title, fontSize = 14.sp, color = Color.White, maxLines = 1,
             overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
         Text(a.artist, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -467,7 +467,7 @@ private fun BigTile(
 ) {
     Column(modifier.clip(RoundedCornerShape(18.dp)).clickable { onClick() }) {
         Box(Modifier.fillMaxWidth().aspectRatio(1f)) {
-            Cover(cover, Modifier.fillMaxSize(), RoundedCornerShape(18.dp))
+            Cover(cover, Modifier.fillMaxSize(), RoundedCornerShape(18.dp), hiRes = true)
             if (cover == null) {
                 Icon(
                     Icons.Filled.LibraryMusic, null, tint = Color(0x55FFFFFF),

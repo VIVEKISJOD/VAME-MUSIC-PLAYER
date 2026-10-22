@@ -143,7 +143,8 @@ fun AlbumScreen(vm: MainViewModel) {
                     Cover(
                         album.cover,
                         Modifier.fillMaxWidth(0.78f).aspectRatio(1f),
-                        RoundedCornerShape(20.dp)
+                        RoundedCornerShape(20.dp),
+                        hiRes = true
                     )
                     Spacer(Modifier.height(16.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {

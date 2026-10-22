@@ -253,10 +253,7 @@ object MusicRepo {
 
     private fun bigCover(url: String?): String? {
         if (url == null) return null
-        return if (url.contains("googleusercontent.com") || url.contains("ggpht.com")) {
-            url.replace(Regex("=w\\d+-h\\d+.*$"), "=w600-h600-l90-rj")
-        } else {
-            url
-        }
+        if (!(url.contains("googleusercontent.com") || url.contains("ggpht.com"))) return url
+        return url.replace(Regex("=(?:w\\d+-h\\d+|s\\d+)[^/]*$"), "=w600-h600-l90-rj")
     }
 }
