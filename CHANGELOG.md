@@ -1,4 +1,12 @@
-# VAME Music - full changelog (up to zip step15, v0.9.0, 22 Oct 2026)
+# VAME Music - full changelog (up to zip step17, v0.9.2, 22 Oct 2026)
+
+## step17 (v0.9.2)
+- New: automatic updates. VAME checks GitHub for a newer version when it opens and in Settings > Check for updates. Tap Update now to download and install it over the old version.
+- New: every upload to the repo now publishes a signed release (Releases page) that users download and the app updates from.
+
+## step16 (v0.9.1)
+- Changed: playlist covers are big square tiles in Library (2 per row on phone, 4 on tablet) and the playlist page shows a big cover with the name.
+- Changed: New playlist and Import playlist are now two buttons above the playlists.
 
 ## step15 (v0.9.0)
 - New: VAME logo is now the app icon.
