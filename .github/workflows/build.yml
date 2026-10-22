@@ -1,8 +1,21 @@
-name: Build APK
+name: Build VAME APK
+
 on:
   push:
-    branches: [ main, master ]
+    branches: [main]
+    tags: ['v*']
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  pull_request:
   workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -10,41 +23,45 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Unzip newest AmeosMusic zip
+      # Upload a zip (any name, e.g. AmeosMusic_step16.zip) to the repo and it is
+      # unpacked over the project, then deleted. Old zips are cleaned out too.
+      - name: Apply uploaded zip (if any)
         run: |
-          set -e
-          ZIP=$(ls AmeosMusic_step*.zip | sort -V | tail -1)
-          echo "Using $ZIP"
-          mkdir src
-          unzip -q "$ZIP" -d src
+          ZIP=$(ls -1 *.zip 2>/dev/null | sort -V | tail -n1 || true)
+          if [ -n "$ZIP" ]; then
+            echo "Applying $ZIP"
+            unzip -o -q "$ZIP" -x '.github/*'
+            rm -f ./*.zip
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -A
+            git commit -m "Apply $ZIP and clean old zips" || true
+            git push || true
+          fi
+
+      - name: Check project exists
+        run: test -f app/build.gradle.kts
 
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: '17'
 
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: 8.9
+          gradle-version: '8.10.2'
 
-      - name: Build release APK
-        working-directory: src
-        run: gradle :app:assembleRelease --no-daemon
+      - name: Build debug APK
+        run: gradle assembleDebug --no-daemon
 
-      - name: Sign APK with throwaway key
-        working-directory: src
-        run: |
-          set -e
-          SDK=$ANDROID_HOME
-          BT=$(ls $SDK/build-tools | sort -V | tail -1)
-          UNSIGNED=$(find app/build/outputs/apk/release -name "*.apk" | head -1)
-          keytool -genkeypair -keystore ci.jks -alias ameos -keyalg RSA -keysize 2048 \
-            -validity 10000 -storepass ameos123 -keypass ameos123 -dname "CN=Ameos"
-          $SDK/build-tools/$BT/zipalign -f -p 4 "$UNSIGNED" aligned.apk
-          $SDK/build-tools/$BT/apksigner sign --ks ci.jks --ks-pass pass:ameos123 \
-            --key-pass pass:ameos123 --out AmeosMusic.apk aligned.apk
-
-      - uses: actions/upload-artifact@v4
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
-          name: AmeosMusic-apk
-          path: src/AmeosMusic.apk
+          name: VAME-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+
+      - name: Publish release (only when you push a tag like v0.9.0)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: app/build/outputs/apk/debug/*.apk
