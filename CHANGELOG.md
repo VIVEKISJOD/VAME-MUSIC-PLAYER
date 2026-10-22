@@ -1,4 +1,22 @@
-# VAME Music - full changelog (up to zip step17, v0.9.2, 22 Oct 2026)
+# VAME Music - full changelog (up to zip step19, v0.9.4, 22 Oct 2026)
+
+## step19 (v0.9.4)
+- Changed: Now Playing now matches your screenshot: full-width artwork at the top that fades into the background, big title with artist under it, star and 3-dot menu on the right.
+- New: the current lyric line is big and bold under the song name (tap it for full lyrics).
+- New: thick progress bar with time passed, audio quality (kbps / kHz) in the middle and time left.
+- New: big rewind / play / forward buttons and a thick volume bar.
+- New: bottom row with lyrics, a pill with sound output + repeat, and queue; the output name is shown under it.
+- Changed: like is a star now. Tap the artwork to turn the moving cover (Animate cover) on or off. Drag down to close.
+
+## step18 (v0.9.3)
+- Fixed: covers are sharp now. Big covers (player, album, artist, playlist, home) load in high resolution instead of the small blurry picture.
+- New: Now Playing looks like iOS: drag handle on top, big artwork with shadow, title and artist on the left, heart and ... on the right.
+- New: artwork shrinks when the song is paused and grows when it plays.
+- New: one line of lyrics under the song name, changes with the song (tap it to open full lyrics).
+- New: thin iOS-style progress bar that grows when you touch it, with time left (-1:23).
+- New: volume slider with speaker icons (real phone volume).
+- New: drag the player down to close it. Tap the artwork for Animate cover.
+- Changed: bottom icons are now lyrics, sound output, repeat, queue.
 
 ## step17 (v0.9.2)
 - New: automatic updates. VAME checks GitHub for a newer version when it opens and in Settings > Check for updates. Tap Update now to download and install it over the old version.
