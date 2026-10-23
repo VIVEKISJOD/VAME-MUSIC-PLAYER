@@ -19,6 +19,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -181,6 +183,13 @@ fun AmeosRoot(vm: MainViewModel) {
                 SettingsScreen(vm)
             }
             AnimatedVisibility(
+                visible = vm.recapOpen,
+                enter = slideInVertically(tween(420, easing = FastOutSlowInEasing)) { it / 2 } + fadeIn(tween(300)),
+                exit = slideOutVertically(tween(320)) { it / 2 } + fadeOut(tween(240))
+            ) {
+                RecapScreen(vm)
+            }
+            AnimatedVisibility(
                 visible = vm.showOnboarding,
                 enter = fadeIn(tween(300)),
                 exit = fadeOut(tween(300))
@@ -212,8 +221,24 @@ fun AmeosRoot(vm: MainViewModel) {
 // Tablet: the tab bar lives in the side rail, so only a floating glass mini player is here.
 @Composable
 private fun MainPages(vm: MainViewModel, tablet: Boolean, dockFolded: Boolean, onExpand: () -> Unit) {
+    // depth: the page underneath shrinks and dims a little while a detail page is open,
+    // and eases back when it closes (so opening and Back both feel animated)
+    val covered = vm.playlistOpen || vm.likedOpen || vm.albumOpen || vm.downloadsOpen || vm.artistOpen
+    val depth by animateFloatAsState(
+        if (covered) 1f else 0f, tween(380, easing = FastOutSlowInEasing), label = "pageDepth"
+    )
     Box(Modifier.fillMaxSize()) {
-        Box(Modifier.fillMaxSize().statusBarsPadding()) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .graphicsLayer {
+                    val sc = 1f - 0.05f * depth
+                    scaleX = sc
+                    scaleY = sc
+                    alpha = 1f - 0.4f * depth
+                }
+        ) {
             AnimatedContent(
                 targetState = vm.tab,
                 transitionSpec = {
@@ -227,7 +252,7 @@ private fun MainPages(vm: MainViewModel, tablet: Boolean, dockFolded: Boolean, o
             ) { t ->
                 when (t) {
                     0 -> HomeScreen(vm)
-                    1 -> SearchScreen(vm)
+                    1 -> ExploreScreen(vm)
                     2 -> YourTypeScreen(vm)
                     else -> LibraryScreen(vm)
                 }

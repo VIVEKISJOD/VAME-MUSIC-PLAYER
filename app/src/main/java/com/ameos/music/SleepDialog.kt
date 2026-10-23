@@ -111,12 +111,9 @@ private fun NumberField(
 fun SleepDialog(vm: MainViewModel) {
     var customMin by remember { mutableStateOf("") }
     var customTimes by remember { mutableStateOf("") }
-    val close = { vm.showSleepDialog = false }
+    val closeNow = { vm.showSleepDialog = false }
 
-    Dialog(
-        onDismissRequest = { close() },
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
+    AnimDialog(onClosed = closeNow) { close ->
         Column(
             Modifier
                 .padding(horizontal = 16.dp)

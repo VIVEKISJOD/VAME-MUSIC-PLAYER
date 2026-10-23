@@ -1,6 +1,14 @@
 package com.ameos.music
 
 import android.widget.Toast
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -330,7 +338,7 @@ private data class TabItem(val label: String, val icon: ImageVector)
 fun BottomBar(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
     val items = listOf(
         TabItem("Home", Icons.Filled.Home),
-        TabItem("Search", Icons.Filled.Search),
+        TabItem("Explore", Icons.Filled.Explore),
         TabItem("Your type", Icons.Filled.RadioButtonChecked),
         TabItem("Library", Icons.Filled.LibraryMusic)
     )
@@ -415,51 +423,66 @@ fun DetailBottomBar(vm: MainViewModel, modifier: Modifier = Modifier) {
 
 // Bottom dock: mini player + tab bar. Scrolling down folds it into one slim row
 // (Home circle, mini player pill, Search circle); scrolling up opens it again.
-// One spring drives both layers (fade, slide and scale) and the height, so it stays smooth.
+// One spring drives fade, slide, scale and height. Nothing re-composes while it moves:
+// the spring value is only read inside graphicsLayer / layout, so the fold stays smooth.
 @Composable
 fun Dock(vm: MainViewModel, collapsed: Boolean, onExpand: () -> Unit, modifier: Modifier = Modifier) {
     val hasSong = vm.current != null
     val folded = collapsed && hasSong
-    val p by animateFloatAsState(
+    val pState: State<Float> = animateFloatAsState(
         if (folded) 1f else 0f,
-        spring(dampingRatio = 0.86f, stiffness = 260f),
+        spring(dampingRatio = 1f, stiffness = 380f),
         label = "dockFold"
     )
-    val fullH by animateDpAsState(
+    val fullHState: State<androidx.compose.ui.unit.Dp> = animateDpAsState(
         if (hasSong) 138.dp else 64.dp,
-        spring(dampingRatio = 0.85f, stiffness = 300f),
+        spring(dampingRatio = 1f, stiffness = 380f),
         label = "dockFull"
     )
-    Box(modifier.fillMaxWidth().height(androidx.compose.ui.unit.lerp(fullH, 56.dp, p))) {
-        if (p < 0.98f) {
-            Column(
-                Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .requiredHeight(fullH)
-                    .graphicsLayer {
-                        alpha = (1f - p * 1.6f).coerceIn(0f, 1f)
-                        translationY = p * 36f
-                        scaleX = 1f - 0.06f * p
-                        scaleY = 1f - 0.06f * p
-                    },
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                if (hasSong) MiniPlayer(vm)
-                BottomBar(vm.tab, { vm.tab = it })
+    // only flips once, when the fold passes the middle (cheap)
+    val foldedHalf by remember { derivedStateOf { pState.value > 0.5f } }
+    val fullTarget = if (hasSong) 138.dp else 64.dp
+    Box(
+        modifier
+            .fillMaxWidth()
+            .layout { m, c ->
+                val h = androidx.compose.ui.unit.lerp(fullHState.value, 56.dp, pState.value)
+                    .roundToPx().coerceAtLeast(0)
+                val pl = m.measure(c.copy(minHeight = h, maxHeight = h))
+                layout(pl.width, h) { pl.placeRelative(0, 0) }
             }
+    ) {
+        // the full dock stays in the tree (so the mini player does not replay its spring-in)
+        Column(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .requiredHeight(fullTarget)
+                .graphicsLayer {
+                    val p = pState.value
+                    alpha = (1f - p * 1.5f).coerceIn(0f, 1f)
+                    translationY = p * 40f
+                    scaleX = 1f - 0.05f * p
+                    scaleY = 1f - 0.05f * p
+                }
+                .blockTouches(foldedHalf),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            if (hasSong) MiniPlayer(vm)
+            BottomBar(vm.tab, { vm.tab = it })
         }
-        if (p > 0.02f) {
+        if (foldedHalf) {
             Box(
                 Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
                     .requiredHeight(56.dp)
                     .graphicsLayer {
-                        alpha = ((p - 0.25f) * 1.6f).coerceIn(0f, 1f)
-                        translationY = (1f - p) * -30f
-                        scaleX = 0.94f + 0.06f * p
-                        scaleY = 0.94f + 0.06f * p
+                        val p = pState.value
+                        alpha = ((p - 0.3f) * 1.7f).coerceIn(0f, 1f)
+                        translationY = (1f - p) * -26f
+                        scaleX = 0.95f + 0.05f * p
+                        scaleY = 0.95f + 0.05f * p
                     }
             ) {
                 FoldedDock(vm, onExpand)
@@ -552,7 +575,7 @@ private data class RailItem(val label: String, val icon: ImageVector)
 fun SideRail(vm: MainViewModel) {
     val items = listOf(
         RailItem("Home", Icons.Filled.Home),
-        RailItem("Search", Icons.Filled.Search),
+        RailItem("Explore", Icons.Filled.Explore),
         RailItem("Your type", Icons.Filled.RadioButtonChecked),
         RailItem("Library", Icons.Filled.LibraryMusic)
     )
@@ -614,3 +637,51 @@ fun SideRail(vm: MainViewModel) {
         Spacer(Modifier.height(16.dp))
     }
 }
+
+
+// Dialog that fades + scales in and also animates OUT (Back, tapping outside, or a button).
+// content gets a close() that plays the exit animation first; onClosed runs after it.
+@Composable
+fun AnimDialog(
+    onClosed: () -> Unit,
+    canClose: () -> Boolean = { true },
+    content: @Composable (close: () -> Unit) -> Unit
+) {
+    var show by remember { mutableStateOf(false) }
+    var closing by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(Unit) { show = true }
+    val close: () -> Unit = {
+        if (!closing && canClose()) {
+            closing = true
+            show = false
+            scope.launch {
+                delay(230)
+                onClosed()
+            }
+        }
+    }
+    Dialog(
+        onDismissRequest = close,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        AnimatedVisibility(
+            visible = show,
+            enter = fadeIn(tween(220)) + scaleIn(tween(280, easing = FastOutSlowInEasing), initialScale = 0.9f),
+            exit = fadeOut(tween(190)) + scaleOut(tween(220, easing = FastOutSlowInEasing), targetScale = 0.92f)
+        ) {
+            content(close)
+        }
+    }
+}
+
+// swallows every touch on this layer (used for the hidden half of the dock)
+fun Modifier.blockTouches(on: Boolean): Modifier =
+    if (!on) this else this.pointerInput(Unit) {
+        awaitPointerEventScope {
+            while (true) {
+                val e = awaitPointerEvent(PointerEventPass.Initial)
+                e.changes.forEach { it.consume() }
+            }
+        }
+    }

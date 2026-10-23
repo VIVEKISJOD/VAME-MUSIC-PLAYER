@@ -1,4 +1,14 @@
-# VAME Music - full changelog (up to zip step22, v0.10.1, 24 Oct 2026)
+# VAME Music - full changelog (up to zip step23, v0.11.0, 24 Oct 2026)
+
+## step23 (v0.11.0)
+- Changed: the big "Last Played" banner is gone from Home (phone and tablet). A Liked songs shelf (big cards, See all) takes its place. With no likes yet it shows songs for you.
+- New: Settings > App icon. 8 logo variants (Classic, Crimson, Sunset, Emerald, Ocean, Violet, Midnight, Mono). Tap one and the home screen icon changes (some launchers need a few seconds or close the app once).
+- New: animations when things close. Dialogs (new playlist, add to playlist, sleep timer, audio output, import) now fade and scale in AND out. The page under a playlist / album / artist / liked / downloads page shrinks and dims while it is open and eases back on Back. Recap slides up and down.
+- Changed: the bottom bar fold is smoother. The spring is only read while drawing (no re-composing each frame), the mini player no longer replays its entrance after unfolding, and the hidden half cannot be tapped by mistake.
+- New: Explore (replaces Search). Big title, search box and colourful mood tiles (Chill, Commute, Energize, Feel good, Focus, Gaming, Party, Romance, Sad, Sleep). Tap a tile to see those songs. Back or the X in the search box returns to the tiles. Your genres tiles stay below.
+- New: Library redone. Swipeable stats cards (minutes listened, top artist, top song), Downloads / Liked songs / Your Recap rows, big tiles for Playlists (New, Import, Liked Songs + yours, with Show all), Recently played and Artists, and a history + profile pill on top.
+- New: Recap. A Spotify-style story: intro, minutes listened (counts up), top artist, top 5 songs, top 5 artists, summary with Share. Tap right/left to move, it also moves by itself.
+- New: listening stats. VAME counts the seconds you really listen per song and artist (saved on the phone only). Recap and the Library cards use it. Counting starts with this build.
 
 ## step22 (v0.10.1)
 - New: Settings > Appearance. Pick Colour glass, AMOLED (pure black) or AMOLED glass (pure black + glass), choose a palette (Crimson, Sunset, Amber, Emerald, Ocean, Violet, Rose, Mono) or make your own colour with the sliders. The whole app changes and it is remembered.

@@ -229,16 +229,13 @@ fun PlaylistEditDialog(vm: MainViewModel) {
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) picked = uri
     }
-    val close = {
+    val closeNow = {
         vm.showPlaylistDialog = false
         vm.editPlaylistId = null
         vm.pendingSong = null
     }
 
-    Dialog(
-        onDismissRequest = { close() },
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
+    AnimDialog(onClosed = closeNow) { close ->
         Column(
             Modifier
                 .padding(horizontal = 16.dp)
@@ -366,12 +363,9 @@ fun PlaylistEditDialog(vm: MainViewModel) {
 fun AddToPlaylistDialog(vm: MainViewModel) {
     val song = vm.addTarget ?: return
     val ctx = LocalContext.current
-    val close = { vm.addTarget = null }
+    val closeNow = { vm.addTarget = null }
 
-    Dialog(
-        onDismissRequest = { close() },
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
+    AnimDialog(onClosed = closeNow) { close ->
         Column(
             Modifier
                 .padding(horizontal = 16.dp)

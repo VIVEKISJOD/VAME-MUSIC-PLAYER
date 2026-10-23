@@ -88,14 +88,11 @@ private val OAccent: Color get() = Pal.accent
 @Composable
 fun OutputDialog(vm: MainViewModel) {
     val ctx = LocalContext.current
-    val close = { vm.showOutputDialog = false }
+    val closeNow = { vm.showOutputDialog = false }
     val selected = vm.currentOutput?.id
     val hasExternal = vm.outputs.any { it.kind != AudioOutput.PHONE }
 
-    Dialog(
-        onDismissRequest = { close() },
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
+    AnimDialog(onClosed = closeNow) { close ->
         Column(
             Modifier
                 .padding(horizontal = 16.dp)

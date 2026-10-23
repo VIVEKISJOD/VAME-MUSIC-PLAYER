@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -87,6 +88,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var downloadsOpen by mutableStateOf(false)
     var downloadBytes by mutableStateOf(0L)
     var downloadQuality by mutableIntStateOf(Prefs.downloadQuality(app))
+
+    // listening stats (Library card + Recap)
+    private val stats = StatsStore.load(app)
+    var statMinutes by mutableLongStateOf(stats.totalSec / 60)
+    var statPlays by mutableIntStateOf(stats.totalPlays)
+    val statSince: Long get() = stats.since
+    var recapOpen by mutableStateOf(false)
+    private var statTick = 0
 
     // playlist import
     var showImportDialog by mutableStateOf(false)
@@ -182,6 +191,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         player.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(playing: Boolean) {
                 isPlaying = playing
+                if (!playing) StatsStore.save(getApplication<Application>(), stats)
             }
 
             override fun onPlaybackStateChanged(state: Int) {
@@ -193,12 +203,49 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }
         })
         isPlaying = player.isPlaying
+        // every second of real playing is added to the listening stats
+        viewModelScope.launch {
+            while (true) {
+                delay(1000)
+                val s = current
+                if (s != null && isPlaying) addListen(s)
+            }
+        }
         PlaybackBridge.onNext = { next() }
         PlaybackBridge.onPrev = { prev() }
         loadHome()
     }
 
+    private fun statFor(s: Song): SongStat {
+        val e = stats.songs.getOrPut(s.url) { SongStat(s.url, s.title, s.artist, s.cover, 0L, 0) }
+        e.title = s.title
+        e.artist = s.artist
+        if (s.cover != null) e.cover = s.cover
+        return e
+    }
+
+    private fun addListen(s: Song) {
+        statFor(s).sec += 1
+        stats.totalSec += 1
+        if (stats.totalSec % 60L == 0L) statMinutes = stats.totalSec / 60
+        statTick++
+        if (statTick >= 20) {
+            statTick = 0
+            StatsStore.save(getApplication<Application>(), stats)
+        }
+    }
+
+    private fun countPlay(s: Song) {
+        statFor(s).plays += 1
+        stats.totalPlays += 1
+        statPlays = stats.totalPlays
+        StatsStore.save(getApplication<Application>(), stats)
+    }
+
+    fun recap(): RecapData = StatsStore.recap(stats)
+
     override fun onCleared() {
+        StatsStore.save(getApplication<Application>(), stats)
         PlaybackBridge.onNext = null
         PlaybackBridge.onPrev = null
         super.onCleared()
@@ -373,6 +420,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun searchFor(text: String) {
         query = text
         search()
+    }
+
+    // back from search results to the Explore tiles
+    fun clearSearch() {
+        searched = false
+        query = ""
+        results = emptyList()
+        albumResults = emptyList()
+        error = null
     }
 
     // ---------- settings ----------
@@ -805,6 +861,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 played.add(0, song)
                 while (played.size > 30) played.removeAt(played.size - 1)
                 Prefs.saveHistory(getApplication<Application>(), played.toList())
+                countPlay(song)
 
                 if (r.related.isNotEmpty()) suggestions = r.related.take(10)
                 if (endless && queue.size - index < 8) {
@@ -980,6 +1037,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         likedOpen = false
         downloadsOpen = false
         playlistOpen = false
+        recapOpen = false
         tab = 0
     }
 

@@ -348,11 +348,7 @@ fun DownloadsScreen(vm: MainViewModel) {
 fun ImportDialog(vm: MainViewModel) {
     var link by remember { mutableStateOf("") }
     val clip = LocalClipboardManager.current
-    val close: () -> Unit = {
-        if (!vm.importBusy) {
-            vm.showImportDialog = false
-        }
-    }
+    val closeNow: () -> Unit = { vm.showImportDialog = false }
     // if a playlist link is already copied, put it in the box straight away
     LaunchedEffect(Unit) {
         val t = clip.getText()?.text
@@ -363,10 +359,8 @@ fun ImportDialog(vm: MainViewModel) {
         }
     }
 
-    Dialog(
-        onDismissRequest = { close() },
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
+    AnimDialog(onClosed = closeNow, canClose = { !vm.importBusy }) { animClose ->
+        val close: () -> Unit = { if (!vm.importBusy) animClose() }
         Column(
             Modifier
                 .padding(horizontal = 16.dp)

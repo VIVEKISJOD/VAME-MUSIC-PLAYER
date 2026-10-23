@@ -78,6 +78,7 @@ fun SettingsScreen(vm: MainViewModel) {
             }
 
             AppearanceSection()
+            AppIconSection()
 
             SectionLabel("Home title")
             TextField(
