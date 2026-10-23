@@ -47,10 +47,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 
-private val PBg = Color(0xFF2A1F21)
-private val PCard = Color(0xFF382C2F)
-private val PAccent = Color(0xFFFFB3B9)
-private val PDim = Color(0xFFC9B3B6)
+private val PBg: Color get() = Pal.surface
+private val PCard: Color get() = Pal.surface2
+private val PAccent: Color get() = Pal.accent
+private val PDim: Color get() = Pal.textDim
 
 // ---------------- playlist page ----------------
 
@@ -65,7 +65,7 @@ fun PlaylistScreen(vm: MainViewModel) {
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    listOf(Color(0xFF3A1511), Color(0xFF120D0D), Color(0xFF0A0808))
+                    listOf(Pal.bgTop, Pal.bgMid, Pal.bgBot)
                 )
             )
             .clickable(
@@ -116,12 +116,12 @@ fun PlaylistScreen(vm: MainViewModel) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text("CREATED BY", fontSize = 11.sp, color = Color(0xFF8C7C7E))
+                    Text("CREATED BY", fontSize = 11.sp, color = Pal.muted)
                     Text("You", fontSize = 15.sp, color = Color.White)
                 }
                 Spacer(Modifier.width(24.dp))
                 Column {
-                    Text("LASTS", fontSize = 11.sp, color = Color(0xFF8C7C7E))
+                    Text("LASTS", fontSize = 11.sp, color = Pal.muted)
                     Text(mins.toString() + " Mins", fontSize = 15.sp, color = Color.White)
                 }
                 Spacer(Modifier.weight(1f))
@@ -180,9 +180,10 @@ private fun PlaylistSongRow(vm: MainViewModel, pl: Playlist, s: Song) {
     Row(
         Modifier
             .fillMaxWidth()
+            .appear()
             .padding(vertical = 4.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(CardDark)
+            .glassFill()
             .combinedClickable(
                 onClick = { vm.play(s, pl.songs) },
                 onLongClick = {
@@ -197,11 +198,11 @@ private fun PlaylistSongRow(vm: MainViewModel, pl: Playlist, s: Song) {
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(s.title, fontSize = 16.sp, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(s.artist, fontSize = 13.sp, color = Color(0xFF8C7C7E), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(s.artist, fontSize = 13.sp, color = Pal.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         Box {
             IconButton(onClick = { menu = true }) {
-                Icon(Icons.Filled.MoreHoriz, null, tint = Color(0xFFD9C0C2))
+                Icon(Icons.Filled.MoreHoriz, null, tint = Pal.textDim)
             }
             DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                 DropdownMenuItem(
@@ -241,9 +242,10 @@ fun PlaylistEditDialog(vm: MainViewModel) {
         Column(
             Modifier
                 .padding(horizontal = 16.dp)
+                .widthIn(max = 520.dp)
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(32.dp))
-                .background(PBg)
+                .glassPanel(RoundedCornerShape(32.dp))
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -373,10 +375,11 @@ fun AddToPlaylistDialog(vm: MainViewModel) {
         Column(
             Modifier
                 .padding(horizontal = 16.dp)
+                .widthIn(max = 520.dp)
                 .fillMaxWidth()
                 .heightIn(max = 620.dp)
                 .clip(RoundedCornerShape(32.dp))
-                .background(PBg)
+                .glassPanel(RoundedCornerShape(32.dp))
                 .padding(20.dp)
         ) {
             Text("Add to playlist", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
@@ -401,7 +404,7 @@ fun AddToPlaylistDialog(vm: MainViewModel) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
-                        Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(Color(0x33FFB3B9)),
+                        Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(Pal.accent.copy(alpha = 0.2f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(Icons.Filled.Add, null, tint = PAccent)

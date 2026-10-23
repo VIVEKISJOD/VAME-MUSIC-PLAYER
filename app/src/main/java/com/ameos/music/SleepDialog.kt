@@ -32,10 +32,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 
-private val DlgBg = Color(0xFF2A1F21)
-private val CardBg = Color(0xFF382C2F)
-private val Accent = Color(0xFFFFB3B9)
-private val Dim = Color(0xFFC9B3B6)
+private val DlgBg: Color get() = Pal.surface
+private val CardBg: Color get() = Pal.surface2
+private val Accent: Color get() = Pal.accent
+private val Dim: Color get() = Pal.textDim
 
 @Composable
 private fun Chip(label: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
@@ -120,10 +120,11 @@ fun SleepDialog(vm: MainViewModel) {
         Column(
             Modifier
                 .padding(horizontal = 16.dp)
+                .widthIn(max = 520.dp)
                 .fillMaxWidth()
                 .heightIn(max = 680.dp)
                 .clip(RoundedCornerShape(32.dp))
-                .background(DlgBg)
+                .glassPanel(RoundedCornerShape(32.dp))
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 22.dp)
         ) {
@@ -141,7 +142,7 @@ fun SleepDialog(vm: MainViewModel) {
                         .fillMaxWidth()
                         .padding(top = 16.dp)
                         .clip(RoundedCornerShape(20.dp))
-                        .background(Color(0x33FFB3B9))
+                        .background(Pal.accent.copy(alpha = 0.2f))
                         .padding(start = 18.dp, top = 12.dp, bottom = 12.dp, end = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {

@@ -1,6 +1,7 @@
 package com.ameos.music
 
 import android.widget.Toast
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
@@ -10,11 +11,15 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -25,6 +30,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -48,6 +55,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -62,7 +70,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 
 val CardDark = Color(0xFF141010)
-val Stroke = Color(0x22FFFFFF)
+val Stroke = Color(0x33FFFFFF)
 
 data class GenreTile(val name: String, val covers: List<String>, val artists: String)
 
@@ -91,13 +99,46 @@ fun Modifier.pressScale(target: Float = 0.96f): Modifier = composed {
 }
 
 // Glass surface: see-through layer + light edge on top.
-private val GlassEdge = Brush.verticalGradient(listOf(Color(0x66FFFFFF), Color(0x11FFFFFF)))
+// light edge of the glass: bright on the top-left, soft at the bottom-right
+val GlassEdge: Brush
+    get() = if (Pal.mode == 1) SolidColor(Color(0x2AFFFFFF)) else Brush.linearGradient(
+        listOf(Color(0xAAFFFFFF), Color(0x22FFFFFF), Color(0x11FFFFFF), Color(0x55FFFFFF))
+    )
+private val GlassSheen: Brush = Brush.linearGradient(
+    listOf(Color(0x33FFFFFF), Color(0x08FFFFFF), Color.Transparent, Color(0x14FFFFFF))
+)
 
-fun Modifier.glass(shape: Shape, top: Color = Color(0xCC2A1A1D), bottom: Color = Color(0xCC120C0C)): Modifier =
+fun Modifier.glass(shape: Shape, top: Color = Pal.glassTop, bottom: Color = Pal.glassBottom): Modifier =
     this
         .clip(shape)
         .background(Brush.verticalGradient(listOf(top, bottom)))
+        .then(if (Pal.glassy) Modifier.background(GlassSheen) else Modifier)
         .border(1.dp, GlassEdge, shape)
+
+// light glass fill for cards, rows, round buttons (put .clip(shape) before it, add a border if wanted)
+fun Modifier.glassFill(): Modifier =
+    if (Pal.mode == 1) this.background(Pal.surface)
+    else this
+        .background(Brush.verticalGradient(listOf(Color(0x2EFFFFFF), Color(0x14FFFFFF))))
+        .background(GlassSheen)
+
+// glass for sheets and dialogs: dark glass with a sheen and a light edge
+fun Modifier.glassPanel(shape: Shape): Modifier =
+    this
+        .clip(shape)
+        .background(Brush.verticalGradient(listOf(Pal.panelTop, Pal.panelBottom)))
+        .then(if (Pal.glassy) Modifier.background(GlassSheen) else Modifier)
+        .border(1.dp, GlassEdge, shape)
+
+// fade + rise when an item first shows up
+fun Modifier.appear(): Modifier = composed {
+    val a = remember { Animatable(0f) }
+    LaunchedEffect(Unit) { a.animateTo(1f, tween(340, easing = FastOutSlowInEasing)) }
+    this.graphicsLayer {
+        alpha = a.value
+        translationY = (1f - a.value) * 36f
+    }
+}
 
 private val ytThumbRe = Regex("^(https?://i\\.ytimg\\.com/vi(?:_webp)?/[^/]+/)[A-Za-z0-9_]+\\.(?:jpg|webp)(?:\\?.*)?$")
 private val lhSizeRe = Regex("=(?:w\\d+-h\\d+|s\\d+)[^/]*$")
@@ -124,7 +165,7 @@ fun Cover(
     // if the sharp link does not exist, fall back to the normal one
     var failed by remember(url) { mutableStateOf(false) }
     val data = if (hiRes && !failed) hiResCover(url) else url
-    Box(modifier.clip(shape).background(Color(0xFF2A1215))) {
+    Box(modifier.clip(shape).background(Pal.surface)) {
         if (data != null) {
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
@@ -170,10 +211,11 @@ fun SongRow(song: Song, vm: MainViewModel, list: List<Song>) {
     Row(
         Modifier
             .fillMaxWidth()
+            .appear()
             .padding(vertical = 4.dp)
             .pressScale()
             .clip(RoundedCornerShape(16.dp))
-            .background(CardDark)
+            .glassFill()
             .border(1.dp, Stroke, RoundedCornerShape(16.dp))
             .combinedClickable(
                 onClick = { vm.play(song, list) },
@@ -204,13 +246,13 @@ fun SongRow(song: Song, vm: MainViewModel, list: List<Song>) {
             vm.playNext(song)
             if (!idle) Toast.makeText(ctx, "Will play next", Toast.LENGTH_SHORT).show()
         }) {
-            Icon(Icons.Filled.QueuePlayNext, null, tint = Color(0xFFD9C0C2))
+            Icon(Icons.Filled.QueuePlayNext, null, tint = Pal.textDim)
         }
         IconButton(onClick = { vm.toggleLike(song) }) {
             if (vm.isLiked(song)) {
-                Icon(Icons.Filled.Favorite, null, tint = Color(0xFFFFB3B9))
+                Icon(Icons.Filled.Favorite, null, tint = Pal.accent)
             } else {
-                Icon(Icons.Outlined.FavoriteBorder, null, tint = Color(0xFFD9C0C2))
+                Icon(Icons.Outlined.FavoriteBorder, null, tint = Pal.textDim)
             }
         }
     }
@@ -220,15 +262,22 @@ fun SongRow(song: Song, vm: MainViewModel, list: List<Song>) {
 fun MiniPlayer(vm: MainViewModel, modifier: Modifier = Modifier) {
     val song = vm.current ?: return
     val shape = RoundedCornerShape(32.dp)
+    val enter = remember { Animatable(0f) }
+    LaunchedEffect(Unit) { enter.animateTo(1f, spring(dampingRatio = 0.8f, stiffness = 300f)) }
     Box(
         modifier
             .fillMaxWidth()
             .height(64.dp)
+            .graphicsLayer {
+                alpha = enter.value.coerceIn(0f, 1f)
+                translationY = (1f - enter.value) * 80f
+            }
             .pressScale(0.97f)
             .clip(shape)
-            .clickable { vm.showPlayer = true }
-            .background(Brush.horizontalGradient(listOf(Color(0xE65A1218), Color(0xE62A0C10))))
-            .border(1.dp, Brush.verticalGradient(listOf(Color(0x66FF8A95), Color(0x22FF6B7A))), shape)
+            .clickable { vm.showPlayer = !vm.showPlayer }
+            .background(Brush.horizontalGradient(listOf(Pal.miniA, Pal.miniB)))
+            .glassFill()
+            .border(1.dp, Brush.verticalGradient(listOf(Pal.accent.copy(alpha = 0.4f), Pal.accent.copy(alpha = 0.13f))), shape)
     ) {
         Cover(
             song.cover,
@@ -247,7 +296,7 @@ fun MiniPlayer(vm: MainViewModel, modifier: Modifier = Modifier) {
                     color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    song.artist, fontSize = 12.sp, color = Color(0xFFE6BDC0),
+                    song.artist, fontSize = 12.sp, color = Pal.textDim,
                     maxLines = 1, overflow = TextOverflow.Ellipsis
                 )
             }
@@ -260,10 +309,12 @@ fun MiniPlayer(vm: MainViewModel, modifier: Modifier = Modifier) {
                         Modifier.size(22.dp), color = Color.White, strokeWidth = 2.dp
                     )
                 } else {
-                    Icon(
-                        if (vm.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                        null, tint = Color.White
-                    )
+                    Crossfade(vm.isPlaying, animationSpec = tween(180), label = "pp") { pl ->
+                        Icon(
+                            if (pl) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                            null, tint = Color.White
+                        )
+                    }
                 }
             }
             IconButton(onClick = { vm.next() }) {
@@ -293,7 +344,7 @@ fun BottomBar(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modif
     ) {
         items.forEachIndexed { i, item ->
             val on = i == selected
-            val col = if (on) Color.White else Color(0xFF8C7C7E)
+            val col = if (on) Color.White else Pal.muted
             Column(
                 Modifier
                     .weight(1f)
@@ -319,7 +370,7 @@ fun RoundIcon(icon: ImageVector, onClick: () -> Unit) {
         Modifier
             .size(40.dp)
             .clip(CircleShape)
-            .background(Color(0x33FFFFFF))
+            .glassFill()
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
@@ -338,7 +389,7 @@ fun HomeFab(vm: MainViewModel) {
             .clickable { vm.goHome() },
         contentAlignment = Alignment.Center
     ) {
-        Icon(Icons.Filled.Home, null, tint = Color(0xFFD9C0C2), modifier = Modifier.size(26.dp))
+        Icon(Icons.Filled.Home, null, tint = Pal.textDim, modifier = Modifier.size(26.dp))
     }
 }
 
@@ -364,28 +415,55 @@ fun DetailBottomBar(vm: MainViewModel, modifier: Modifier = Modifier) {
 
 // Bottom dock: mini player + tab bar. Scrolling down folds it into one slim row
 // (Home circle, mini player pill, Search circle); scrolling up opens it again.
+// One spring drives both layers (fade, slide and scale) and the height, so it stays smooth.
 @Composable
 fun Dock(vm: MainViewModel, collapsed: Boolean, onExpand: () -> Unit, modifier: Modifier = Modifier) {
-    val folded = collapsed && vm.current != null
-    Column(modifier.animateContentSize(spring(dampingRatio = 0.8f, stiffness = 380f))) {
-        AnimatedVisibility(
-            visible = !folded,
-            enter = fadeIn(tween(220, delayMillis = 60)) + expandVertically(spring(0.8f, 380f)),
-            exit = fadeOut(tween(140)) + shrinkVertically(spring(0.8f, 380f))
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                MiniPlayer(vm)
+    val hasSong = vm.current != null
+    val folded = collapsed && hasSong
+    val p by animateFloatAsState(
+        if (folded) 1f else 0f,
+        spring(dampingRatio = 0.86f, stiffness = 260f),
+        label = "dockFold"
+    )
+    val fullH by animateDpAsState(
+        if (hasSong) 138.dp else 64.dp,
+        spring(dampingRatio = 0.85f, stiffness = 300f),
+        label = "dockFull"
+    )
+    Box(modifier.fillMaxWidth().height(androidx.compose.ui.unit.lerp(fullH, 56.dp, p))) {
+        if (p < 0.98f) {
+            Column(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .requiredHeight(fullH)
+                    .graphicsLayer {
+                        alpha = (1f - p * 1.6f).coerceIn(0f, 1f)
+                        translationY = p * 36f
+                        scaleX = 1f - 0.06f * p
+                        scaleY = 1f - 0.06f * p
+                    },
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                if (hasSong) MiniPlayer(vm)
                 BottomBar(vm.tab, { vm.tab = it })
             }
         }
-        AnimatedVisibility(
-            visible = folded,
-            enter = fadeIn(tween(220, delayMillis = 60)) + scaleIn(spring(0.7f, 400f), initialScale = 0.85f) +
-                expandVertically(spring(0.8f, 380f)),
-            exit = fadeOut(tween(140)) + scaleOut(tween(160), targetScale = 0.9f) +
-                shrinkVertically(spring(0.8f, 380f))
-        ) {
-            FoldedDock(vm, onExpand)
+        if (p > 0.02f) {
+            Box(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .requiredHeight(56.dp)
+                    .graphicsLayer {
+                        alpha = ((p - 0.25f) * 1.6f).coerceIn(0f, 1f)
+                        translationY = (1f - p) * -30f
+                        scaleX = 0.94f + 0.06f * p
+                        scaleY = 0.94f + 0.06f * p
+                    }
+            ) {
+                FoldedDock(vm, onExpand)
+            }
         }
     }
 }
@@ -407,7 +485,7 @@ private fun FoldedDock(vm: MainViewModel, onExpand: () -> Unit) {
         ) {
             Icon(
                 Icons.Filled.Home, null,
-                tint = if (vm.tab == 0) Color.White else Color(0xFF8C7C7E),
+                tint = if (vm.tab == 0) Color.White else Pal.muted,
                 modifier = Modifier.size(24.dp)
             )
         }
@@ -439,10 +517,12 @@ private fun FoldedDock(vm: MainViewModel, onExpand: () -> Unit) {
                         Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp
                     )
                 } else {
-                    Icon(
-                        if (vm.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                        null, tint = Color.White
-                    )
+                    Crossfade(vm.isPlaying, animationSpec = tween(180), label = "pp") { pl ->
+                        Icon(
+                            if (pl) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                            null, tint = Color.White
+                        )
+                    }
                 }
             }
         }
@@ -457,9 +537,80 @@ private fun FoldedDock(vm: MainViewModel, onExpand: () -> Unit) {
         ) {
             Icon(
                 Icons.Filled.Search, null,
-                tint = if (vm.tab == 1) Color.White else Color(0xFF8C7C7E),
+                tint = if (vm.tab == 1) Color.White else Pal.muted,
                 modifier = Modifier.size(24.dp)
             )
         }
+    }
+}
+
+
+// Tablet: navigation rail on the left (replaces the bottom tab bar)
+private data class RailItem(val label: String, val icon: ImageVector)
+
+@Composable
+fun SideRail(vm: MainViewModel) {
+    val items = listOf(
+        RailItem("Home", Icons.Filled.Home),
+        RailItem("Search", Icons.Filled.Search),
+        RailItem("Your type", Icons.Filled.RadioButtonChecked),
+        RailItem("Library", Icons.Filled.LibraryMusic)
+    )
+    Column(
+        Modifier
+            .width(92.dp)
+            .fillMaxHeight()
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .padding(vertical = 14.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Image(
+            painterResource(R.drawable.logo_app), null,
+            Modifier
+                .size(54.dp)
+                .pressScale(0.92f)
+                .clip(RoundedCornerShape(16.dp))
+                .clickable { vm.goHome() }
+        )
+        Spacer(Modifier.weight(1f))
+        items.forEachIndexed { i, item ->
+            val on = vm.tab == i
+            val pill by animateFloatAsState(
+                if (on) 1f else 0f, spring(dampingRatio = 0.75f, stiffness = 400f), label = "railPill"
+            )
+            Column(
+                Modifier
+                    .padding(vertical = 6.dp)
+                    .pressScale(0.92f)
+                    .clip(RoundedCornerShape(20.dp))
+                    .clickable { vm.tab = i },
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(
+                    Modifier.width(64.dp).height(34.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        Modifier
+                            .matchParentSize()
+                            .alpha(pill)
+                            .glass(RoundedCornerShape(17.dp), Pal.accent.copy(alpha = 0.53f), Pal.accentDeep.copy(alpha = 0.5f))
+                    )
+                    Icon(
+                        item.icon, null,
+                        tint = if (on) Color.White else Pal.muted,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+                Text(
+                    item.label, fontSize = 11.sp,
+                    color = if (on) Color.White else Pal.muted,
+                    fontWeight = if (on) FontWeight.Bold else FontWeight.Normal,
+                    modifier = Modifier.padding(top = 3.dp)
+                )
+            }
+        }
+        Spacer(Modifier.height(16.dp))
     }
 }

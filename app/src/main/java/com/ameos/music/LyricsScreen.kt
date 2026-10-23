@@ -61,7 +61,7 @@ fun LyricsScreen(vm: MainViewModel) {
     Box(
         Modifier
             .fillMaxSize()
-            .background(lerp(tint, Color.Black, 0.5f))
+            .background(lerp(tint, Color.Black, if (Pal.amoled) 0.92f else 0.5f))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
@@ -131,12 +131,12 @@ fun LyricsScreen(vm: MainViewModel) {
                 ) {
                     if (vm.loading) {
                         CircularProgressIndicator(
-                            Modifier.size(30.dp), color = Color(0xFF1B1315), strokeWidth = 3.dp
+                            Modifier.size(30.dp), color = Pal.surface, strokeWidth = 3.dp
                         )
                     } else {
                         Icon(
                             if (vm.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                            null, tint = Color(0xFF1B1315), modifier = Modifier.size(38.dp)
+                            null, tint = Pal.surface, modifier = Modifier.size(38.dp)
                         )
                     }
                 }

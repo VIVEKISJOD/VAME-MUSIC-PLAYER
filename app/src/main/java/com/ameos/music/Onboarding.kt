@@ -42,7 +42,7 @@ fun OnboardingScreen(vm: MainViewModel) {
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    listOf(Color(0xFF3A1511), Color(0xFF120D0D), Color(0xFF0A0808))
+                    listOf(Pal.bgTop, Pal.bgMid, Pal.bgBot)
                 )
             )
             .clickable(
@@ -64,7 +64,7 @@ fun OnboardingScreen(vm: MainViewModel) {
             )
             Text(
                 "Pick a few. They shape your Home, Search and Your Type. You can change this later in Settings.",
-                fontSize = 14.sp, color = Color(0xFFC9B3B6),
+                fontSize = 14.sp, color = Pal.textDim,
                 modifier = Modifier.padding(top = 10.dp, bottom = 20.dp)
             )
             Column(
@@ -79,7 +79,7 @@ fun OnboardingScreen(vm: MainViewModel) {
                                 Modifier
                                     .weight(1f)
                                     .clip(RoundedCornerShape(20.dp))
-                                    .background(if (on) Color(0xFFFFB3B9) else Color(0xFF2A1F21))
+                                    .background(if (on) Pal.accent else Pal.surface)
                                     .clickable { sel = if (on) sel - g else sel + g }
                                     .padding(vertical = 20.dp),
                                 contentAlignment = Alignment.Center

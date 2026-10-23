@@ -47,7 +47,7 @@ fun SettingsScreen(vm: MainViewModel) {
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    listOf(Color(0xFF3A1511), Color(0xFF0E0B0B), Color(0xFF0A0808)),
+                    listOf(Pal.bgTop, Pal.bgMid, Pal.bgBot),
                     endY = 1500f
                 )
             )
@@ -77,6 +77,8 @@ fun SettingsScreen(vm: MainViewModel) {
                 )
             }
 
+            AppearanceSection()
+
             SectionLabel("Home title")
             TextField(
                 value = vm.title,
@@ -93,7 +95,7 @@ fun SettingsScreen(vm: MainViewModel) {
             )
             Text(
                 "Whatever you type replaces the big word at the top of Home.",
-                fontSize = 12.sp, color = Color(0xFF8C7C7E),
+                fontSize = 12.sp, color = Pal.muted,
                 modifier = Modifier.padding(top = 6.dp)
             )
 
@@ -107,7 +109,7 @@ fun SettingsScreen(vm: MainViewModel) {
                     Text(
                         if (vm.genres.isEmpty()) "Pick the types of songs you like."
                         else vm.genres.joinToString(", "),
-                        fontSize = 12.sp, color = Color(0xFF8C7C7E)
+                        fontSize = 12.sp, color = Pal.muted
                     )
                 }
             }
@@ -127,7 +129,7 @@ fun SettingsScreen(vm: MainViewModel) {
             )
             Text(
                 "Lower quality uses less data. Applies from the next song.",
-                fontSize = 12.sp, color = Color(0xFF8C7C7E)
+                fontSize = 12.sp, color = Pal.muted
             )
             QualityChips(vm.quality) { vm.updateQuality(it) }
 
@@ -173,7 +175,7 @@ fun SettingsScreen(vm: MainViewModel) {
             )
             Text(
                 "Applies to new downloads.",
-                fontSize = 12.sp, color = Color(0xFF8C7C7E)
+                fontSize = 12.sp, color = Pal.muted
             )
             QualityChips(vm.downloadQuality) { vm.updateDownloadQuality(it) }
 
@@ -206,7 +208,7 @@ fun SettingsScreen(vm: MainViewModel) {
 
             SectionLabel("About")
             Text(
-                "VAME Music v0.9.6 - made by vxvekggs",
+                "VAME Music v" + Updater.currentVersion(ctx) + " - made by vxvekggs",
                 fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White
             )
             Spacer(Modifier.height(10.dp))
@@ -216,7 +218,7 @@ fun SettingsScreen(vm: MainViewModel) {
                 Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(50))
-                    .background(Color(0x33FFFFFF))
+                    .glassFill()
                     .clickable { openUrl(ctx, "https://github.com/VIVEKISJOD/VAME-MUSIC-PLAYER") }
                     .padding(vertical = 13.dp),
                 horizontalArrangement = Arrangement.Center,
@@ -230,7 +232,7 @@ fun SettingsScreen(vm: MainViewModel) {
                     "(CC BY 4.0). Built with NewPipeExtractor (GPLv3), AndroidX Media3, Compose, " +
                     "Coil, OkHttp and Kotlin (Apache 2.0). Lyrics from LRCLIB. " +
                     "VAME is not affiliated with YouTube, Spotify or Apple.",
-                fontSize = 12.sp, color = Color(0xFFD9C0C2)
+                fontSize = 12.sp, color = Pal.textDim
             )
             Spacer(Modifier.height(40.dp))
         }
@@ -245,7 +247,7 @@ private fun SwitchRow(title: String, sub: String, checked: Boolean, onChange: (B
     ) {
         Column(Modifier.weight(1f)) {
             Text(title, fontSize = 16.sp, color = Color.White)
-            Text(sub, fontSize = 12.sp, color = Color(0xFF8C7C7E))
+            Text(sub, fontSize = 12.sp, color = Pal.muted)
         }
         Switch(checked = checked, onCheckedChange = onChange)
     }
@@ -261,7 +263,7 @@ private fun ActionRow(title: String, sub: String, onClick: () -> Unit) {
             .padding(vertical = 8.dp)
     ) {
         Text(title, fontSize = 16.sp, color = Color.White)
-        Text(sub, fontSize = 12.sp, color = Color(0xFF8C7C7E))
+        Text(sub, fontSize = 12.sp, color = Pal.muted)
     }
 }
 
@@ -277,13 +279,13 @@ private fun QualityChips(selected: Int, onPick: (Int) -> Unit) {
             Box(
                 Modifier
                     .clip(RoundedCornerShape(50))
-                    .background(if (on) Color(0xFFFFB3B9) else Color(0x33FFFFFF))
+                    .background(if (on) Pal.accent else Color(0x33FFFFFF))
                     .clickable { onPick(i) }
                     .padding(horizontal = 16.dp, vertical = 9.dp)
             ) {
                 Text(
                     n, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-                    color = if (on) Color(0xFF3A1511) else Color.White
+                    color = if (on) Pal.bgTop else Color.White
                 )
             }
         }

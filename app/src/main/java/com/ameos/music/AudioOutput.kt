@@ -79,10 +79,10 @@ object AudioOutput {
     }
 }
 
-private val OBg = Color(0xFF2A1F21)
-private val ORow = Color(0xFF382C2F)
-private val OSub = Color(0xFFC9B3B6)
-private val OAccent = Color(0xFFFFB3B9)
+private val OBg: Color get() = Pal.surface
+private val ORow: Color get() = Pal.surface2
+private val OSub: Color get() = Pal.textDim
+private val OAccent: Color get() = Pal.accent
 
 // "Play audio on" picker: this phone / Bluetooth / headphones
 @Composable
@@ -99,10 +99,11 @@ fun OutputDialog(vm: MainViewModel) {
         Column(
             Modifier
                 .padding(horizontal = 16.dp)
+                .widthIn(max = 520.dp)
                 .fillMaxWidth()
                 .heightIn(max = 560.dp)
                 .clip(RoundedCornerShape(32.dp))
-                .background(OBg)
+                .glassPanel(RoundedCornerShape(32.dp))
                 .padding(20.dp)
         ) {
             Text("Play audio on", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)

@@ -42,9 +42,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-private val SheetBg = Color(0xFF2A1F21)
-private val RowBg = Color(0xFF382C2F)
-private val SubTxt = Color(0xFFC9B3B6)
+private val SheetBg: Color get() = Pal.surface
+private val RowBg: Color get() = Pal.surface2
+private val SubTxt: Color get() = Pal.textDim
 
 private fun mmss(sec: Int): String {
     val m = sec / 60
@@ -139,11 +139,12 @@ fun QuickSheet(vm: MainViewModel) {
                 val dragY = remember { Animatable(0f) }
                 Column(
                     Modifier
+                        .widthIn(max = 560.dp)
                         .fillMaxWidth()
                         .fillMaxHeight(0.88f)
                         .offset { IntOffset(0, dragY.value.roundToInt()) }
                         .clip(RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
-                        .background(SheetBg)
+                        .glassPanel(RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
@@ -327,7 +328,7 @@ fun QuickSheet(vm: MainViewModel) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Box(
-                                Modifier.size(52.dp).clip(RoundedCornerShape(50)).background(Color(0xFF1B1315)),
+                                Modifier.size(52.dp).clip(RoundedCornerShape(50)).background(Pal.surface),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(Icons.Filled.Person, null, tint = SubTxt, modifier = Modifier.size(28.dp))

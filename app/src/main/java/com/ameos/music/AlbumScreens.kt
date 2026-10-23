@@ -48,9 +48,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 
-private val APink = Color(0xFFFFB3B9)
-private val ADim = Color(0xFFC9B3B6)
-private val ACard = Color(0xFF382C2F)
+private val APink: Color get() = Pal.accent
+private val ADim: Color get() = Pal.textDim
+private val ACard: Color get() = Pal.surface2
 
 private fun mmss(sec: Long): String {
     val s = sec.coerceAtLeast(0L)
@@ -66,10 +66,11 @@ private fun TrackRow(n: Int, s: Song, vm: MainViewModel, list: List<Song>) {
     Row(
         Modifier
             .fillMaxWidth()
+            .appear()
             .padding(vertical = 4.dp)
             .pressScale()
             .clip(RoundedCornerShape(16.dp))
-            .background(CardDark)
+            .glassFill()
             .border(1.dp, Stroke, RoundedCornerShape(16.dp))
             .combinedClickable(
                 onClick = { vm.play(s, list) },
@@ -82,18 +83,18 @@ private fun TrackRow(n: Int, s: Song, vm: MainViewModel, list: List<Song>) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            n.toString(), fontSize = 20.sp, color = Color(0xFF8C7C7E),
+            n.toString(), fontSize = 20.sp, color = Pal.muted,
             modifier = Modifier.width(34.dp)
         )
         Column(Modifier.weight(1f)) {
             Text(s.title, fontSize = 16.sp, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
-                artistName(s.artist), fontSize = 13.sp, color = Color(0xFF8C7C7E),
+                artistName(s.artist), fontSize = 13.sp, color = Pal.muted,
                 maxLines = 1, overflow = TextOverflow.Ellipsis
             )
         }
         if (s.durationSec > 0L) {
-            Text(mmss(s.durationSec), fontSize = 13.sp, color = Color(0xFF8C7C7E))
+            Text(mmss(s.durationSec), fontSize = 13.sp, color = Pal.muted)
         }
     }
 }
@@ -110,7 +111,7 @@ fun AlbumScreen(vm: MainViewModel) {
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    listOf(lerp(tint, Color.Black, 0.35f), Color(0xFF120D0D), Color(0xFF0A0808))
+                    listOf(lerp(tint, Color.Black, 0.35f), Pal.bgMid, Pal.bgBot)
                 )
             )
             .clickable(
@@ -156,7 +157,7 @@ fun AlbumScreen(vm: MainViewModel) {
                             Text(
                                 if (album.artist.isNotBlank()) album.artist
                                 else songs.firstOrNull()?.artist?.let { artistName(it) } ?: "",
-                                fontSize = 15.sp, color = Color(0xFFC9B3B6),
+                                fontSize = 15.sp, color = Pal.textDim,
                                 maxLines = 1, overflow = TextOverflow.Ellipsis
                             )
                         }
@@ -210,7 +211,7 @@ fun DownloadsScreen(vm: MainViewModel) {
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    listOf(Color(0xFF3A1511), Color(0xFF120D0D), Color(0xFF0A0808))
+                    listOf(Pal.bgTop, Pal.bgMid, Pal.bgBot)
                 )
             )
             .clickable(
@@ -233,7 +234,7 @@ fun DownloadsScreen(vm: MainViewModel) {
                     )
                     Text(
                         songs.size.toString() + " songs - " + mb, fontSize = 12.sp,
-                        color = Color(0xFF8C7C7E)
+                        color = Pal.muted
                     )
                 }
                 Row(
@@ -274,7 +275,7 @@ fun DownloadsScreen(vm: MainViewModel) {
                                 .fillMaxWidth()
                                 .padding(vertical = 4.dp)
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(CardDark)
+                                .glassFill()
                                 .padding(12.dp)
                         ) {
                             Text(
@@ -284,7 +285,7 @@ fun DownloadsScreen(vm: MainViewModel) {
                             Spacer(Modifier.height(8.dp))
                             Box(
                                 Modifier.fillMaxWidth().height(5.dp)
-                                    .clip(RoundedCornerShape(50)).background(Color(0x33FFFFFF))
+                                    .clip(RoundedCornerShape(50)).glassFill()
                             ) {
                                 Box(
                                     Modifier.fillMaxWidth(p.coerceIn(0.02f, 1f)).fillMaxHeight()
@@ -312,7 +313,7 @@ fun DownloadsScreen(vm: MainViewModel) {
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)
                             .clip(RoundedCornerShape(16.dp))
-                            .background(CardDark)
+                            .glassFill()
                             .border(1.dp, Stroke, RoundedCornerShape(16.dp))
                             .clickable { vm.play(s, songs) }
                             .padding(10.dp),
@@ -326,12 +327,12 @@ fun DownloadsScreen(vm: MainViewModel) {
                                 maxLines = 1, overflow = TextOverflow.Ellipsis
                             )
                             Text(
-                                artistName(s.artist), fontSize = 13.sp, color = Color(0xFF8C7C7E),
+                                artistName(s.artist), fontSize = 13.sp, color = Pal.muted,
                                 maxLines = 1, overflow = TextOverflow.Ellipsis
                             )
                         }
                         IconButton(onClick = { vm.deleteDownload(s) }) {
-                            Icon(Icons.Filled.Delete, null, tint = Color(0xFFD9C0C2))
+                            Icon(Icons.Filled.Delete, null, tint = Pal.textDim)
                         }
                     }
                 }
@@ -369,9 +370,10 @@ fun ImportDialog(vm: MainViewModel) {
         Column(
             Modifier
                 .padding(horizontal = 16.dp)
+                .widthIn(max = 520.dp)
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(32.dp))
-                .background(Color(0xFF2A1F21))
+                .glassPanel(RoundedCornerShape(32.dp))
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp)
         ) {
@@ -430,7 +432,7 @@ fun ImportDialog(vm: MainViewModel) {
                         .padding(top = 12.dp)
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(50))
-                        .background(Color(0x33FFFFFF))
+                        .glassFill()
                         .clickable {
                             vm.showImportDialog = false
                             vm.openPlaylist(doneId)
@@ -458,7 +460,7 @@ fun ImportDialog(vm: MainViewModel) {
                     Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(50))
-                        .background(if (vm.importBusy) Color(0x66FFB3B9) else APink)
+                        .background(if (vm.importBusy) Pal.accent.copy(alpha = 0.4f) else APink)
                         .clickable { vm.importPlaylist(link) }
                         .padding(vertical = 15.dp),
                     contentAlignment = Alignment.Center

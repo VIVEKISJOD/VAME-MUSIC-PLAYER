@@ -1,4 +1,17 @@
-# VAME Music - full changelog (up to zip step22, v0.9.7, 24 Oct 2026)
+# VAME Music - full changelog (up to zip step22, v0.10.1, 24 Oct 2026)
+
+## step22 (v0.10.1)
+- New: Settings > Appearance. Pick Colour glass, AMOLED (pure black) or AMOLED glass (pure black + glass), choose a palette (Crimson, Sunset, Amber, Emerald, Ocean, Violet, Rose, Mono) or make your own colour with the sliders. The whole app changes and it is remembered.
+- Changed: the bottom bar fold is rebuilt to be smooth (one spring for fade, slide, scale and height) and needs a real swipe so it no longer flickers.
+- New: more animations: tab switching slides and fades, pages open with an ease-out slide, songs and playlist rows rise in, mini player springs in, play/pause icon fades.
+- (tablet layout, glass, logo, update fix, bar fold below)
+
+## step22 (v0.10.0)
+- New: tablet layout. Navigation rail on the left (Home, Search, Your type, Library), Now Playing and lyrics open in a glass panel on the right while the pages stay usable, and a floating glass mini player at the bottom.
+- New: glass look everywhere: songs, cards, buttons, sheets, dialogs and the rail now have glass fill, a light edge and a sheen. The page behind a sheet or dialog is blurred (Android 12+).
+- New: bigger Home banner on tablets; sheets and dialogs stay a nice width on tablets.
+- New: the new VAME logo is the app icon and shows on the tablet rail.
+- (also in this build) bottom bar fold animation and the update download fix, listed below.
 
 ## step22 (v0.9.7)
 - New: bottom bar animation. Scroll down and the mini player + tab bar fold into one slim row (Home, mini player, Search). Scroll up and it opens again. Tapping Home or Search opens it back.

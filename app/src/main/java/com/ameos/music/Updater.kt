@@ -221,9 +221,9 @@ fun UpdateDialog(vm: MainViewModel) {
     val busy = vm.updateProgress >= 0
     AlertDialog(
         onDismissRequest = { vm.showUpdate = false },
-        containerColor = Color(0xFF2A1215),
+        containerColor = Pal.surface,
         titleContentColor = Color.White,
-        textContentColor = Color(0xFFD9C0C2),
+        textContentColor = Pal.textDim,
         title = { Text("Update available: " + info.version) },
         text = {
             Column(Modifier.heightIn(max = 260.dp).verticalScroll(rememberScrollState())) {
@@ -242,7 +242,7 @@ fun UpdateDialog(vm: MainViewModel) {
                     )
                     LinearProgressIndicator(
                         progress = { vm.updateProgress / 100f },
-                        color = Color(0xFFF6C6D0),
+                        color = Pal.accentSoft,
                         modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
                     )
                 }
@@ -262,12 +262,12 @@ fun UpdateDialog(vm: MainViewModel) {
             ) {
                 Text(
                     if (busy) "Downloading..." else if (vm.updateError != null) "Try again" else "Update now",
-                    color = Color(0xFFF6C6D0)
+                    color = Pal.accentSoft
                 )
             }
         },
         dismissButton = {
-            TextButton(onClick = { vm.showUpdate = false }) { Text("Later", color = Color(0xFFD9C0C2)) }
+            TextButton(onClick = { vm.showUpdate = false }) { Text("Later", color = Pal.textDim) }
         }
     )
 }

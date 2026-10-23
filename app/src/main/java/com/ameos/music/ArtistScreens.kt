@@ -53,7 +53,7 @@ fun ArtistScreen(vm: MainViewModel) {
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    listOf(Color(0xFF3A1511), Color(0xFF120D0D), Color(0xFF0A0808))
+                    listOf(Pal.bgTop, Pal.bgMid, Pal.bgBot)
                 )
             )
             .clickable(
@@ -84,7 +84,7 @@ fun ArtistScreen(vm: MainViewModel) {
                             cover,
                             Modifier
                                 .size(170.dp)
-                                .border(1.dp, Color(0x33FF6B7A), CircleShape),
+                                .border(1.dp, Pal.accent.copy(alpha = 0.2f), CircleShape),
                             CircleShape,
                             hiRes = true
                         )
@@ -96,7 +96,7 @@ fun ArtistScreen(vm: MainViewModel) {
                         Text(
                             if (vm.artistLoading) "Loading songs..."
                             else songs.size.toString() + " songs",
-                            fontSize = 13.sp, color = Color(0xFF8C7C7E),
+                            fontSize = 13.sp, color = Pal.muted,
                             modifier = Modifier.padding(top = 2.dp)
                         )
                         Spacer(Modifier.height(14.dp))
@@ -104,7 +104,7 @@ fun ArtistScreen(vm: MainViewModel) {
                             Row(
                                 Modifier
                                     .clip(RoundedCornerShape(50))
-                                    .background(if (fav) Color(0x88FFB3B9) else Color(0x33FFFFFF))
+                                    .background(if (fav) Pal.accent.copy(alpha = 0.53f) else Color(0x33FFFFFF))
                                     .clickable { vm.toggleArtistLike(name, cover) }
                                     .padding(horizontal = 16.dp, vertical = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically
@@ -149,7 +149,7 @@ fun ArtistScreen(vm: MainViewModel) {
                     item {
                         Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
                             CircularProgressIndicator(
-                                Modifier.size(28.dp), color = Color(0xFFFFB3B9), strokeWidth = 3.dp
+                                Modifier.size(28.dp), color = Pal.accent, strokeWidth = 3.dp
                             )
                         }
                     }
@@ -179,7 +179,7 @@ fun LikedScreen(vm: MainViewModel) {
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    listOf(Color(0xFF3A1511), Color(0xFF120D0D), Color(0xFF0A0808))
+                    listOf(Pal.bgTop, Pal.bgMid, Pal.bgBot)
                 )
             )
             .clickable(
@@ -202,7 +202,7 @@ fun LikedScreen(vm: MainViewModel) {
                     )
                     Text(
                         songs.size.toString() + " songs", fontSize = 12.sp,
-                        color = Color(0xFF8C7C7E)
+                        color = Pal.muted
                     )
                 }
                 Row(
@@ -236,7 +236,7 @@ fun LikedScreen(vm: MainViewModel) {
                 ) {
                     Text(
                         "No liked songs yet. Tap the heart on any song.",
-                        fontSize = 15.sp, color = Color(0xFFC9B3B6)
+                        fontSize = 15.sp, color = Pal.textDim
                     )
                 }
             } else {

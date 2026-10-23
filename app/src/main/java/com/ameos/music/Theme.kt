@@ -9,7 +9,7 @@ import androidx.compose.ui.graphics.Color
 val AmeosSeed = Color(0xFFC8283D)
 val AmeosPlayRed = Color(0xFFE0314A)
 
-private val AmeosColors = darkColorScheme(
+private val AmeosColorsUnused = darkColorScheme(
     primary = Color(0xFFFFB3B9),
     onPrimary = Color(0xFF560018),
     primaryContainer = AmeosSeed,
@@ -30,8 +30,26 @@ private val AmeosColors = darkColorScheme(
 
 @Composable
 fun AmeosTheme(content: @Composable () -> Unit) {
+    val colors = darkColorScheme(
+        primary = Pal.accent,
+        onPrimary = Color(0xFF1B1315),
+        primaryContainer = Pal.accentDeep,
+        onPrimaryContainer = Color(0xFFFFFFFF),
+        secondary = Pal.textDim,
+        onSecondary = Color(0xFF1B1315),
+        background = Pal.bgMid,
+        onBackground = Color(0xFFF3DEDF),
+        surface = Pal.bgMid,
+        onSurface = Color(0xFFF3DEDF),
+        surfaceVariant = Pal.surface2,
+        onSurfaceVariant = Pal.textDim,
+        surfaceContainer = Pal.surface,
+        surfaceContainerHigh = Pal.surface2,
+        outline = Pal.muted,
+        error = Color(0xFFFFB4AB)
+    )
     MaterialTheme(
-        colorScheme = AmeosColors,
+        colorScheme = colors,
         typography = Typography(),
         content = content
     )

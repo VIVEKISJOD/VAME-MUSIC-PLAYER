@@ -108,7 +108,7 @@ import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.text.style.TextAlign
 
-private val Pink = Color(0xFFFFB3B9)
+private val Pink: Color get() = Pal.accent
 private val SoftWhite = Color(0xFFEDEDED)
 
 private fun fmt(ms: Long): String {
@@ -124,7 +124,7 @@ fun PlayerMenuButton(vm: MainViewModel, size: Dp = 40.dp) {
         Modifier
             .size(size)
             .clip(CircleShape)
-            .background(Color(0x33FFFFFF))
+            .glassFill()
             .clickable { vm.showMenu = true },
         contentAlignment = Alignment.Center
     ) {
@@ -319,7 +319,7 @@ fun NowPlayingScreen(vm: MainViewModel) {
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    listOf(Color(0xFF0A0708), lerp(tint, Color.Black, 0.55f), lerp(tint, Color.Black, 0.8f))
+                    listOf(Pal.bgBot, lerp(tint, Color.Black, if (Pal.amoled) 0.9f else 0.55f), lerp(tint, Color.Black, if (Pal.amoled) 1f else 0.8f))
                 )
             )
             .clickable(
@@ -367,7 +367,7 @@ fun NowPlayingScreen(vm: MainViewModel) {
                             0f to Color(0x55000000),
                             0.18f to Color.Transparent,
                             0.62f to Color.Transparent,
-                            1f to Color(0xFF0A0708)
+                            1f to Pal.bgBot
                         )
                     )
             )
@@ -545,7 +545,7 @@ fun NowPlayingScreen(vm: MainViewModel) {
                     Modifier
                         .height(56.dp)
                         .clip(RoundedCornerShape(50))
-                        .background(Color(0x33FFFFFF)),
+                        .glassFill(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
@@ -640,14 +640,14 @@ private fun QueuePanel(vm: MainViewModel, onClose: () -> Unit) {
                 )
                 Text(
                     "Drag the handle to reorder. Long-press a song for more.",
-                    fontSize = 12.sp, color = Color(0xFFE6BDC0)
+                    fontSize = 12.sp, color = Pal.textDim
                 )
             }
             Box(
                 Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(Color(0x33FFFFFF))
+                    .glassFill()
                     .clickable {
                         val ok = vm.shuffleUpNext()
                         Toast.makeText(
@@ -678,8 +678,8 @@ private fun QueuePanel(vm: MainViewModel, onClose: () -> Unit) {
                         .graphicsLayer { translationY = if (dragging) dragY else 0f }
                         .clip(RoundedCornerShape(14.dp))
                         .background(
-                            if (dragging) Color(0x55FFB3B9)
-                            else if (cur) Color(0x33FFB3B9)
+                            if (dragging) Pal.accent.copy(alpha = 0.33f)
+                            else if (cur) Pal.accent.copy(alpha = 0.2f)
                             else Color.Transparent
                         )
                         .combinedClickable(
@@ -700,7 +700,7 @@ private fun QueuePanel(vm: MainViewModel, onClose: () -> Unit) {
                             maxLines = 1, overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            s.artist, fontSize = 12.sp, color = Color(0xFFE6BDC0),
+                            s.artist, fontSize = 12.sp, color = Pal.textDim,
                             maxLines = 1, overflow = TextOverflow.Ellipsis
                         )
                     }
@@ -743,7 +743,7 @@ private fun QueuePanel(vm: MainViewModel, onClose: () -> Unit) {
                     ) {
                         Icon(
                             Icons.Filled.DragHandle, null,
-                            tint = Color(0xFFE6BDC0), modifier = Modifier.size(26.dp)
+                            tint = Pal.textDim, modifier = Modifier.size(26.dp)
                         )
                     }
                 }

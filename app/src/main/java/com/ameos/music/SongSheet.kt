@@ -37,9 +37,9 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
-private val SsBg = Color(0xFF2A1F21)
-private val SsRow = Color(0xFF382C2F)
-private val SsSub = Color(0xFFC9B3B6)
+private val SsBg: Color get() = Pal.surface
+private val SsRow: Color get() = Pal.surface2
+private val SsSub: Color get() = Pal.textDim
 
 @Composable
 private fun SongSheetRow(icon: ImageVector, title: String, sub: String, onClick: () -> Unit) {
@@ -102,10 +102,11 @@ fun SongSheet(vm: MainViewModel) {
                 val dragY = remember { Animatable(0f) }
                 Column(
                     Modifier
+                        .widthIn(max = 560.dp)
                         .fillMaxWidth()
                         .offset { IntOffset(0, dragY.value.roundToInt()) }
                         .clip(RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
-                        .background(SsBg)
+                        .glassPanel(RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null

@@ -75,7 +75,7 @@ fun HomeScreen(vm: MainViewModel) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("All", "Music", "Podcasts", "Playlists").forEachIndexed { i, t ->
                     val chipBg by animateColorAsState(
-                        if (i == vm.homeFilter) Color(0xFF7A1A24) else Color(0x22FFFFFF),
+                        if (i == vm.homeFilter) Pal.accentDeep else Color(0x22FFFFFF),
                         label = "chip"
                     )
                     Text(
@@ -96,10 +96,10 @@ fun HomeScreen(vm: MainViewModel) {
                 Box(
                     Modifier
                         .fillMaxWidth()
-                        .height(210.dp)
+                        .height(if (LocalConfiguration.current.screenWidthDp >= 600) 300.dp else 210.dp)
                         .pressScale(0.98f)
                         .clip(RoundedCornerShape(24.dp))
-                        .border(1.dp, Color(0x33FF6B7A), RoundedCornerShape(24.dp))
+                        .border(1.dp, Pal.accent.copy(alpha = 0.2f), RoundedCornerShape(24.dp))
                         .clickable { vm.play(hero, vm.recommended) }
                 ) {
                     Cover(hero.cover, Modifier.fillMaxSize(), RoundedCornerShape(0.dp), hiRes = true)
@@ -112,7 +112,7 @@ fun HomeScreen(vm: MainViewModel) {
                         Text(hero.title, fontSize = 18.sp, fontWeight = FontWeight.SemiBold,
                             color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.widthIn(max = 200.dp))
-                        Text(hero.artist, fontSize = 14.sp, color = Color(0xFFE6BDC0), maxLines = 1)
+                        Text(hero.artist, fontSize = 14.sp, color = Pal.textDim, maxLines = 1)
                     }
                     Row(
                         Modifier
@@ -130,7 +130,7 @@ fun HomeScreen(vm: MainViewModel) {
                 }
             } else {
                 Box(Modifier.fillMaxWidth().height(210.dp).clip(RoundedCornerShape(24.dp))
-                    .background(Color(0xFF2A1215)))
+                    .background(Pal.surface))
             }
         }
         item { SectionLabel("Recommended Albums", "NEW") }
@@ -213,7 +213,7 @@ fun HomeScreen(vm: MainViewModel) {
         if (vm.homeFilter == 2) {
             item { SectionLabel("Podcasts") }
             if (vm.podcasts.isEmpty()) {
-                item { Text("Loading...", color = Color(0xFFE6BDC0)) }
+                item { Text("Loading...", color = Pal.textDim) }
             }
             items(vm.podcasts) { s -> SongRow(s, vm, vm.podcasts) }
         }
@@ -268,7 +268,7 @@ private fun GenreTileView(tile: GenreTile, color: Color, modifier: Modifier, onC
             Text(tile.name, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White,
                 maxLines = 2, overflow = TextOverflow.Ellipsis)
             if (tile.artists.isNotEmpty()) {
-                Text(tile.artists, fontSize = 11.sp, color = Color(0xFFD9C0C2), maxLines = 1,
+                Text(tile.artists, fontSize = 11.sp, color = Pal.textDim, maxLines = 1,
                     overflow = TextOverflow.Ellipsis)
             }
         }
@@ -312,7 +312,7 @@ fun SearchScreen(vm: MainViewModel) {
         }
         if (vm.loading) {
             item {
-                Text("Loading...", color = Color(0xFFE6BDC0), modifier = Modifier.padding(top = 12.dp))
+                Text("Loading...", color = Pal.textDim, modifier = Modifier.padding(top = 12.dp))
             }
         }
         if (!vm.searched) {
@@ -395,7 +395,7 @@ fun YourTypeScreen(vm: MainViewModel) {
                 ) {
                     Text("Discover new Music", fontSize = 26.sp, fontWeight = FontWeight.SemiBold,
                         color = Color.White, textAlign = TextAlign.Center)
-                    Text("Picked for you", fontSize = 13.sp, color = Color(0xFFD9C0C2),
+                    Text("Picked for you", fontSize = 13.sp, color = Pal.textDim,
                         modifier = Modifier.padding(top = 4.dp))
                 }
             }
@@ -403,7 +403,7 @@ fun YourTypeScreen(vm: MainViewModel) {
         if (vm.discoverReason.isNotEmpty() && vm.discover.isNotEmpty()) {
             item {
                 Text(
-                    vm.discoverReason, fontSize = 13.sp, color = Color(0xFF8C7C7E),
+                    vm.discoverReason, fontSize = 13.sp, color = Pal.muted,
                     modifier = Modifier.padding(top = 10.dp, bottom = 6.dp)
                 )
             }
@@ -480,7 +480,7 @@ private fun BigTile(
             title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
             maxLines = 1, overflow = TextOverflow.Ellipsis
         )
-        Text(sub, fontSize = 12.sp, color = Color(0xFF8C7C7E), maxLines = 1)
+        Text(sub, fontSize = 12.sp, color = Pal.muted, maxLines = 1)
     }
 }
 
@@ -495,7 +495,7 @@ private fun LibItem(
         Column {
             Text(title, fontSize = 15.sp, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (sub != null) {
-                Text(sub, fontSize = 11.sp, color = Color(0xFF8C7C7E), maxLines = 1,
+                Text(sub, fontSize = 11.sp, color = Pal.muted, maxLines = 1,
                     overflow = TextOverflow.Ellipsis)
             }
         }
@@ -522,13 +522,13 @@ fun LibraryScreen(vm: MainViewModel) {
                     .padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Filled.Download, null, tint = Color(0xFFFFB3B9))
+                Icon(Icons.Filled.Download, null, tint = Pal.accent)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Text("Downloads", fontSize = 16.sp, color = Color.White)
                     Text(
                         vm.downloads.size.toString() + " songs for offline",
-                        fontSize = 12.sp, color = Color(0xFF8C7C7E)
+                        fontSize = 12.sp, color = Pal.muted
                     )
                 }
             }
@@ -591,7 +591,7 @@ fun LibraryScreen(vm: MainViewModel) {
             if (artists.isEmpty()) {
                 Text(
                     "Open an artist page (... menu > Go to artist) and tap Like artist",
-                    fontSize = 13.sp, color = Color(0xFF8C7C7E)
+                    fontSize = 13.sp, color = Pal.muted
                 )
             } else {
                 TwoColumn(artists) { a, m ->
@@ -604,7 +604,7 @@ fun LibraryScreen(vm: MainViewModel) {
         item { SectionLabel("Liked Songs") }
         item {
             if (songs.isEmpty()) {
-                Text("No liked songs yet", fontSize = 13.sp, color = Color(0xFF8C7C7E))
+                Text("No liked songs yet", fontSize = 13.sp, color = Pal.muted)
             } else {
                 val cells: List<Song?> = songs.map { it }.plus(listOf<Song?>(null))
                 TwoColumn(cells) { s, m ->
