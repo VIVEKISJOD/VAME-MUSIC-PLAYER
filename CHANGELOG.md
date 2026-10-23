@@ -1,4 +1,8 @@
-# VAME Music - full changelog (up to zip step21, v0.9.6, 22 Oct 2026)
+# VAME Music - full changelog (up to zip step22, v0.9.7, 24 Oct 2026)
+
+## step22 (v0.9.7)
+- New: bottom bar animation. Scroll down and the mini player + tab bar fold into one slim row (Home, mini player, Search). Scroll up and it opens again. Tapping Home or Search opens it back.
+- Fixed: update download no longer freezes half way. If the connection drops or stalls, VAME waits and continues from where it stopped (up to 8 tries), on a steadier connection mode.
 
 ## step21 (v0.9.6)
 - Test update: checks that VAME can update itself with the new download bar. Nothing else changed.

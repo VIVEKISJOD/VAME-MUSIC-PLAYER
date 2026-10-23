@@ -29,8 +29,10 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import java.io.File
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
+import okhttp3.Protocol
 import okhttp3.Request
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
@@ -115,7 +117,8 @@ object Updater {
         return false
     }
 
-    // Downloads the APK inside the app (same internet path the songs use), with progress 0..100.
+    // Downloads the APK inside the app with progress 0..100. If the connection stalls or drops,
+    // it waits a moment and continues from where it stopped (up to 8 tries).
     suspend fun downloadApk(app: Context, info: Info, onProgress: (Int) -> Unit): File =
         withContext(Dispatchers.IO) {
             val dir = File(app.cacheDir, "update")
@@ -123,38 +126,68 @@ object Updater {
             dir.listFiles()?.forEach { it.delete() }
             val file = File(dir, "VAME-" + info.version + ".apk")
             val dl = client.newBuilder()
+                .protocols(listOf(Protocol.HTTP_1_1))
                 .connectTimeout(20, TimeUnit.SECONDS)
-                .readTimeout(60, TimeUnit.SECONDS)
+                .readTimeout(15, TimeUnit.SECONDS)
                 .build()
-            val req = Request.Builder()
-                .url(info.apkUrl)
-                .header("User-Agent", "VAME-music-app")
-                .build()
-            dl.newCall(req).execute().use { r ->
-                if (!r.isSuccessful) throw IllegalStateException("GitHub answered " + r.code)
-                val body = r.body ?: throw IllegalStateException("Empty download")
-                val total = body.contentLength()
-                body.byteStream().use { input ->
-                    file.outputStream().use { out ->
-                        val buf = ByteArray(64 * 1024)
-                        var done = 0L
-                        var last = -1
-                        while (true) {
-                            val n = input.read(buf)
-                            if (n < 0) break
-                            out.write(buf, 0, n)
-                            done += n
-                            if (total > 0) {
-                                val pct = (done * 100 / total).toInt()
-                                if (pct != last) {
-                                    last = pct
-                                    onProgress(pct)
+            var finished = false
+            var lastError: Exception? = null
+            var tries = 0
+            var last = -1
+            while (!finished && tries < 8) {
+                tries++
+                try {
+                    val have = if (file.exists()) file.length() else 0L
+                    val rb = Request.Builder()
+                        .url(info.apkUrl)
+                        .header("User-Agent", "VAME-music-app")
+                    if (have > 0) rb.header("Range", "bytes=" + have + "-")
+                    dl.newCall(rb.build()).execute().use { r ->
+                        if (r.code == 416 && have > 0) {
+                            finished = true
+                            return@use
+                        }
+                        if (!r.isSuccessful) throw IllegalStateException("GitHub answered " + r.code)
+                        val body = r.body ?: throw IllegalStateException("Empty download")
+                        val resumed = r.code == 206 && have > 0
+                        if (!resumed && have > 0) file.delete()
+                        val start = if (resumed) have else 0L
+                        val len = body.contentLength()
+                        val cr = r.header("Content-Range")
+                        var total = if (len > 0) start + len else -1L
+                        if (cr != null && cr.contains("/")) {
+                            total = cr.substringAfter("/").toLongOrNull() ?: total
+                        }
+                        body.byteStream().use { input ->
+                            java.io.FileOutputStream(file, resumed).use { out ->
+                                val buf = ByteArray(64 * 1024)
+                                var done = start
+                                while (true) {
+                                    val n = input.read(buf)
+                                    if (n < 0) break
+                                    out.write(buf, 0, n)
+                                    done += n
+                                    if (total > 0) {
+                                        val pct = (done * 100 / total).toInt()
+                                        if (pct != last) {
+                                            last = pct
+                                            onProgress(pct)
+                                        }
+                                    }
                                 }
                             }
                         }
+                        if (total > 0 && file.length() < total) {
+                            throw java.io.IOException("Connection dropped")
+                        }
+                        finished = true
                     }
+                } catch (e: java.io.IOException) {
+                    lastError = e
+                    delay(1500)
                 }
             }
+            if (!finished) throw lastError ?: IllegalStateException("Download failed")
             if (file.length() < 100_000L) throw IllegalStateException("Download incomplete")
             file
         }

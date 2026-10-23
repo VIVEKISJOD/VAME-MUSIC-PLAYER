@@ -1,6 +1,15 @@
 package com.ameos.music
 
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -349,5 +358,108 @@ fun DetailBottomBar(vm: MainViewModel, modifier: Modifier = Modifier) {
             Spacer(Modifier.weight(1f))
         }
         HomeFab(vm)
+    }
+}
+
+
+// Bottom dock: mini player + tab bar. Scrolling down folds it into one slim row
+// (Home circle, mini player pill, Search circle); scrolling up opens it again.
+@Composable
+fun Dock(vm: MainViewModel, collapsed: Boolean, onExpand: () -> Unit, modifier: Modifier = Modifier) {
+    val folded = collapsed && vm.current != null
+    Column(modifier.animateContentSize(spring(dampingRatio = 0.8f, stiffness = 380f))) {
+        AnimatedVisibility(
+            visible = !folded,
+            enter = fadeIn(tween(220, delayMillis = 60)) + expandVertically(spring(0.8f, 380f)),
+            exit = fadeOut(tween(140)) + shrinkVertically(spring(0.8f, 380f))
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                MiniPlayer(vm)
+                BottomBar(vm.tab, { vm.tab = it })
+            }
+        }
+        AnimatedVisibility(
+            visible = folded,
+            enter = fadeIn(tween(220, delayMillis = 60)) + scaleIn(spring(0.7f, 400f), initialScale = 0.85f) +
+                expandVertically(spring(0.8f, 380f)),
+            exit = fadeOut(tween(140)) + scaleOut(tween(160), targetScale = 0.9f) +
+                shrinkVertically(spring(0.8f, 380f))
+        ) {
+            FoldedDock(vm, onExpand)
+        }
+    }
+}
+
+@Composable
+private fun FoldedDock(vm: MainViewModel, onExpand: () -> Unit) {
+    val song = vm.current
+    Row(
+        Modifier.fillMaxWidth().height(56.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            Modifier
+                .size(56.dp)
+                .pressScale(0.9f)
+                .glass(CircleShape)
+                .clickable { vm.tab = 0; onExpand() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                Icons.Filled.Home, null,
+                tint = if (vm.tab == 0) Color.White else Color(0xFF8C7C7E),
+                modifier = Modifier.size(24.dp)
+            )
+        }
+        Spacer(Modifier.width(10.dp))
+        Row(
+            Modifier
+                .weight(1f)
+                .height(56.dp)
+                .pressScale(0.97f)
+                .glass(RoundedCornerShape(28.dp))
+                .clickable { vm.showPlayer = true }
+                .padding(horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (song != null) {
+                Cover(song.cover, Modifier.size(40.dp), CircleShape)
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    song.title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
+                    color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+            } else {
+                Spacer(Modifier.weight(1f))
+            }
+            IconButton(onClick = { vm.toggle() }) {
+                if (vm.loading) {
+                    CircularProgressIndicator(
+                        Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp
+                    )
+                } else {
+                    Icon(
+                        if (vm.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                        null, tint = Color.White
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.width(10.dp))
+        Box(
+            Modifier
+                .size(56.dp)
+                .pressScale(0.9f)
+                .glass(CircleShape)
+                .clickable { vm.tab = 1; onExpand() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                Icons.Filled.Search, null,
+                tint = if (vm.tab == 1) Color.White else Color(0xFF8C7C7E),
+                modifier = Modifier.size(24.dp)
+            )
+        }
     }
 }

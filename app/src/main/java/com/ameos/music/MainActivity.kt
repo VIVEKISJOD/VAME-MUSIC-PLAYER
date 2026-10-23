@@ -25,6 +25,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -80,9 +89,22 @@ fun AmeosRoot(vm: MainViewModel) {
     // This is registered first, so open pages and sheets still close before it.
     BackHandler(enabled = vm.tab != 0) { vm.tab = 0 }
     if (vm.showUpdate && vm.updateInfo != null) UpdateDialog(vm)
+    // scroll down = bottom bar folds into one slim row, scroll up = opens again
+    var dockFolded by remember { mutableStateOf(false) }
+    LaunchedEffect(vm.tab) { dockFolded = false }
+    val dockScroll = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (available.y < -10f) dockFolded = true
+                else if (available.y > 10f) dockFolded = false
+                return Offset.Zero
+            }
+        }
+    }
     Box(
         Modifier
             .fillMaxSize()
+            .nestedScroll(dockScroll)
             .background(
                 Brush.verticalGradient(
                     listOf(Color(0xFF3A1511), Color(0xFF0E0B0B), Color(0xFF0A0808)),
@@ -111,8 +133,7 @@ fun AmeosRoot(vm: MainViewModel) {
             if (err != null) {
                 Text(err, color = Color(0xFFFFB4AB), fontSize = 12.sp)
             }
-            MiniPlayer(vm)
-            BottomBar(vm.tab, { vm.tab = it })
+            Dock(vm, dockFolded, { dockFolded = false })
         }
         AnimatedVisibility(
             visible = vm.playlistOpen,
