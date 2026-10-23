@@ -1235,4 +1235,152 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
     }
+
+    // ---------- optional Google / YouTube Music account ----------
+    var showLogin by mutableStateOf(false)
+    var ytSignedIn by mutableStateOf(Account.signedIn(app))
+    var ytName by mutableStateOf(Account.name(app))
+    var ytPhoto by mutableStateOf<String?>(Account.photo(app))
+    val ytPlaylists = mutableStateListOf<YtPlaylist>()
+    var ytBusy by mutableStateOf(false)
+    var ytStatus by mutableStateOf("")
+
+    // your name on the Library stats cards + albums saved to Library
+    var userName by mutableStateOf(Prefs.userName(app))
+    val savedAlbums = mutableStateListOf<Album>()
+
+    private fun toast(msg: String) {
+        android.widget.Toast.makeText(getApplication<Application>(), msg, android.widget.Toast.LENGTH_LONG).show()
+    }
+
+    init {
+        savedAlbums.addAll(Prefs.savedAlbums(app))
+        if (ytSignedIn) {
+            ytPlaylists.addAll(Account.library(app))
+            refreshYt()
+        }
+    }
+
+    fun updateUserName(t: String) {
+        userName = t
+        Prefs.setUserName(getApplication<Application>(), t)
+    }
+
+    // called by the login screen when the Google cookie is ready
+    fun onLoginDone(cookie: String) {
+        Account.saveCookie(getApplication<Application>(), cookie)
+        ytSignedIn = true
+        showLogin = false
+        refreshYt()
+    }
+
+    fun refreshYt() {
+        if (!ytSignedIn || ytBusy) return
+        ytBusy = true
+        ytStatus = "YouTube library la raha hoon..."
+        viewModelScope.launch {
+            val app = getApplication<Application>()
+            try {
+                val acc = Account.fetchAccount(app)
+                if (acc != null) {
+                    ytName = acc.name
+                    ytPhoto = acc.photo
+                    Account.saveAccount(app, acc)
+                }
+                val list = Account.libraryPlaylists(app)
+                ytPlaylists.clear()
+                ytPlaylists.addAll(list)
+                Account.saveLibrary(app, list)
+                ytStatus = list.size.toString() + " playlists mili"
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                ytStatus = "Library load fail: " + (e.message ?: e.javaClass.simpleName)
+            }
+            ytBusy = false
+        }
+    }
+
+    fun signOutYt() {
+        Account.signOut(getApplication<Application>())
+        ytSignedIn = false
+        ytName = ""
+        ytPhoto = null
+        ytStatus = ""
+        ytPlaylists.clear()
+    }
+
+    // opens a YouTube library playlist on the album page (songs stay on YouTube, nothing is copied)
+    fun openYtPlaylist(p: YtPlaylist) {
+        albumInfo = Album(p.title, "YouTube Music", "yt:" + p.id, p.cover)
+        albumOpen = true
+        albumSongs = emptyList()
+        albumLoading = true
+        albumJob?.cancel()
+        albumJob = viewModelScope.launch {
+            try {
+                val songs = Account.playlistSongs(getApplication<Application>(), p.id)
+                albumSongs = songs
+                val cur = albumInfo
+                if (cur != null && cur.cover == null && songs.isNotEmpty()) {
+                    albumInfo = cur.copy(cover = songs.first().cover)
+                }
+                if (songs.isEmpty()) error = "Is playlist mein songs nahi mile"
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                error = "YouTube playlist load fail: " + (e.message ?: e.javaClass.simpleName)
+            }
+            albumLoading = false
+        }
+    }
+
+    fun openYtLiked() {
+        openYtPlaylist(YtPlaylist("VLLM", "YouTube liked songs", "", null))
+    }
+
+    // the open YouTube playlist -> a normal VAME playlist
+    fun saveYtAsPlaylist() {
+        val a = albumInfo ?: return
+        val songs = albumSongs.distinctBy { it.url }
+        if (songs.isEmpty()) return
+        val id = System.currentTimeMillis().toString()
+        playlists.add(Playlist(id, a.title.take(40).ifBlank { "YouTube playlist" }, null, songs))
+        savePlaylists()
+        toast("\"" + a.title + "\" VAME playlist ban gayi (" + songs.size + " songs)")
+    }
+
+    // all your YouTube liked songs -> VAME Liked songs (only adds, never removes)
+    fun importYtLikes() {
+        if (!ytSignedIn || ytBusy) return
+        ytBusy = true
+        ytStatus = "Liked songs la raha hoon..."
+        viewModelScope.launch {
+            try {
+                val songs = Account.playlistSongs(getApplication<Application>(), "VLLM", 500)
+                var added = 0
+                for (s in songs.reversed()) {
+                    if (!isLiked(s)) {
+                        liked.add(0, s)
+                        added++
+                    }
+                }
+                Prefs.saveLikes(getApplication<Application>(), liked.toList())
+                ytStatus = added.toString() + " nayi liked songs aayi"
+                toast(added.toString() + " songs Liked songs mein add hue")
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                ytStatus = "Likes load fail: " + (e.message ?: e.javaClass.simpleName)
+            }
+            ytBusy = false
+        }
+    }
+
+    fun isAlbumSaved(a: Album): Boolean = savedAlbums.any { it.url == a.url }
+
+    fun toggleSaveAlbum(a: Album) {
+        if (isAlbumSaved(a)) savedAlbums.removeAll { it.url == a.url } else savedAlbums.add(0, a)
+        Prefs.saveSavedAlbums(getApplication<Application>(), savedAlbums.toList())
+    }
 }

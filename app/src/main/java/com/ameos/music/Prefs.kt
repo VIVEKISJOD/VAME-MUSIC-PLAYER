@@ -179,4 +179,40 @@ object Prefs {
         }
         sp(c).edit().putString("likedArtists", arr.toString()).apply()
     }
+
+    // your name on the Library stats cards
+    fun userName(c: Context): String = sp(c).getString("userName", "") ?: ""
+    fun setUserName(c: Context, v: String) = sp(c).edit().putString("userName", v).apply()
+
+    // albums saved to Library
+    fun savedAlbums(c: Context): List<Album> {
+        val raw = sp(c).getString("savedAlbums", null) ?: return emptyList()
+        return try {
+            val arr = JSONArray(raw)
+            (0 until arr.length()).map { i ->
+                val o = arr.getJSONObject(i)
+                Album(
+                    title = o.optString("t"),
+                    artist = o.optString("a"),
+                    url = o.optString("u"),
+                    cover = if (o.isNull("c")) null else o.optString("c")
+                )
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    fun saveSavedAlbums(c: Context, list: List<Album>) {
+        val arr = JSONArray()
+        for (a in list) {
+            val o = JSONObject()
+            o.put("t", a.title)
+            o.put("a", a.artist)
+            o.put("u", a.url)
+            o.put("c", a.cover ?: JSONObject.NULL)
+            arr.put(o)
+        }
+        sp(c).edit().putString("savedAlbums", arr.toString()).apply()
+    }
 }

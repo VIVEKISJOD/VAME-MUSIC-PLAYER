@@ -196,6 +196,13 @@ fun AmeosRoot(vm: MainViewModel) {
             ) {
                 OnboardingScreen(vm)
             }
+            AnimatedVisibility(
+                visible = vm.showLogin,
+                enter = slideInVertically(tween(380, easing = FastOutSlowInEasing)) { it / 2 } + fadeIn(tween(260)),
+                exit = slideOutVertically(tween(300)) { it / 2 } + fadeOut(tween(200))
+            ) {
+                LoginScreen(vm)
+            }
         }
         QuickSheet(vm)
         SongSheet(vm)

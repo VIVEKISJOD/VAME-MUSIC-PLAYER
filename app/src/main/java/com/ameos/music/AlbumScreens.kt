@@ -17,7 +17,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.LibraryAdd
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.CircularProgressIndicator
@@ -128,6 +131,21 @@ fun AlbumScreen(vm: MainViewModel) {
                     Icon(Icons.Filled.ArrowBack, null, tint = Color.White)
                 }
                 Spacer(Modifier.weight(1f))
+                if (album.url.startsWith("yt:")) {
+                    if (songs.isNotEmpty()) {
+                        IconButton(onClick = { vm.saveYtAsPlaylist() }) {
+                            Icon(Icons.Filled.LibraryAdd, null, tint = Color.White)
+                        }
+                    }
+                } else {
+                    val saved = vm.isAlbumSaved(album)
+                    IconButton(onClick = { vm.toggleSaveAlbum(album) }) {
+                        Icon(
+                            if (saved) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
+                            null, tint = Color.White
+                        )
+                    }
+                }
                 if (songs.isNotEmpty()) {
                     IconButton(onClick = {
                         vm.downloadAll(songs)

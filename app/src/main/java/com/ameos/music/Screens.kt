@@ -743,7 +743,7 @@ fun LibraryScreen(vm: MainViewModel) {
     val tileSize = if (big) 190.dp else 160.dp
     val cardW = minOf((w * 0.82f).dp, 420.dp)
     val rec = androidx.compose.runtime.remember(vm.statMinutes, vm.statPlays) { vm.recap() }
-    val name = vm.title.ifBlank { "VAME" }.uppercase()
+    val name = vm.userName.ifBlank { vm.ytName }.ifBlank { vm.title }.ifBlank { "VAME" }.uppercase()
     val year = java.text.SimpleDateFormat("yyyy", java.util.Locale.getDefault()).format(java.util.Date())
     val since = java.text.SimpleDateFormat("MM / yy", java.util.Locale.getDefault()).format(java.util.Date(vm.statSince))
     val topArtist = rec.topArtists.firstOrNull()
@@ -828,6 +828,54 @@ fun LibraryScreen(vm: MainViewModel) {
         item { LibRow(Icons.Filled.Favorite, "Liked songs", vm.liked.size.toString() + " songs") { vm.likedOpen = true } }
         item { LibRow(Icons.Filled.AutoAwesome, "Your Recap", "Top songs and artists") { vm.recapOpen = true } }
 
+        if (vm.ytSignedIn) {
+            item {
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 26.dp, bottom = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("YouTube Music", fontSize = 26.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                    Text(
+                        if (vm.ytBusy) "Loading..." else "Refresh", fontSize = 16.sp, color = Color.White,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(50))
+                            .clickable { vm.refreshYt() }
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
+            }
+            item {
+                val ytTiles = ArrayList<LibTile>()
+                ytTiles.add(LibTile(
+                    "Liked songs", "On YouTube Music", null,
+                    Icons.Filled.ThumbUp, listOf(Color(0xFFE53935), Color(0xFF8E1B1B))
+                ) { vm.openYtLiked() })
+                for (yp in vm.ytPlaylists) {
+                    ytTiles.add(LibTile(yp.title, yp.subtitle.ifBlank { "Playlist" }, yp.cover, Icons.Filled.LibraryMusic, null) {
+                        vm.openYtPlaylist(yp)
+                    })
+                }
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    items(ytTiles) { t -> PlTile(t, Modifier.width(tileSize)) }
+                }
+            }
+            if (vm.ytStatus.startsWith("Library load fail")) {
+                item {
+                    Text(
+                        vm.ytStatus, fontSize = 12.sp, color = Color(0xFFFFB4AB),
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+            }
+        } else {
+            item {
+                LibRow(Icons.Filled.AccountCircle, "Sign in with Google", "Optional: see your YouTube Music library") {
+                    vm.showLogin = true
+                }
+            }
+        }
+
         item {
             Row(
                 Modifier.fillMaxWidth().padding(top = 26.dp, bottom = 12.dp),
@@ -880,6 +928,24 @@ fun LibraryScreen(vm: MainViewModel) {
                     items(list) { s ->
                         PlTile(LibTile(s.title, s.artist, s.cover, Icons.Filled.MusicNote, null) {
                             vm.play(s, list)
+                        }, Modifier.width(tileSize))
+                    }
+                }
+            }
+        }
+        if (vm.savedAlbums.isNotEmpty()) {
+            item {
+                Text(
+                    "Saved albums", fontSize = 26.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
+                    modifier = Modifier.padding(top = 28.dp, bottom = 12.dp)
+                )
+            }
+            item {
+                val albums = vm.savedAlbums.toList()
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    items(albums) { al ->
+                        PlTile(LibTile(al.title, al.artist.ifBlank { "Album" }, al.cover, Icons.Filled.Album, null) {
+                            vm.openAlbum(al)
                         }, Modifier.width(tileSize))
                     }
                 }

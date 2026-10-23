@@ -79,6 +79,7 @@ fun SettingsScreen(vm: MainViewModel) {
 
             AppearanceSection()
             AppIconSection()
+            AccountSection(vm)
 
             SectionLabel("Home title")
             TextField(
@@ -96,6 +97,26 @@ fun SettingsScreen(vm: MainViewModel) {
             )
             Text(
                 "Whatever you type replaces the big word at the top of Home.",
+                fontSize = 12.sp, color = Pal.muted,
+                modifier = Modifier.padding(top = 6.dp)
+            )
+
+            SectionLabel("Your name")
+            TextField(
+                value = vm.userName,
+                onValueChange = { vm.updateUserName(it) },
+                singleLine = true,
+                shape = RoundedCornerShape(20.dp),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color(0x33FFFFFF),
+                    unfocusedContainerColor = Color(0x33FFFFFF),
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
+            Text(
+                "Shown on your Library stats cards.",
                 fontSize = 12.sp, color = Pal.muted,
                 modifier = Modifier.padding(top = 6.dp)
             )

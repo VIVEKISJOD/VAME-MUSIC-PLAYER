@@ -1,4 +1,15 @@
-# VAME Music - full changelog (up to zip step23, v0.11.0, 24 Oct 2026)
+# VAME Music - full changelog (up to zip step24, v0.12.0, 24 Oct 2026)
+
+## step24 (v0.12.0)
+- New: optional Google sign-in INSIDE the app (Settings > Account, or Library > Sign in with Google). It opens a normal Google login page in the app, no Google Cloud setup. It is never part of onboarding and VAME works fully without it.
+- New: your YouTube Music playlists show in Library (row "YouTube Music") without importing anything. Tap one to open it, play it or shuffle it. Refresh button reloads them.
+- New: YouTube liked songs page (first tile in the YouTube Music row).
+- New: save a YouTube playlist as a normal VAME playlist with one tap (the add-to-library icon on its page).
+- New: Settings > Account > Copy YouTube likes to my Liked songs (only adds, never removes).
+- New: Saved albums. The bookmark icon on an album page saves it; saved albums get their own row in Library.
+- New: Settings > Your name. The name shows on the Library stats cards (falls back to your Google name, then the Home title).
+- New: Sign out in Settings > Account clears the login from the phone.
+- Note: the Google login is unofficial (same way as Metrolist / InnerTune). It only READS your library, never likes or edits anything. It can stop working when YouTube changes. Songs still play ad-free through NewPipe.
 
 ## step23 (v0.11.0)
 - Changed: the big "Last Played" banner is gone from Home (phone and tablet). A Liked songs shelf (big cards, See all) takes its place. With no likes yet it shows songs for you.

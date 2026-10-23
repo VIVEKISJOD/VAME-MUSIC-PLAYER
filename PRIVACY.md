@@ -1,6 +1,7 @@
 # Privacy
 
-VAME Music has **no accounts, no ads and no analytics**. Nothing is sent to the developer.
+VAME Music has **no ads and no analytics**, and it never needs an account. Nothing is sent to the developer.
+Signing in with Google is optional (Settings > Account).
 
 ## Stored only on your phone
 Liked songs and artists, playlists (and their cover photos), listening history, last played song, settings,
@@ -9,6 +10,7 @@ removes everything.
 
 ## Network requests the app makes
 - **YouTube / YouTube Music** (through NewPipeExtractor): to search, get song details and stream audio.
+- **Google / YouTube Music account (optional)**: if you sign in, the login cookie is kept only on your phone and is sent only to YouTube to read your library (playlists and liked songs). Sign out in Settings removes it.
 - **Cover images** from the servers that host them.
 - **LRCLIB** (lrclib.net): the song title, artist and length are sent to look up lyrics.
 - **GitHub** (api.github.com): to check if a newer VAME release exists. Nothing about you is sent.
