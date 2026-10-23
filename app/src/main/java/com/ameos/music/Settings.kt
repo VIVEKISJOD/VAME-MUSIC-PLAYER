@@ -211,6 +211,15 @@ fun SettingsScreen(vm: MainViewModel) {
                 "Hinglish lyrics", "Shows Hindi lyrics written in English letters.",
                 vm.hinglish
             ) { vm.setHinglishOn(it) }
+            Text(
+                "Lyrics size", fontSize = 16.sp, color = Color.White,
+                modifier = Modifier.padding(top = 10.dp)
+            )
+            QualityChips(vm.lyricsSize, listOf("Small", "Medium", "Large")) { vm.updateLyricsSize(it) }
+            SwitchRow(
+                "Keep screen on in lyrics", "The screen stays awake while the lyrics are open.",
+                vm.keepScreenLyrics
+            ) { vm.setKeepScreenLyricsOn(it) }
 
             SectionLabel("Storage")
             ActionRow(
@@ -290,8 +299,11 @@ private fun ActionRow(title: String, sub: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun QualityChips(selected: Int, onPick: (Int) -> Unit) {
-    val names = listOf("High", "Normal", "Data saver")
+private fun QualityChips(
+    selected: Int,
+    names: List<String> = listOf("High", "Normal", "Data saver"),
+    onPick: (Int) -> Unit
+) {
     Row(
         Modifier.fillMaxWidth().padding(top = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)

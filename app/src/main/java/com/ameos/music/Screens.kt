@@ -860,6 +860,24 @@ fun LibraryScreen(vm: MainViewModel) {
                     items(ytTiles) { t -> PlTile(t, Modifier.width(tileSize)) }
                 }
             }
+            if (vm.ytArtists.isNotEmpty()) {
+                item {
+                    Text(
+                        "Your YouTube artists", fontSize = 22.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
+                        modifier = Modifier.padding(top = 22.dp, bottom = 12.dp)
+                    )
+                }
+                item {
+                    val yar = vm.ytArtists.toList()
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                        items(yar) { a ->
+                            PlTile(LibTile(a.name, "Artist", a.cover, Icons.Filled.Person, null) {
+                                vm.openArtist(a.name)
+                            }, Modifier.width(tileSize))
+                        }
+                    }
+                }
+            }
             if (vm.ytStatus.startsWith("Library load fail")) {
                 item {
                     Text(

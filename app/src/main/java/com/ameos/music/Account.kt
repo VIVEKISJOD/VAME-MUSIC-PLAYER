@@ -390,6 +390,34 @@ object Account {
         out
     }
 
+    // artists the person follows on YouTube Music
+    suspend fun libraryArtists(c: Context): List<ArtistItem> = withContext(Dispatchers.IO) {
+        val out = ArrayList<ArtistItem>()
+        var root = browse(c, "FEmusic_library_corpus_artists")
+        var pages = 0
+        while (true) {
+            val rows = ArrayList<JSONObject>()
+            collect(root, "musicResponsiveListItemRenderer", rows)
+            for (row in rows) {
+                val cols = row.optJSONArray("flexColumns")
+                val name = runsText(
+                    cols?.optJSONObject(0)
+                        ?.optJSONObject("musicResponsiveListItemFlexColumnRenderer")
+                        ?.optJSONObject("text")
+                        ?.optJSONArray("runs")
+                )
+                if (name.isBlank()) continue
+                if (out.any { it.name == name }) continue
+                out.add(ArtistItem(name, coverOf(row)))
+            }
+            pages++
+            val next = continuationOf(root)
+            if (next == null || pages >= 3) break
+            root = browseMore(c, next)
+        }
+        out
+    }
+
     // songs of a library playlist (id like "VLPLxxxx"); "VLLM" = Liked music
     suspend fun playlistSongs(c: Context, browseId: String, maxItems: Int = 300): List<Song> =
         withContext(Dispatchers.IO) {

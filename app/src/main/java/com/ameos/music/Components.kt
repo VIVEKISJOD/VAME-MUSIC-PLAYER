@@ -588,14 +588,19 @@ fun SideRail(vm: MainViewModel) {
             .padding(vertical = 14.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Image(
-            painterResource(R.drawable.logo_app), null,
+        val railCtx = LocalContext.current
+        LaunchedEffect(Unit) { AppIcons.live = AppIcons.current(railCtx) }
+        val railIcon = AppIcons.all.firstOrNull { it.id == AppIcons.live } ?: AppIcons.all[0]
+        Box(
             Modifier
                 .size(54.dp)
                 .pressScale(0.92f)
                 .clip(RoundedCornerShape(16.dp))
+                .background(Brush.linearGradient(listOf(railIcon.a, railIcon.b)))
                 .clickable { vm.goHome() }
-        )
+        ) {
+            Image(painterResource(R.drawable.ic_launcher_fg), null, Modifier.fillMaxSize())
+        }
         Spacer(Modifier.weight(1f))
         items.forEachIndexed { i, item ->
             val on = vm.tab == i

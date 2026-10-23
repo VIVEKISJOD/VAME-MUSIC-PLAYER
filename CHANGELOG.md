@@ -1,4 +1,12 @@
-# VAME Music - full changelog (up to zip step24, v0.12.0, 24 Oct 2026)
+# VAME Music - full changelog (up to zip step25, v0.13.0, 24 Oct 2026)
+
+## step25 (v0.13.0)
+- Fixed: tablet logo (top left of the side rail) now changes together with the app icon you pick in Settings > App icon.
+- Fixed: on a tablet, the floating mini player pill at the bottom hides while the Now Playing panel is open on the right (it comes back when you close the panel).
+- Changed: tablet lyrics mode is now full screen, like a landscape canvas. Song cover + name on the left, lyrics playing on the right, nothing else on screen, and only a Back button at the bottom right.
+- New: Settings > Lyrics size (Small, Medium, Large) for phone and tablet.
+- New: Settings > Keep screen on in lyrics (on by default), so the screen does not sleep while you read lyrics.
+- New: Library > YouTube Music > Your YouTube artists row (artists you follow, only when signed in). Tap one to open the artist page.
 
 ## step24 (v0.12.0)
 - New: optional Google sign-in INSIDE the app (Settings > Account, or Library > Sign in with Google). It opens a normal Google login page in the app, no Google Cloud setup. It is never part of onboarding and VAME works fully without it.

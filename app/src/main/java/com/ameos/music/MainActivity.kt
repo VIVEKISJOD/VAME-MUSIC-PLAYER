@@ -156,6 +156,14 @@ fun AmeosRoot(vm: MainViewModel) {
                         PlayerPanel(vm)
                     }
                 }
+                // lyrics on a tablet: full screen, cover + name on the left, lyrics on the right
+                AnimatedVisibility(
+                    visible = vm.showLyrics && vm.current != null,
+                    enter = fadeIn(tween(320)) + scaleIn(tween(360, easing = FastOutSlowInEasing), initialScale = 0.96f),
+                    exit = fadeOut(tween(240))
+                ) {
+                    TabletLyricsScreen(vm)
+                }
             } else {
                 Box(Modifier.fillMaxSize().nestedScroll(dockScroll)) {
                     MainPages(vm, false, dockFolded) { dockFolded = false }
@@ -278,7 +286,13 @@ private fun MainPages(vm: MainViewModel, tablet: Boolean, dockFolded: Boolean, o
                 Text(err, color = Color(0xFFFFB4AB), fontSize = 12.sp)
             }
             if (tablet) {
-                MiniPlayer(vm)
+                AnimatedVisibility(
+                    visible = !(vm.showPlayer && vm.current != null),
+                    enter = fadeIn(tween(220)) + slideInVertically(tween(260)) { it / 2 },
+                    exit = fadeOut(tween(160)) + slideOutVertically(tween(220)) { it / 2 }
+                ) {
+                    MiniPlayer(vm)
+                }
             } else {
                 Dock(vm, dockFolded, onExpand)
             }
@@ -339,12 +353,5 @@ private fun PlayerPanel(vm: MainViewModel) {
             .border(1.dp, GlassEdge, shape)
     ) {
         NowPlayingScreen(vm)
-        AnimatedVisibility(
-            visible = vm.showLyrics && vm.current != null,
-            enter = slideInVertically(tween(380)) { it / 3 } + fadeIn(tween(300)),
-            exit = slideOutVertically(tween(300)) { it / 3 } + fadeOut(tween(220))
-        ) {
-            LyricsScreen(vm)
-        }
     }
 }

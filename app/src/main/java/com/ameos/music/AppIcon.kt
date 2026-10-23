@@ -41,6 +41,9 @@ import androidx.compose.ui.unit.sp
 data class IconVariant(val id: String, val name: String, val a: Color, val b: Color)
 
 object AppIcons {
+    // the icon that is on right now (the tablet rail logo follows it)
+    var live by mutableStateOf("Default")
+
     val all = listOf(
         IconVariant("Default", "Classic", Color(0xFF4F46E5), Color(0xFF9333EA)),
         IconVariant("Crimson", "Crimson", Color(0xFFFF5C78), Color(0xFF6E0828)),
@@ -101,6 +104,7 @@ fun AppIconSection() {
                     .clickable {
                         if (selected != v.id) {
                             AppIcons.set(ctx, v.id)
+                            AppIcons.live = v.id
                             selected = v.id
                             Toast.makeText(
                                 ctx, v.name + " icon on. Your launcher may take a few seconds.",

@@ -1249,6 +1249,21 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var userName by mutableStateOf(Prefs.userName(app))
     val savedAlbums = mutableStateListOf<Album>()
 
+    // lyrics text size + keep screen on in lyrics
+    var lyricsSize by mutableIntStateOf(Prefs.lyricsSize(app))
+    var keepScreenLyrics by mutableStateOf(Prefs.keepScreenLyrics(app))
+    val ytArtists = mutableStateListOf<ArtistItem>()
+
+    fun updateLyricsSize(i: Int) {
+        lyricsSize = i
+        Prefs.setLyricsSize(getApplication<Application>(), i)
+    }
+
+    fun setKeepScreenLyricsOn(on: Boolean) {
+        keepScreenLyrics = on
+        Prefs.setKeepScreenLyrics(getApplication<Application>(), on)
+    }
+
     private fun toast(msg: String) {
         android.widget.Toast.makeText(getApplication<Application>(), msg, android.widget.Toast.LENGTH_LONG).show()
     }
@@ -1291,6 +1306,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 ytPlaylists.clear()
                 ytPlaylists.addAll(list)
                 Account.saveLibrary(app, list)
+                try {
+                    val ar = Account.libraryArtists(app)
+                    ytArtists.clear()
+                    ytArtists.addAll(ar)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                }
                 ytStatus = list.size.toString() + " playlists mili"
             } catch (e: CancellationException) {
                 throw e
@@ -1308,6 +1331,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         ytPhoto = null
         ytStatus = ""
         ytPlaylists.clear()
+        ytArtists.clear()
     }
 
     // opens a YouTube library playlist on the album page (songs stay on YouTube, nothing is copied)

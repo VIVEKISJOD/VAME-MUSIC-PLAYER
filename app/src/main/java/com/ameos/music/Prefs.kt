@@ -180,6 +180,13 @@ object Prefs {
         sp(c).edit().putString("likedArtists", arr.toString()).apply()
     }
 
+    // lyrics text size: 0 small, 1 medium, 2 large
+    fun lyricsSize(c: Context): Int = sp(c).getInt("lyricsSize", 1)
+    fun setLyricsSize(c: Context, v: Int) = sp(c).edit().putInt("lyricsSize", v).apply()
+
+    fun keepScreenLyrics(c: Context): Boolean = sp(c).getBoolean("keepScreenLyrics", true)
+    fun setKeepScreenLyrics(c: Context, v: Boolean) = sp(c).edit().putBoolean("keepScreenLyrics", v).apply()
+
     // your name on the Library stats cards
     fun userName(c: Context): String = sp(c).getString("userName", "") ?: ""
     fun setUserName(c: Context, v: String) = sp(c).edit().putString("userName", v).apply()

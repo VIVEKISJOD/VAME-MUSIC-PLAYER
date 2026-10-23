@@ -22,6 +22,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -33,6 +34,7 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -44,10 +46,96 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 
+// keeps the screen awake while lyrics are open (Settings switch)
+@Composable
+private fun KeepScreenOn(vm: MainViewModel) {
+    val view = LocalView.current
+    DisposableEffect(vm.keepScreenLyrics) {
+        val old = view.keepScreenOn
+        view.keepScreenOn = vm.keepScreenLyrics
+        onDispose { view.keepScreenOn = old }
+    }
+}
+
+// Tablet lyrics mode: the whole screen. Cover (canvas) + song name on the left,
+// lyrics on the right, and only a back button at the bottom right.
+@Composable
+fun TabletLyricsScreen(vm: MainViewModel) {
+    val song = vm.current ?: return
+    BackHandler { vm.showLyrics = false }
+    KeepScreenOn(vm)
+    val tint = rememberCoverTint(song.cover)
+    var pos by remember { mutableLongStateOf(0L) }
+    LaunchedEffect(song.url) {
+        while (true) {
+            pos = vm.player.currentPosition
+            delay(100)
+        }
+    }
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(lerp(tint, Color.Black, if (Pal.amoled) 0.92f else 0.5f))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { }
+    ) {
+        Row(
+            Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding()
+        ) {
+            Column(
+                Modifier
+                    .weight(0.42f)
+                    .fillMaxHeight()
+                    .padding(start = 44.dp, end = 16.dp),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Cover(
+                    song.cover,
+                    Modifier.widthIn(max = 440.dp).fillMaxWidth().aspectRatio(1f),
+                    RoundedCornerShape(28.dp),
+                    hiRes = true
+                )
+                Spacer(Modifier.height(22.dp))
+                Text(
+                    song.title, fontSize = 30.sp, fontWeight = FontWeight.Bold,
+                    color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    artistName(song.artist), fontSize = 18.sp, fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFFD0D0D0), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+            Box(Modifier.weight(0.58f).fillMaxHeight()) {
+                LyricsList(vm, pos)
+            }
+        }
+        Box(
+            Modifier
+                .align(Alignment.BottomEnd)
+                .navigationBarsPadding()
+                .padding(end = 28.dp, bottom = 24.dp)
+                .size(58.dp)
+                .clip(CircleShape)
+                .background(Color(0x55FFFFFF))
+                .clickable { vm.showLyrics = false },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(Icons.Filled.ArrowBack, null, tint = Color.White)
+        }
+    }
+}
+
 @Composable
 fun LyricsScreen(vm: MainViewModel) {
     val song = vm.current ?: return
     BackHandler { vm.showLyrics = false }
+    KeepScreenOn(vm)
     val tint = rememberCoverTint(song.cover)
 
     var pos by remember { mutableLongStateOf(0L) }
@@ -160,6 +248,11 @@ private fun LyricsList(vm: MainViewModel, pos: Long) {
         return
     }
     val synced = vm.lyricsSynced
+    val fs = when (vm.lyricsSize) {
+        0 -> 26
+        2 -> 40
+        else -> 34
+    }
     val active = if (synced) lines.indexOfLast { it.timeMs <= pos } else -1
     val state = rememberLazyListState()
     LaunchedEffect(active) {
@@ -209,13 +302,13 @@ private fun LyricsList(vm: MainViewModel, pos: Long) {
                     }
                 }
                 Text(
-                    styled, fontSize = 34.sp, lineHeight = 42.sp,
+                    styled, fontSize = fs.sp, lineHeight = (fs + 8).sp,
                     fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
                     modifier = mod
                 )
             } else {
                 Text(
-                    text, fontSize = 34.sp, lineHeight = 42.sp,
+                    text, fontSize = fs.sp, lineHeight = (fs + 8).sp,
                     fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
                     color = Color.White.copy(alpha = a),
                     modifier = mod
