@@ -1235,22 +1235,37 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var updateProgress by mutableIntStateOf(-1) // -1 = not downloading, 0..100 = downloading
     var updateError by mutableStateOf<String?>(null)
 
+    var updateDetail by mutableStateOf("")
+    private var updateJob: Job? = null
+
+    fun cancelUpdate() {
+        updateJob?.cancel()
+        updateJob = null
+        updateProgress = -1
+        updateDetail = ""
+        updateError = "Download cancelled. Tap Try again to continue."
+    }
+
     fun startUpdate(app: android.content.Context, info: Updater.Info) {
         if (updateProgress >= 0) return
         if (Updater.needsInstallPermission(app)) return
         updateError = null
+        updateDetail = ""
         updateProgress = 0
-        viewModelScope.launch {
+        updateJob = viewModelScope.launch {
             try {
-                val f = Updater.downloadApk(app, info) { updateProgress = it }
+                val f = Updater.downloadApk(app, info, { updateProgress = it }, { updateDetail = it })
                 updateProgress = -1
+                updateDetail = ""
                 showUpdate = false
                 Updater.install(app, f)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 updateProgress = -1
-                updateError = "Download failed: " + (e.message ?: e.javaClass.simpleName)
+                updateDetail = ""
+                updateError = "Download failed: " + (e.message ?: e.javaClass.simpleName) +
+                    ". Tap Try again (it continues where it stopped) or use the browser."
             }
         }
     }

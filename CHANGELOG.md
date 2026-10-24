@@ -1,4 +1,13 @@
-# VAME Music - full changelog (up to zip step33, v0.18.1, 24 Oct 2026)
+# VAME Music - full changelog (up to zip step34, v0.18.2, 24 Oct 2026)
+
+## step34 (v0.18.2) - includes step28 fix and steps 29 to 33
+- Fixed: the update window looked stuck on "Downloading..." because the percentage was hidden under the long notes. Progress now sits at the top of the window, always visible.
+- New: shows how much is downloaded, e.g. "12.4 / 31.0 MB - 450 KB/s".
+- New: Cancel button while downloading.
+- New: "Download in browser instead" button in the update window (backup way).
+- New: "Try again" continues the half-finished download instead of starting from 0.
+- New: server errors (5xx) and dropped connections retry up to 12 times and show "Connection problem, trying again (n/12)".
+- New: a note to keep VAME open on screen while it downloads.
 
 ## step33 (v0.18.1) - includes step28 fix and steps 29 to 32
 - Changed: a tablet held upright (portrait) now works like a normal phone: bottom bar, mini player pill and full screen player. The side rail and side player only show when the tablet is sideways.

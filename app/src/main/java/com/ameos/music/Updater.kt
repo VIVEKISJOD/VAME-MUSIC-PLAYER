@@ -30,6 +30,7 @@ import androidx.core.content.FileProvider
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Protocol
@@ -118,12 +119,15 @@ object Updater {
     }
 
     // Downloads the APK inside the app with progress 0..100. If the connection stalls or drops,
-    // it waits a moment and continues from where it stopped (up to 8 tries).
-    suspend fun downloadApk(app: Context, info: Info, onProgress: (Int) -> Unit): File =
+    // it waits a moment and continues from where it stopped (up to 12 tries).
+    suspend fun downloadApk(
+        app: Context, info: Info, onProgress: (Int) -> Unit, onDetail: (String) -> Unit
+    ): File =
         withContext(Dispatchers.IO) {
             val dir = File(app.cacheDir, "update")
             dir.mkdirs()
-            dir.listFiles()?.forEach { it.delete() }
+            // keep a half-finished file of this version so "Try again" continues where it stopped
+            dir.listFiles()?.forEach { if (it.name != "VAME-" + info.version + ".apk") it.delete() }
             val file = File(dir, "VAME-" + info.version + ".apk")
             val dl = client.newBuilder()
                 .protocols(listOf(Protocol.HTTP_1_1))
@@ -134,7 +138,7 @@ object Updater {
             var lastError: Exception? = null
             var tries = 0
             var last = -1
-            while (!finished && tries < 8) {
+            while (!finished && tries < 12) {
                 tries++
                 try {
                     val have = if (file.exists()) file.length() else 0L
@@ -147,6 +151,7 @@ object Updater {
                             finished = true
                             return@use
                         }
+                        if (r.code >= 500) throw java.io.IOException("GitHub answered " + r.code)
                         if (!r.isSuccessful) throw IllegalStateException("GitHub answered " + r.code)
                         val body = r.body ?: throw IllegalStateException("Empty download")
                         val resumed = r.code == 206 && have > 0
@@ -162,11 +167,22 @@ object Updater {
                             java.io.FileOutputStream(file, resumed).use { out ->
                                 val buf = ByteArray(64 * 1024)
                                 var done = start
+                                var tickAt = System.currentTimeMillis()
+                                var tickBytes = done
+                                onDetail("Connected, starting...")
                                 while (true) {
+                                    ensureActive()
                                     val n = input.read(buf)
                                     if (n < 0) break
                                     out.write(buf, 0, n)
                                     done += n
+                                    val now = System.currentTimeMillis()
+                                    if (now - tickAt >= 700) {
+                                        val speed = (done - tickBytes) * 1000 / (now - tickAt) / 1024
+                                        onDetail(mb(done) + (if (total > 0) " / " + mb(total) else "") + " MB  -  " + speed + " KB/s")
+                                        tickAt = now
+                                        tickBytes = done
+                                    }
                                     if (total > 0) {
                                         val pct = (done * 100 / total).toInt()
                                         if (pct != last) {
@@ -184,6 +200,7 @@ object Updater {
                     }
                 } catch (e: java.io.IOException) {
                     lastError = e
+                    onDetail("Connection problem, trying again (" + tries + "/12)...")
                     delay(1500)
                 }
             }
@@ -191,6 +208,8 @@ object Updater {
             if (file.length() < 100_000L) throw IllegalStateException("Download incomplete")
             file
         }
+
+    private fun mb(b: Long): String = String.format(java.util.Locale.US, "%.1f", b / 1048576.0)
 
     fun install(app: Context, file: File) {
         try {
@@ -205,7 +224,7 @@ object Updater {
         }
     }
 
-    private fun openInBrowser(c: Context, url: String) {
+    fun openInBrowser(c: Context, url: String) {
         try {
             c.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         } catch (e: Exception) {
@@ -233,31 +252,39 @@ fun UpdateDialog(vm: MainViewModel) {
     val ctx = LocalContext.current
     val busy = vm.updateProgress >= 0
     AlertDialog(
-        onDismissRequest = { vm.showUpdate = false },
+        onDismissRequest = { if (!busy) vm.showUpdate = false },
         containerColor = Pal.surface,
         titleContentColor = Color.White,
         textContentColor = Pal.textDim,
         title = { Text("Update available: " + info.version) },
         text = {
-            Column(Modifier.heightIn(max = 260.dp).verticalScroll(rememberScrollState())) {
-                Text(
-                    "You have " + Updater.currentVersion(ctx) + ".",
-                    fontSize = 13.sp
-                )
-                if (info.notes.isNotBlank()) {
-                    Text(info.notes.trim().take(800), fontSize = 13.sp, modifier = Modifier)
-                }
-                PlayProtectHelp()
+            Column {
+                Text("You have " + Updater.currentVersion(ctx) + ".", fontSize = 13.sp)
+                // progress is always on top, so it is never hidden under the notes
                 if (busy) {
                     Text(
-                        "Downloading... " + vm.updateProgress + "%",
-                        fontSize = 14.sp, color = Color.White,
+                        if (vm.updateProgress > 0) "Downloading... " + vm.updateProgress + "%" else "Downloading...",
+                        fontSize = 15.sp, color = Color.White,
                         modifier = Modifier.padding(top = 12.dp)
                     )
-                    LinearProgressIndicator(
-                        progress = { vm.updateProgress / 100f },
-                        color = Pal.accentSoft,
-                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
+                    if (vm.updateProgress > 0) {
+                        LinearProgressIndicator(
+                            progress = { vm.updateProgress / 100f },
+                            color = Pal.accentSoft,
+                            modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
+                        )
+                    } else {
+                        LinearProgressIndicator(
+                            color = Pal.accentSoft,
+                            modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
+                        )
+                    }
+                    if (vm.updateDetail.isNotBlank()) {
+                        Text(vm.updateDetail, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+                    }
+                    Text(
+                        "Keep VAME open on screen until it finishes.",
+                        fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp)
                     )
                 }
                 if (vm.updateError != null) {
@@ -266,6 +293,18 @@ fun UpdateDialog(vm: MainViewModel) {
                         fontSize = 13.sp, color = Color(0xFFFFB4AB),
                         modifier = Modifier.padding(top = 12.dp)
                     )
+                }
+                TextButton(
+                    onClick = { Updater.openInBrowser(ctx, info.apkUrl) },
+                    modifier = Modifier.padding(top = 4.dp)
+                ) {
+                    Text("Download in browser instead", color = Pal.accentSoft, fontSize = 13.sp)
+                }
+                Column(Modifier.heightIn(max = 180.dp).verticalScroll(rememberScrollState())) {
+                    if (info.notes.isNotBlank()) {
+                        Text(info.notes.trim().take(800), fontSize = 13.sp)
+                    }
+                    PlayProtectHelp()
                 }
             }
         },
@@ -281,7 +320,9 @@ fun UpdateDialog(vm: MainViewModel) {
             }
         },
         dismissButton = {
-            TextButton(onClick = { vm.showUpdate = false }) { Text("Later", color = Pal.textDim) }
+            TextButton(onClick = { if (busy) vm.cancelUpdate() else vm.showUpdate = false }) {
+                Text(if (busy) "Cancel" else "Later", color = Pal.textDim)
+            }
         }
     )
 }
