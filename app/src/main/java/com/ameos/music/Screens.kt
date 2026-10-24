@@ -74,7 +74,7 @@ fun ProfileButton(vm: MainViewModel, size: androidx.compose.ui.unit.Dp, tappable
 
 @Composable
 fun HomeScreen(vm: MainViewModel) {
-    val recs = vm.recommended.take(4)
+    val recs = vm.recommended.take(6)
     val lastAlbums = if (vm.played.size > 1) vm.played.toList() else vm.recommended.drop(5)
 
     LazyColumn(contentPadding = ScreenPad) {
@@ -125,7 +125,7 @@ fun HomeScreen(vm: MainViewModel) {
         item {
             val shelf = if (vm.liked.isNotEmpty()) vm.liked.toList() else vm.recommended.take(12)
             val big = LocalConfiguration.current.screenWidthDp >= 600
-            val sz = if (big) 190.dp else 150.dp
+            val sz = if (big) 230.dp else 184.dp
             if (shelf.isEmpty()) {
                 Box(
                     Modifier.fillMaxWidth().height(sz).clip(RoundedCornerShape(24.dp))
@@ -168,20 +168,20 @@ fun HomeScreen(vm: MainViewModel) {
         item { SectionLabel("Recommended Albums", "NEW") }
         item {
             if (vm.recommendedAlbums.isNotEmpty()) {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     vm.recommendedAlbums.chunked(2).forEach { pair ->
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                             pair.forEach { a ->
                                 Row(
                                     Modifier.weight(1f).pressScale().clickable { vm.openAlbum(a) },
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Cover(a.cover, Modifier.size(48.dp), RoundedCornerShape(8.dp))
+                                    Cover(a.cover, Modifier.size(66.dp), RoundedCornerShape(12.dp))
                                     Spacer(Modifier.width(10.dp))
                                     Column {
-                                        Text(a.title, fontSize = 15.sp, color = Color.White,
+                                        Text(a.title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
                                             maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                        Text(a.artist, fontSize = 13.sp,
+                                        Text(a.artist, fontSize = 14.sp,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             maxLines = 1, overflow = TextOverflow.Ellipsis)
                                     }
@@ -193,20 +193,20 @@ fun HomeScreen(vm: MainViewModel) {
                 }
             } else {
                 val rows = recs.chunked(2)
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     rows.forEach { pair ->
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                             pair.forEach { s ->
                                 Row(
                                     Modifier.weight(1f).pressScale().clickable { vm.play(s, vm.recommended) },
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Cover(s.cover, Modifier.size(48.dp), RoundedCornerShape(8.dp))
+                                    Cover(s.cover, Modifier.size(66.dp), RoundedCornerShape(12.dp))
                                     Spacer(Modifier.width(10.dp))
                                     Column {
-                                        Text(s.title, fontSize = 15.sp, color = Color.White,
+                                        Text(s.title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
                                             maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                        Text(s.artist, fontSize = 13.sp,
+                                        Text(s.artist, fontSize = 14.sp,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             maxLines = 1, overflow = TextOverflow.Ellipsis)
                                     }
@@ -220,15 +220,53 @@ fun HomeScreen(vm: MainViewModel) {
         }
         item { SectionLabel("Last played albums") }
         item {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            val lw = if (LocalConfiguration.current.screenWidthDp >= 600) 220.dp else 176.dp
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 items(lastAlbums) { s ->
-                    Column(Modifier.width(150.dp).pressScale().clickable { vm.play(s, lastAlbums) }) {
-                        Cover(s.cover, Modifier.size(150.dp), RoundedCornerShape(16.dp), hiRes = true)
-                        Text(s.title, fontSize = 14.sp, color = Color.White, maxLines = 1,
-                            overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
-                        Text(s.artist, fontSize = 12.sp,
+                    Column(Modifier.width(lw).pressScale().clickable { vm.play(s, lastAlbums) }) {
+                        Cover(s.cover, Modifier.size(lw), RoundedCornerShape(20.dp), hiRes = true)
+                        Text(s.title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White, maxLines = 1,
+                            overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
+                        Text(s.artist, fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1,
                             overflow = TextOverflow.Ellipsis)
+                    }
+                }
+            }
+        }
+        val picks = vm.recommended.drop(4).take(12)
+        if (picks.isNotEmpty()) {
+            item { SectionLabel("Quick picks") }
+            item {
+                val qw = if (LocalConfiguration.current.screenWidthDp >= 600) 220.dp else 176.dp
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    items(picks) { s ->
+                        Column(Modifier.width(qw).pressScale().clickable { vm.play(s, picks) }) {
+                            Cover(s.cover, Modifier.size(qw), RoundedCornerShape(20.dp), hiRes = true)
+                            Text(s.title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White, maxLines = 1,
+                                overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
+                            Text(s.artist, fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1,
+                                overflow = TextOverflow.Ellipsis)
+                        }
+                    }
+                }
+            }
+        }
+        if (vm.likedArtists.isNotEmpty()) {
+            item { SectionLabel("Your artists") }
+            item {
+                val aw = if (LocalConfiguration.current.screenWidthDp >= 600) 130.dp else 104.dp
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    items(vm.likedArtists.toList()) { a ->
+                        Column(
+                            Modifier.width(aw).pressScale().clickable { vm.openArtist(a.name) },
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Cover(a.cover, Modifier.size(aw), CircleShape, hiRes = true)
+                            Text(a.name, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
+                        }
                     }
                 }
             }

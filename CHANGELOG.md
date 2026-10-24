@@ -1,4 +1,11 @@
-# VAME Music - full changelog (up to zip step30, v0.17.0, 24 Oct 2026)
+# VAME Music - full changelog (up to zip step31, v0.17.1, 24 Oct 2026)
+
+## step31 (v0.17.1) - includes step28 fix, step29 and step30
+- Changed: Home is bigger. The Liked songs shelf cards, Last played albums and Recommended Albums covers and text are larger (phone and tablet).
+- New: Home shows 6 recommended items instead of 4.
+- New: "Quick picks" shelf of big cards on Home (more songs to tap).
+- New: "Your artists" row of round artist pictures on Home (artists you liked), tap to open the artist page.
+- New: bigger spacing between Home rows so the page fills the screen.
 
 ## step30 (v0.17.0) - includes step28 fix and step29
 - Fixed: the step28 build error (Platform declaration clash on setArtistLatestPic / setArtistAlbumCardOn in MainViewModel). Functions renamed, no visible change.
