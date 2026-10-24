@@ -1,4 +1,12 @@
-# VAME Music - full changelog (up to zip step37, v0.20.1, 24 Oct 2026)
+# VAME Music - full changelog (up to zip step38, v0.20.2, 24 Oct 2026)
+
+## step38 (v0.20.2) - includes everything up to step37
+- Fixed: on the tablet the album / YouTube playlist page had a huge cover that filled the whole screen, so the list looked stuck and would not scroll. The cover is now small (max 240dp).
+- New: every song on album and YouTube playlist pages shows a small cover (48dp). If a song has no cover, the playlist cover is used.
+- New: on the tablet the album page header is side by side (cover left, title and buttons right).
+- New: album page shows "N songs - X min" under the artist name.
+- New: Liked songs page also shows the total minutes.
+- New: round "back to top" button appears on album, playlist and liked pages after scrolling down.
 
 ## step37 (v0.20.1) - includes everything up to step36
 - Fixed: the player animation was too fast to see on the phone and not smooth on the tablet. It now takes about half a second with a soft landing. On the phone the whole player screen melts onto the mini player pill while the big cover flies down onto the pill cover. On the tablet the side player shrinks into the small box or pill and grows back out.

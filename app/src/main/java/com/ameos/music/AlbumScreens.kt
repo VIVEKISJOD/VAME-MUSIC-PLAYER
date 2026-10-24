@@ -64,7 +64,7 @@ private fun mmss(sec: Long): String {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun TrackRow(n: Int, s: Song, vm: MainViewModel, list: List<Song>) {
+private fun TrackRow(n: Int, s: Song, vm: MainViewModel, list: List<Song>, fallback: String? = null) {
     val haptic = LocalHapticFeedback.current
     Row(
         Modifier
@@ -86,9 +86,11 @@ private fun TrackRow(n: Int, s: Song, vm: MainViewModel, list: List<Song>) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            n.toString(), fontSize = 20.sp, color = Pal.muted,
-            modifier = Modifier.width(34.dp)
+            n.toString(), fontSize = 16.sp, color = Pal.muted,
+            modifier = Modifier.width(28.dp)
         )
+        Cover(s.cover ?: fallback, Modifier.size(48.dp), RoundedCornerShape(8.dp))
+        Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(s.title, fontSize = 16.sp, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
@@ -103,11 +105,55 @@ private fun TrackRow(n: Int, s: Song, vm: MainViewModel, list: List<Song>) {
 }
 
 @Composable
+private fun AlbumHead(album: Album, songs: List<Song>, vm: MainViewModel, modifier: Modifier = Modifier) {
+    val mins = (songs.sumOf { it.durationSec } / 60).toInt()
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                album.title, fontSize = 26.sp, fontWeight = FontWeight.SemiBold,
+                color = Color.White, maxLines = 3, overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                if (album.artist.isNotBlank()) album.artist
+                else songs.firstOrNull()?.artist?.let { artistName(it) } ?: "",
+                fontSize = 15.sp, color = Pal.textDim,
+                maxLines = 1, overflow = TextOverflow.Ellipsis
+            )
+            if (songs.isNotEmpty()) {
+                Text(
+                    songs.size.toString() + " songs" + (if (mins > 0) "  -  " + mins.toString() + " min" else ""),
+                    fontSize = 12.sp, color = Pal.muted
+                )
+            }
+        }
+        IconButton(onClick = { vm.playAlbum(true) }) {
+            Icon(Icons.Filled.Shuffle, null, tint = Color.White)
+        }
+        Box(
+            Modifier
+                .size(58.dp)
+                .pressScale(0.92f)
+                .clip(CircleShape)
+                .background(Color(0xFFD9381E))
+                .clickable { vm.playAlbum(false) },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                Icons.Filled.PlayArrow, null, tint = Color.White,
+                modifier = Modifier.size(32.dp)
+            )
+        }
+    }
+}
+
+@Composable
 fun AlbumScreen(vm: MainViewModel) {
     BackHandler(enabled = vm.albumOpen) { vm.closeAlbum() }
     val album = vm.albumInfo ?: return
     val songs = vm.albumSongs
     val tint = rememberCoverTint(album.cover)
+    val wide = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= 600
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
 
     Box(
         Modifier
@@ -156,46 +202,30 @@ fun AlbumScreen(vm: MainViewModel) {
             }
             LazyColumn(
                 Modifier.weight(1f),
+                state = listState,
                 contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 170.dp)
             ) {
                 item {
-                    Cover(
-                        album.cover,
-                        Modifier.fillMaxWidth(0.78f).aspectRatio(1f),
-                        RoundedCornerShape(20.dp),
-                        hiRes = true
-                    )
-                    Spacer(Modifier.height(16.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                album.title, fontSize = 26.sp, fontWeight = FontWeight.SemiBold,
-                                color = Color.White, maxLines = 3, overflow = TextOverflow.Ellipsis
+                    if (wide) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Cover(
+                                album.cover,
+                                Modifier.size(200.dp),
+                                RoundedCornerShape(20.dp),
+                                hiRes = true
                             )
-                            Text(
-                                if (album.artist.isNotBlank()) album.artist
-                                else songs.firstOrNull()?.artist?.let { artistName(it) } ?: "",
-                                fontSize = 15.sp, color = Pal.textDim,
-                                maxLines = 1, overflow = TextOverflow.Ellipsis
-                            )
+                            Spacer(Modifier.width(22.dp))
+                            AlbumHead(album, songs, vm, Modifier.weight(1f))
                         }
-                        IconButton(onClick = { vm.playAlbum(true) }) {
-                            Icon(Icons.Filled.Shuffle, null, tint = Color.White)
-                        }
-                        Box(
-                            Modifier
-                                .size(58.dp)
-                                .pressScale(0.92f)
-                                .clip(CircleShape)
-                                .background(Color(0xFFD9381E))
-                                .clickable { vm.playAlbum(false) },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                Icons.Filled.PlayArrow, null, tint = Color.White,
-                                modifier = Modifier.size(32.dp)
-                            )
-                        }
+                    } else {
+                        Cover(
+                            album.cover,
+                            Modifier.fillMaxWidth(0.78f).widthIn(max = 240.dp).aspectRatio(1f),
+                            RoundedCornerShape(20.dp),
+                            hiRes = true
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        AlbumHead(album, songs, vm, Modifier.fillMaxWidth())
                     }
                     Spacer(Modifier.height(14.dp))
                 }
@@ -208,9 +238,10 @@ fun AlbumScreen(vm: MainViewModel) {
                         }
                     }
                 }
-                itemsIndexed(songs) { i, s -> TrackRow(i + 1, s, vm, songs) }
+                itemsIndexed(songs) { i, s -> TrackRow(i + 1, s, vm, songs, album.cover) }
             }
         }
+        ScrollTopButton(listState, Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 190.dp))
         DetailBottomBar(vm, Modifier.align(Alignment.BottomCenter))
     }
 }

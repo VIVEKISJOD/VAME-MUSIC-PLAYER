@@ -307,6 +307,8 @@ fun ArtistScreen(vm: MainViewModel) {
 fun LikedScreen(vm: MainViewModel) {
     BackHandler(enabled = vm.likedOpen) { vm.closeLiked() }
     val songs = vm.liked.toList()
+    val likedMins = (songs.sumOf { it.durationSec } / 60).toInt()
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
 
     Box(
         Modifier
@@ -335,7 +337,7 @@ fun LikedScreen(vm: MainViewModel) {
                         color = Color.White
                     )
                     Text(
-                        songs.size.toString() + " songs", fontSize = 12.sp,
+                        songs.size.toString() + " songs" + (if (likedMins > 0) "  -  " + likedMins.toString() + " min" else ""), fontSize = 12.sp,
                         color = Pal.muted
                     )
                 }
@@ -376,12 +378,14 @@ fun LikedScreen(vm: MainViewModel) {
             } else {
                 LazyColumn(
                     Modifier.weight(1f),
+                    state = listState,
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 170.dp)
                 ) {
                     items(songs) { s -> SongRow(s, vm, songs) }
                 }
             }
         }
+        ScrollTopButton(listState, Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 100.dp))
         MiniPlayer(
             vm,
             Modifier

@@ -59,6 +59,7 @@ fun PlaylistScreen(vm: MainViewModel) {
     val pl = vm.playlists.firstOrNull { it.id == vm.openPlaylistId } ?: return
     BackHandler(enabled = vm.playlistOpen) { vm.closePlaylist() }
     val mins = (pl.songs.sumOf { it.durationSec } / 60).toInt()
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
 
     Box(
         Modifier
@@ -156,12 +157,14 @@ fun PlaylistScreen(vm: MainViewModel) {
             } else {
                 LazyColumn(
                     Modifier.weight(1f),
+                    state = listState,
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 150.dp)
                 ) {
                     itemsIndexed(pl.songs) { _, s -> PlaylistSongRow(vm, pl, s) }
                 }
             }
         }
+        ScrollTopButton(listState, Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 100.dp))
         MiniPlayer(
             vm,
             Modifier
