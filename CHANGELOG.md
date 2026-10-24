@@ -1,4 +1,10 @@
-# VAME Music - full changelog (up to zip step40, v0.21.0, 24 Oct 2026)
+# VAME Music - full changelog (up to zip step42, v0.21.2, 24 Oct 2026)
+
+## step42 (v0.21.2) - includes everything up to step41
+- Removed: sending VAME playlists to Spotify (the "Copy" and "Merge" buttons and the "Your VAME playlists" card on the Spotify page). Listening to Spotify inside VAME and "To VAME" (bringing a Spotify playlist into VAME) stay. Texts in Library and Settings updated.
+
+## step41 (v0.21.1) - includes everything up to step40
+- Removed: "Move to another app" (the Library tile, the Settings entry and its screen). Music can no longer be copied out to Spotify / YouTube Music / a file from there. Import into VAME and the Spotify screen stay.
 
 ## step40 (v0.21.0) - includes everything up to step39
 - New: Play on another device (like Spotify Connect). Open the output button on Now Playing (the Bluetooth / phone icon): a new list "Other VAME devices (same Wi-Fi)" shows your other phone / tablet running VAME. Tap one and the song moves there and keeps its place.

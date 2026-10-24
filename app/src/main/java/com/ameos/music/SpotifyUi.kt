@@ -97,14 +97,13 @@ private fun SpRow(cover: String?, title: String, sub: String, actions: @Composab
     }
 }
 
-// Spotify page: connect, listen in the app (web player), copy / merge playlists both ways
+// Spotify page: connect, listen in the app (web player), bring playlists into VAME
 @Composable
 fun SpotifyScreen(vm: MainViewModel) {
     val ctx = LocalContext.current
     val app = ctx.applicationContext
     BackHandler { SpotifyHub.open = false }
     var idText by remember { mutableStateOf("") }
-    var mergeFor by remember { mutableStateOf<Playlist?>(null) }
     LaunchedEffect(Unit) {
         SpotifyHub.refreshState(app)
         idText = SpotifyHub.clientId
@@ -133,7 +132,7 @@ fun SpotifyScreen(vm: MainViewModel) {
                 }
                 Column {
                     Text("Spotify", fontSize = 32.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
-                    Text("Listen, copy and merge playlists", fontSize = 13.sp, color = Pal.muted)
+                    Text("Listen and bring playlists into VAME", fontSize = 13.sp, color = Pal.muted)
                 }
             }
 
@@ -231,7 +230,7 @@ fun SpotifyScreen(vm: MainViewModel) {
                 }
 
                 Spacer(Modifier.height(8.dp))
-                KitHeader(Icons.Filled.LibraryMusic, "Your Spotify playlists", "Listen here or copy into VAME")
+                KitHeader(Icons.Filled.LibraryMusic, "Your Spotify playlists", "Listen here or bring into VAME")
                 KitCard {
                     if (SpotifyHub.playlists.isEmpty()) {
                         Text("No playlists loaded yet. Tap Refresh.", fontSize = 13.sp, color = Pal.muted)
@@ -246,62 +245,8 @@ fun SpotifyScreen(vm: MainViewModel) {
                         }
                     }
                 }
-
-                Spacer(Modifier.height(8.dp))
-                KitHeader(Icons.Filled.LibraryMusic, "Your VAME playlists", "Send them to Spotify")
-                KitCard {
-                    if (vm.playlists.isEmpty()) {
-                        Text("You have no VAME playlists yet.", fontSize = 13.sp, color = Pal.muted)
-                    }
-                    for (p in vm.playlists.toList()) {
-                        SpRow(p.shownCover(), p.name, p.songs.size.toString() + " songs") {
-                            KitSmallBtn("Copy", enabled = !SpotifyHub.busy && p.songs.isNotEmpty()) {
-                                SpotifyHub.copyToSpotify(app, vm, p.id)
-                            }
-                            Spacer(Modifier.width(6.dp))
-                            KitSmallBtn("Merge", enabled = !SpotifyHub.busy && p.songs.isNotEmpty()) {
-                                mergeFor = p
-                            }
-                        }
-                    }
-                    KitNote(
-                        "Copy makes a new private Spotify playlist. Merge adds the songs into a Spotify " +
-                            "playlist you already have (songs that are already there are skipped). " +
-                            "Songs are matched by name, so a few may not be found."
-                    )
-                }
             }
             Spacer(Modifier.height(48.dp))
-        }
-
-        val pick = mergeFor
-        if (pick != null) {
-            Dialog(onDismissRequest = { mergeFor = null }) {
-                Column(
-                    Modifier
-                        .glassPanel(RoundedCornerShape(26.dp))
-                        .padding(18.dp)
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    Text(
-                        "Merge \"" + pick.name + "\" into...", fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold, color = Color.White
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    val own = SpotifyHub.playlists.filter { it.mine }
-                    if (own.isEmpty()) Text("No Spotify playlist of yours was found.", fontSize = 13.sp, color = Pal.muted)
-                    for (t in own) {
-                        SpRow(t.cover, t.name, t.total.toString() + " songs") {
-                            KitSmallBtn("Merge") {
-                                mergeFor = null
-                                SpotifyHub.mergeIntoSpotify(app, vm, pick.id, t)
-                            }
-                        }
-                    }
-                    Spacer(Modifier.height(6.dp))
-                    KitButton("Cancel") { mergeFor = null }
-                }
-            }
         }
 
         if (SpotifyHub.showLogin) {

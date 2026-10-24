@@ -374,13 +374,8 @@ fun SettingsScreen(vm: MainViewModel) {
             KitCard {
                 KitAction(
                     "Spotify",
-                    "Listen to your Spotify inside VAME, copy or merge playlists both ways."
+                    "Listen to your Spotify inside VAME and bring your Spotify playlists into VAME."
                 ) { SpotifyHub.open = true }
-                KitDivider()
-                KitAction(
-                    "Move to another app",
-                    "Copy your playlists, liked songs, artists and albums to Spotify, YouTube Music or a file."
-                ) { DataMove.open = true }
             }
 
             KitHeader(Icons.Filled.Storage, "Storage")

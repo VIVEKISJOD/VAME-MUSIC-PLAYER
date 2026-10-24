@@ -124,7 +124,7 @@ fun AmeosRoot(vm: MainViewModel) {
     LaunchedEffect(phoneLand) {
         if (phoneLand) {
             val busy = vm.showSettings || vm.showOnboarding || vm.showLogin || vm.recapOpen ||
-                SpotifyHub.open || DataMove.open
+                SpotifyHub.open
             if (UiOpts.standby && vm.current != null && vm.isPlaying && !vm.showPlayer &&
                 !vm.showLyrics && !busy
             ) {
@@ -288,12 +288,6 @@ fun AmeosRoot(vm: MainViewModel) {
                 originX = 0.5f, originY = 0.6f, startScaleX = 0.8f, startScaleY = 0.8f
             ) {
                 SpotifyScreen(vm)
-            }
-            MorphLayer(
-                visible = DataMove.open,
-                originX = 0.5f, originY = 0.6f, startScaleX = 0.8f, startScaleY = 0.8f
-            ) {
-                SwitchAppScreen(vm)
             }
         }
         QuickSheet(vm)

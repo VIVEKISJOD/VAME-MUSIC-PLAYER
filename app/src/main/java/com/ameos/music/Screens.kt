@@ -823,11 +823,8 @@ fun LibraryScreen(vm: MainViewModel) {
         vm.importedId = null
         vm.showImportDialog = true
     })
-    tiles.add(LibTile("Spotify", "Connect, copy, merge", null, Icons.Filled.Cloud, listOf(Color(0xFF1F9D55), Color(0xFF0B4D2A))) {
+    tiles.add(LibTile("Spotify", "Listen, bring into VAME", null, Icons.Filled.Cloud, listOf(Color(0xFF1F9D55), Color(0xFF0B4D2A))) {
         SpotifyHub.open = true
-    })
-    tiles.add(LibTile("Move to another app", "Take your music with you", null, Icons.Filled.SwapHoriz, listOf(Color(0xFF3A5BD9), Color(0xFF7B3FD0))) {
-        DataMove.open = true
     })
     tiles.add(LibTile(
         "Liked Songs", vm.liked.size.toString() + " songs", null,
