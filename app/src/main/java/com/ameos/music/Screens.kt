@@ -70,6 +70,24 @@ fun ProfileButton(vm: MainViewModel, size: androidx.compose.ui.unit.Dp, tappable
     }
 }
 
+// A row of big song cards (used for the genre shelves on Home)
+@Composable
+private fun SongShelf(vm: MainViewModel, songs: List<Song>) {
+    val w = if (LocalConfiguration.current.screenWidthDp >= 600) 200.dp else 160.dp
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        items(songs) { s ->
+            Column(Modifier.width(w).pressScale().clickable { vm.play(s, songs) }) {
+                Cover(s.cover, Modifier.size(w), RoundedCornerShape(18.dp), hiRes = true)
+                Text(s.title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White, maxLines = 1,
+                    overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
+                Text(s.artist, fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1,
+                    overflow = TextOverflow.Ellipsis)
+            }
+        }
+    }
+}
+
 // ---------------- HOME ----------------
 
 @Composable
@@ -252,6 +270,10 @@ fun HomeScreen(vm: MainViewModel) {
                     }
                 }
             }
+        }
+        for (sh in vm.genreShelves) {
+            item { SectionLabel(sh.name) }
+            item { SongShelf(vm, sh.songs) }
         }
         if (vm.likedArtists.isNotEmpty()) {
             item { SectionLabel("Your artists") }

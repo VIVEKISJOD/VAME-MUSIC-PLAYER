@@ -197,6 +197,9 @@ object Prefs {
     fun artistTop(c: Context): Int = sp(c).getInt("artistTop", 1)
     fun setArtistTop(c: Context, v: Int) = sp(c).edit().putInt("artistTop", v).apply()
 
+    fun homeLang(c: Context): Int = sp(c).getInt("homeLang", 0)
+    fun setHomeLang(c: Context, v: Int) = sp(c).edit().putInt("homeLang", v).apply()
+
     fun startTab(c: Context): Int = sp(c).getInt("startTab", 0)
     fun setStartTab(c: Context, v: Int) = sp(c).edit().putInt("startTab", v).apply()
 

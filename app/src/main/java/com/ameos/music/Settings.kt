@@ -125,6 +125,14 @@ fun SettingsScreen(vm: MainViewModel) {
             SectionLabel("Open app on")
             QualityChips(vm.startTab, listOf("Home", "Explore", "Your type", "Library")) { vm.updateStartTab(it) }
 
+            SectionLabel("Home songs language")
+            Text(
+                "Home shelves are built from the genres you picked. Choose which languages they use.",
+                fontSize = 12.sp, color = Pal.muted, modifier = Modifier.padding(bottom = 8.dp)
+            )
+            QualityChips(vm.homeLang, listOf("English + Hindi", "English", "Hindi")) {
+                vm.chooseHomeLang(it)
+            }
             SectionLabel("Artist page")
             Text(
                 "Picture", fontSize = 16.sp, color = Color.White,

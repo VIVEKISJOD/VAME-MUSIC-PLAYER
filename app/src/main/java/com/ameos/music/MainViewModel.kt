@@ -28,6 +28,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+data class GenreShelf(val name: String, val songs: List<Song>)
+
 class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     val player = PlayerHolder.get(app)
@@ -147,6 +149,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val outputLabel: String
         get() = currentOutput?.name ?: "This phone"
     var genres by mutableStateOf(Prefs.genres(app))
+    // Home genre shelves (declared up here because loadHome() runs in the first init block)
+    var genreShelves by mutableStateOf<List<GenreShelf>>(emptyList())
+    var homeLang by mutableIntStateOf(Prefs.homeLang(app))
+    private var shelfJob: Job? = null
     var showOnboarding by mutableStateOf(!Prefs.onboarded(app))
 
     // playback modes: repeat 0 off, 1 all, 2 one
@@ -299,6 +305,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun loadHome() {
         loadAlbums()
+        loadGenreShelves()
         viewModelScope.launch {
             try {
                 val g = genres.toList().shuffled().take(3)
@@ -1401,6 +1408,71 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var artistLatestPic by mutableStateOf(Prefs.artistLatest(app))
     var artistAlbumCardOn by mutableStateOf(Prefs.artistAlbumCard(app))
     var artistTop by mutableIntStateOf(Prefs.artistTop(app))
+
+    // Home shelves built from the genres picked at sign up (English and Hindi mix)
+
+    fun chooseHomeLang(i: Int) {
+        homeLang = i
+        Prefs.setHomeLang(getApplication<Application>(), i)
+        loadGenreShelves()
+    }
+
+    private fun shelfQueries(g: String, lang: Int): List<String> = when (g) {
+        "Bollywood" -> listOf("Bollywood hindi songs 2026", "Bollywood romantic songs")
+        "Punjabi" -> listOf("Punjabi songs 2026", "Punjabi hits")
+        "K-pop" -> listOf("K-pop songs 2026", "K-pop hits")
+        "Devotional" -> listOf("hindi devotional songs", "bhajan")
+        else -> when (lang) {
+            1 -> listOf(g + " english songs 2026")
+            2 -> listOf(g + " hindi songs 2026")
+            else -> listOf(g + " english songs 2026", g + " hindi songs 2026")
+        }
+    }
+
+    fun loadGenreShelves() {
+        shelfJob?.cancel()
+        shelfJob = viewModelScope.launch {
+            val names = if (genres.isEmpty()) listOf("Pop", "Hip-Hop", "Bollywood") else genres.toList().take(6)
+            val lang = homeLang
+            val out = ArrayList<GenreShelf>()
+            genreShelves = emptyList()
+            for (n in names) {
+                val qs = shelfQueries(n, lang)
+                val lists: List<List<Song>> = try {
+                    coroutineScope {
+                        qs.map { q ->
+                            async {
+                                try {
+                                    MusicRepo.search(q)
+                                } catch (e: CancellationException) {
+                                    throw e
+                                } catch (e: Exception) {
+                                    emptyList<Song>()
+                                }
+                            }
+                        }.awaitAll()
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    emptyList<List<Song>>()
+                }
+                val mixed = ArrayList<Song>()
+                val max = lists.maxOfOrNull { it.size } ?: 0
+                for (i in 0 until max) {
+                    for (l in lists) {
+                        val x = l.getOrNull(i)
+                        if (x != null) mixed.add(x)
+                    }
+                }
+                val songs = mixed.distinctBy { it.url }.take(20)
+                if (songs.isNotEmpty()) {
+                    out.add(GenreShelf(n, songs))
+                    genreShelves = out.toList()
+                }
+            }
+        }
+    }
 
     fun chooseArtistLatestPic(on: Boolean) {
         artistLatestPic = on

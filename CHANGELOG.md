@@ -1,4 +1,12 @@
-# VAME Music - full changelog (up to zip step31, v0.17.1, 24 Oct 2026)
+# VAME Music - full changelog (up to zip step32, v0.18.0, 24 Oct 2026)
+
+## step32 (v0.18.0) - includes step28 fix, step29, step30, step31
+- New: Home now has a full library of shelves built from the genres you picked when you signed up (up to 6 genres). Each genre gets its own row of big song cards, up to 20 songs.
+- New: every genre shelf mixes English and Hindi songs.
+- New: Bollywood, Punjabi, K-pop and Devotional shelves use their own searches (Hindi, Punjabi, Korean, bhajans).
+- New: Settings > Home songs language: English + Hindi, English only or Hindi only.
+- New: shelves load one by one, so Home fills up while the rest is still loading.
+- Changed: if you picked no genres, Home shows Pop, Hip-Hop and Bollywood shelves. Changing your music taste in Settings reloads the shelves.
 
 ## step31 (v0.17.1) - includes step28 fix, step29 and step30
 - Changed: Home is bigger. The Liked songs shelf cards, Last played albums and Recommended Albums covers and text are larger (phone and tablet).
