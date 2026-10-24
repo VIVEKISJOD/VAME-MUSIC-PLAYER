@@ -113,6 +113,8 @@ fun AmeosRoot(vm: MainViewModel) {
     if (vm.showUpdate && vm.updateInfo != null) UpdateDialog(vm)
     val tablet = isTabletLandscape()
     val phoneLand = isPhoneLandscape()
+    // tablet standby only exists on the sideways tablet; leaving it (rotate) switches it off
+    LaunchedEffect(tablet) { if (!tablet) vm.tabStandby = false }
     // Standby: a phone turned sideways while music plays opens the big landscape player by itself,
     // and closes it again when the phone is turned back (only if it was opened this way)
     LaunchedEffect(vm.showPlayer) {
@@ -197,6 +199,14 @@ fun AmeosRoot(vm: MainViewModel) {
                         PlayerPanel(vm)
                     }
                 }
+                // tablet standby: full screen over the rail and the side player (they stay as they were)
+                AnimatedVisibility(
+                    visible = vm.tabStandby && vm.current != null,
+                    enter = fadeIn(tween(320)) + scaleIn(tween(360, easing = FastOutSlowInEasing), initialScale = 0.96f),
+                    exit = fadeOut(tween(240))
+                ) {
+                    StandbyPlayer(vm)
+                }
                 // lyrics on a tablet: full screen, cover + name on the left, lyrics on the right
                 AnimatedVisibility(
                     visible = vm.showLyrics && vm.current != null,
@@ -234,7 +244,7 @@ fun AmeosRoot(vm: MainViewModel) {
             }
             // the music stays on top of Settings (pill or box), so it can be stopped from there
             if (tablet) {
-                TabletMini(vm)
+                if (!vm.tabStandby) TabletMini(vm)
             } else {
                 AnimatedVisibility(
                     visible = vm.showSettings && vm.current != null,

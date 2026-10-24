@@ -1,4 +1,11 @@
-# VAME Music - full changelog (up to zip step38, v0.20.2, 24 Oct 2026)
+# VAME Music - full changelog (up to zip step39, v0.20.3, 24 Oct 2026)
+
+## step39 (v0.20.3) - includes everything up to step38
+- New: Standby button on the tablet (left rail, under Library). It opens the same big Standby player as the phone sideways (cover left, clock, controls right). The side player and the rail are NOT removed: they stay under it and come back when you close Standby (Back, tap the grabber at the top, or swipe it down).
+- New: in tablet Standby, tapping the lyrics line or the lyrics button opens the normal tablet lyrics (cover + name left, lyrics right). Back returns to Standby.
+- New: Settings > Standby: "Standby button on tablet" switch (hide or show the button).
+- New: Settings > Standby: "12-hour clock in Standby" switch.
+- Standby switches off by itself if the tablet is turned upright.
 
 ## step38 (v0.20.2) - includes everything up to step37
 - Fixed: on the tablet the album / YouTube playlist page had a huge cover that filled the whole screen, so the list looked stuck and would not scroll. The cover is now small (max 240dp).

@@ -39,6 +39,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var showPlayer by mutableStateOf(false)
     var showSettings by mutableStateOf(false)
     var showLyrics by mutableStateOf(false)
+    // tablet standby: full screen standby player on top, the side player stays as it is
+    var tabStandby by mutableStateOf(false)
     var showSleepDialog by mutableStateOf(false)
     var showMenu by mutableStateOf(false)
 

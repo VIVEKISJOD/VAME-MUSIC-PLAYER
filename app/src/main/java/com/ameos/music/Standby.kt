@@ -148,8 +148,10 @@ fun StandbyPlayer(vm: MainViewModel) {
     var quality by remember { mutableStateOf("") }
     var clock by remember { mutableStateOf("") }
     val tint = rememberCoverTint(song.cover)
+    // on a tablet this standby is an overlay: closing it keeps the side player as it was
+    val closeStb: () -> Unit = { if (vm.tabStandby) vm.tabStandby = false else vm.showPlayer = false }
 
-    BackHandler { vm.showPlayer = false }
+    BackHandler { closeStb() }
     BackHandler(enabled = showQueue) { showQueue = false }
     StandbyScreenSettings()
 
@@ -172,8 +174,8 @@ fun StandbyPlayer(vm: MainViewModel) {
         }
     }
     LaunchedEffect(Unit) {
-        val fmt = SimpleDateFormat("HH:mm", Locale.getDefault())
         while (true) {
+            val fmt = SimpleDateFormat(if (UiOpts.standby12h) "h:mm a" else "HH:mm", Locale.getDefault())
             clock = fmt.format(Date())
             delay(10000)
         }
@@ -261,7 +263,7 @@ fun StandbyPlayer(vm: MainViewModel) {
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(6.dp))
                                     .clickable {
-                                        vm.showPlayer = false
+                                        closeStb()
                                         vm.showLyrics = false
                                         vm.openArtist(song.artist)
                                     }
@@ -450,14 +452,14 @@ fun StandbyPlayer(vm: MainViewModel) {
                             change.consume()
                             total += dy
                         },
-                        onDragEnd = { if (total > 60f) vm.showPlayer = false },
+                        onDragEnd = { if (total > 60f) closeStb() },
                         onDragCancel = { total = 0f }
                     )
                 }
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
-                ) { vm.showPlayer = false },
+                ) { closeStb() },
             contentAlignment = Alignment.Center
         ) {
             Box(

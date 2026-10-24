@@ -204,6 +204,21 @@ fun SettingsScreen(vm: MainViewModel) {
                     UiOpts.standbyHideBars = it
                     UiOpts.save(ctx)
                 }
+                KitSwitch(
+                    "Standby button on tablet", "Shows a Standby button in the left rail of the tablet. " +
+                        "The side player stays as it is.",
+                    UiOpts.tabStandbyBtn
+                ) {
+                    UiOpts.tabStandbyBtn = it
+                    UiOpts.save(ctx)
+                }
+                KitSwitch(
+                    "12-hour clock in Standby", "Shows 3:21 PM instead of 15:21.",
+                    UiOpts.standby12h
+                ) {
+                    UiOpts.standby12h = it
+                    UiOpts.save(ctx)
+                }
             }
 
             // ---------------- home ----------------

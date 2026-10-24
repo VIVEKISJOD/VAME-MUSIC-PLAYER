@@ -30,6 +30,8 @@ object UiOpts {
     var standbyLyrics by mutableStateOf(false)
     var standbyAwake by mutableStateOf(true)
     var standbyHideBars by mutableStateOf(true)
+    var tabStandbyBtn by mutableStateOf(true)
+    var standby12h by mutableStateOf(false)
 
     // Home: which shelves are shown
     var homeQuick by mutableStateOf(true)
@@ -73,6 +75,8 @@ object UiOpts {
         standbyLyrics = p.getBoolean("standbyLyrics", false)
         standbyAwake = p.getBoolean("standbyAwake", true)
         standbyHideBars = p.getBoolean("standbyHideBars", true)
+        tabStandbyBtn = p.getBoolean("tabStandbyBtn", true)
+        standby12h = p.getBoolean("standby12h", false)
         homeQuick = p.getBoolean("homeQuick", true)
         homeArtists = p.getBoolean("homeArtists", true)
         homeShelves = p.getBoolean("homeShelves", true)
@@ -94,6 +98,8 @@ object UiOpts {
             .putBoolean("standbyLyrics", standbyLyrics)
             .putBoolean("standbyAwake", standbyAwake)
             .putBoolean("standbyHideBars", standbyHideBars)
+            .putBoolean("tabStandbyBtn", tabStandbyBtn)
+            .putBoolean("standby12h", standby12h)
             .putBoolean("homeQuick", homeQuick)
             .putBoolean("homeArtists", homeArtists)
             .putBoolean("homeShelves", homeShelves)

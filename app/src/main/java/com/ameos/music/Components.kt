@@ -681,6 +681,29 @@ fun SideRail(vm: MainViewModel) {
                 )
             }
         }
+        if (vm.current != null && UiOpts.tabStandbyBtn) {
+            // standby mode on the tablet (full screen player with clock, like the phone sideways)
+            val tickS = rememberTick()
+            Column(
+                Modifier
+                    .padding(top = 6.dp)
+                    .pressScale(0.92f)
+                    .clip(RoundedCornerShape(20.dp))
+                    .clickable {
+                        tickS()
+                        vm.tabStandby = true
+                    },
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(Modifier.width(64.dp).height(34.dp), contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.Filled.Bedtime, null,
+                        tint = Pal.muted, modifier = Modifier.size(24.dp)
+                    )
+                }
+                Text("Standby", fontSize = 11.sp, color = Pal.muted, modifier = Modifier.padding(top = 3.dp))
+            }
+        }
         Spacer(Modifier.height(16.dp))
     }
 }
