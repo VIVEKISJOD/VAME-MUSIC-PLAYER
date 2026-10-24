@@ -266,6 +266,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun recap(): RecapData = StatsStore.recap(stats)
 
     override fun onCleared() {
+        Connect.vm = null
+        connectJob?.cancel()
         StatsStore.save(getApplication<Application>(), stats)
         PlaybackBridge.onNext = null
         PlaybackBridge.onPrev = null
@@ -859,6 +861,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun start(song: Song) {
+        val t = Connect.target
+        if (t != null) {
+            castStart(song, t)
+            return
+        }
+        startLocal(song, 0L)
+    }
+
+    private fun startLocal(song: Song, startMs: Long) {
         startJob?.cancel()
         player.pause()
         timesLeft = 0
@@ -884,6 +895,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     .build()
                 player.setMediaItem(item)
                 player.prepare()
+                if (startMs > 0L) player.seekTo(startMs)
                 player.play()
                 played.removeAll { it.url == song.url }
                 played.add(0, song)
@@ -910,7 +922,161 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    // ---------- Connect: play on another VAME device (same Wi-Fi) ----------
+
+    private var connectJob: kotlinx.coroutines.Job? = null
+
+    fun connectStart() {
+        Connect.start(getApplication<Application>(), this)
+        connectJob?.cancel()
+        connectJob = viewModelScope.launch {
+            while (true) {
+                Connect.stateJson = connectStateJson()
+                delay(700)
+            }
+        }
+    }
+
+    private fun connectStateJson(): String {
+        val o = org.json.JSONObject()
+        val c = current
+        o.put("name", Connect.deviceName)
+        if (c != null) {
+            o.put("has", true)
+            o.put("t", c.title)
+            o.put("a", c.artist)
+            o.put("u", c.url)
+            o.put("d", c.durationSec)
+            val cv = c.cover
+            if (cv != null) o.put("c", cv)
+            o.put("play", player.isPlaying)
+            o.put("pos", player.currentPosition)
+            val dd = player.duration
+            o.put("dur", if (dd > 0L) dd else c.durationSec * 1000L)
+        } else {
+            o.put("has", false)
+        }
+        val am = getApplication<Application>().getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager
+        val mx = am.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC).coerceAtLeast(1)
+        o.put("vol", am.getStreamVolume(android.media.AudioManager.STREAM_MUSIC) * 100 / mx)
+        return o.toString()
+    }
+
+    // position / length / seek: from the other device while casting, else the local player
+    fun posMs(): Long {
+        val r = Connect.remote
+        if (Connect.target != null && r != null) {
+            val add = if (r.playing) android.os.SystemClock.elapsedRealtime() - r.at else 0L
+            return r.posMs + add
+        }
+        return player.currentPosition
+    }
+
+    fun durMs(): Long {
+        val r = Connect.remote
+        if (Connect.target != null && r != null && r.durMs > 0L) return r.durMs
+        return player.duration
+    }
+
+    fun seekTo(ms: Long) {
+        val t = Connect.target
+        if (t != null) {
+            Connect.cmd(t, "seek", ms)
+            val r = Connect.remote
+            if (r != null) {
+                Connect.remote = Remote(r.title, r.artist, r.cover, r.url, r.playing, ms, r.durMs, r.vol)
+            }
+        } else {
+            player.seekTo(ms)
+        }
+    }
+
+    // this device was told to play (another VAME sent a queue)
+    fun connectPlayHere(list: List<Song>, i: Int, posMs: Long) {
+        if (list.isEmpty() || Connect.target != null) return
+        val k = i.coerceIn(0, list.size - 1)
+        queue = list
+        index = k
+        startLocal(list[k], posMs)
+    }
+
+    // buttons pressed on another device
+    fun connectCmd(cmd: String, v: Long) {
+        if (Connect.target != null) return
+        when (cmd) {
+            "toggle" -> if (player.isPlaying) player.pause() else toggle()
+            "play" -> if (!player.isPlaying) toggle()
+            "pause" -> player.pause()
+            "next" -> next()
+            "prev" -> prev()
+            "seek" -> player.seekTo(v)
+            "vol" -> {
+                val am = getApplication<Application>().getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager
+                val mx = am.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC)
+                am.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, (v.coerceIn(0L, 100L) * mx / 100L).toInt(), 0)
+            }
+        }
+    }
+
+    private fun castStart(song: Song, t: Peer) {
+        startJob?.cancel()
+        player.pause()
+        timesLeft = 0
+        current = song
+        error = null
+        loadLyrics(song)
+        Connect.sendPlay(t, queue, index, 0L)
+    }
+
+    // choose where the music plays: a Peer = that device, null = this device
+    fun connectTo(p: Peer?) {
+        val old = Connect.target
+        if (p == null) {
+            if (old == null) return
+            val pos = posMs()
+            Connect.cmd(old, "pause")
+            Connect.target = null
+            Connect.remote = null
+            val c = current
+            if (c != null) startLocal(c, pos)
+            return
+        }
+        if (old != null && old.id == p.id) return
+        val pos = if (old == null) player.currentPosition else posMs()
+        if (old != null) Connect.cmd(old, "pause")
+        player.pause()
+        Connect.target = p
+        Connect.remote = null
+        if (current != null) Connect.sendPlay(p, queue, index, pos)
+        Connect.startPolling()
+    }
+
+    // follow what the other device really plays (it moves on to the next song by itself)
+    fun applyRemote(r: Remote) {
+        isPlaying = r.playing
+        val c = current
+        if (c == null || c.url != r.url) {
+            val k = queue.indexOfFirst { it.url == r.url }
+            val s = if (k >= 0) queue[k] else Song(r.title, r.artist, r.url, r.cover, r.durMs / 1000L)
+            if (k >= 0) index = k
+            current = s
+            loadLyrics(s)
+        }
+    }
+
+    fun connectLost(p: Peer) {
+        if (Connect.target?.id != p.id) return
+        Connect.target = null
+        Connect.remote = null
+        android.widget.Toast.makeText(getApplication<Application>(), "Lost connection to " + p.name, android.widget.Toast.LENGTH_SHORT).show()
+    }
+
     fun toggle() {
+        val tg = Connect.target
+        if (tg != null) {
+            Connect.cmd(tg, "toggle")
+            return
+        }
         val cur = current
         if (cur != null && player.mediaItemCount == 0 && !loading) {
             start(cur)

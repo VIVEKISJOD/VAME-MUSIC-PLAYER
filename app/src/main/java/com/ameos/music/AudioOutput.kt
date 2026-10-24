@@ -107,7 +107,7 @@ fun OutputDialog(vm: MainViewModel) {
             Spacer(Modifier.height(12.dp))
             Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
                 vm.outputs.forEach { d ->
-                    val on = d.id == selected
+                    val on = d.id == selected && Connect.target == null
                     Row(
                         Modifier
                             .fillMaxWidth()
@@ -115,6 +115,7 @@ fun OutputDialog(vm: MainViewModel) {
                             .clip(RoundedCornerShape(18.dp))
                             .background(ORow)
                             .clickable {
+                                if (Connect.target != null) vm.connectTo(null)
                                 vm.chooseOutput(d)
                                 close()
                             }
@@ -135,6 +136,45 @@ fun OutputDialog(vm: MainViewModel) {
                             modifier = Modifier.weight(1f)
                         )
                         if (on) {
+                            Icon(Icons.Filled.Check, null, tint = OAccent)
+                        }
+                    }
+                }
+                Text(
+                    "Other VAME devices (same Wi-Fi)", fontSize = 14.sp, color = OSub,
+                    modifier = Modifier.padding(top = 16.dp, bottom = 4.dp, start = 4.dp)
+                )
+                if (Connect.peers.isEmpty()) {
+                    Text(
+                        "None found. Open VAME on your other device and keep both on the same Wi-Fi.",
+                        fontSize = 14.sp, color = OSub,
+                        modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+                    )
+                }
+                Connect.peers.toList().forEach { p ->
+                    val onP = Connect.target?.id == p.id
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 3.dp)
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(ORow)
+                            .clickable {
+                                vm.connectTo(p)
+                                close()
+                            }
+                            .padding(horizontal = 18.dp, vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Filled.Cast, null, tint = if (onP) OAccent else OSub, modifier = Modifier.size(26.dp))
+                        Spacer(Modifier.width(16.dp))
+                        Text(
+                            p.name, fontSize = 18.sp, fontWeight = FontWeight.Bold,
+                            color = if (onP) OAccent else Color.White,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                        if (onP) {
                             Icon(Icons.Filled.Check, null, tint = OAccent)
                         }
                     }

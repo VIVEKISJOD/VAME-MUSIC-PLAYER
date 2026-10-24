@@ -12,8 +12,8 @@ android {
         applicationId = "com.ameos.music"
         minSdk = 26
         targetSdk = 34
-        versionCode = 42
-        versionName = "0.20.3"
+        versionCode = 43
+        versionName = "0.21.0"
     }
 
     // Same signing key for every update (stored as GitHub secrets), so the app can update itself.
@@ -91,6 +91,7 @@ dependencies {
 
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("org.nanohttpd:nanohttpd:2.3.1")
 
     implementation("com.github.TeamNewPipe:NewPipeExtractor:v0.26.5")
 }

@@ -219,6 +219,12 @@ fun SettingsScreen(vm: MainViewModel) {
                     UiOpts.standby12h = it
                     UiOpts.save(ctx)
                 }
+                KitSwitch(
+                    "Let other devices play here", "Your other VAME devices on the same Wi-Fi can send music to this device and press its buttons.",
+                    Connect.allow
+                ) {
+                    Connect.setAllow(ctx, it)
+                }
             }
 
             // ---------------- home ----------------

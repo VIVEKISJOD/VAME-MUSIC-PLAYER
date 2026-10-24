@@ -290,8 +290,8 @@ fun NowPlayingScreen(vm: MainViewModel) {
 
     LaunchedEffect(song.url) {
         while (true) {
-            pos = vm.player.currentPosition
-            val d = vm.player.duration
+            pos = vm.posMs()
+            val d = vm.durMs()
             dur = if (d > 0) d else song.durationSec * 1000
             val f = vm.player.audioFormat
             if (f != null) {
@@ -479,7 +479,7 @@ fun NowPlayingScreen(vm: MainViewModel) {
                 onChange = { dragFrac = it },
                 onEnd = { f ->
                     val t = (f * max.toFloat()).toLong()
-                    vm.player.seekTo(t)
+                    vm.seekTo(t)
                     pos = t
                     dragging = false
                 }

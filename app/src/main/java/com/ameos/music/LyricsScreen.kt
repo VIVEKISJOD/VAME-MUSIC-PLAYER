@@ -68,7 +68,7 @@ fun TabletLyricsScreen(vm: MainViewModel) {
     var pos by remember { mutableLongStateOf(0L) }
     LaunchedEffect(song.url) {
         while (true) {
-            pos = vm.player.currentPosition
+            pos = vm.posMs()
             delay(100)
         }
     }
@@ -147,7 +147,7 @@ fun LyricsScreen(vm: MainViewModel) {
     var pos by remember { mutableLongStateOf(0L) }
     LaunchedEffect(song.url) {
         while (true) {
-            pos = vm.player.currentPosition
+            pos = vm.posMs()
             delay(100)
         }
     }
@@ -289,7 +289,7 @@ private fun LyricsList(vm: MainViewModel, pos: Long) {
             val text = if (line.text.isBlank()) "..." else line.text
             val base = Modifier
                 .fillMaxWidth()
-                .clickable(enabled = synced) { vm.player.seekTo(line.timeMs) }
+                .clickable(enabled = synced) { vm.seekTo(line.timeMs) }
                 .padding(horizontal = 28.dp, vertical = 14.dp)
             val mod = if (blurR > 0.dp) base.blur(blurR) else base
 

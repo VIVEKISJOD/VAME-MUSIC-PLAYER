@@ -1,4 +1,12 @@
-# VAME Music - full changelog (up to zip step39, v0.20.3, 24 Oct 2026)
+# VAME Music - full changelog (up to zip step40, v0.21.0, 24 Oct 2026)
+
+## step40 (v0.21.0) - includes everything up to step39
+- New: Play on another device (like Spotify Connect). Open the output button on Now Playing (the Bluetooth / phone icon): a new list "Other VAME devices (same Wi-Fi)" shows your other phone / tablet running VAME. Tap one and the song moves there and keeps its place.
+- New: while the music plays on the other device, a small card at the top shows the song, Previous / Play-Pause / Next, volume - and +, and a "This device" button that brings the music back here.
+- New: change the song from your phone (tap any song, Next, Previous) and it changes on the other device. The seek bar and lyrics follow the other device too.
+- New: when the other device moves to its next song by itself, your phone follows it.
+- New: Settings > Standby: "Let other devices play here" switch (turn it off to stop others from controlling this device).
+- Note: no account and no internet server needed, only the same Wi-Fi. TV app comes next (step41), it will use this same feature.
 
 ## step39 (v0.20.3) - includes everything up to step38
 - New: Standby button on the tablet (left rail, under Library). It opens the same big Standby player as the phone sideways (cover left, clock, controls right). The side player and the rail are NOT removed: they stay under it and come back when you close Standby (Back, tap the grabber at the top, or swipe it down).

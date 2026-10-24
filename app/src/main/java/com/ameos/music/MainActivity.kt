@@ -82,6 +82,7 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= 33) need.add(Manifest.permission.POST_NOTIFICATIONS)
         if (Build.VERSION.SDK_INT >= 31) need.add(Manifest.permission.BLUETOOTH_CONNECT)
         if (need.isNotEmpty()) permLauncher.launch(need.toTypedArray())
+        vm.connectStart()
         setContent {
             AmeosTheme {
                 AmeosRoot(vm)
@@ -312,6 +313,7 @@ fun AmeosRoot(vm: MainViewModel) {
         if (vm.showImportDialog) {
             ImportDialog(vm)
         }
+        RemoteCard(vm, Modifier.align(Alignment.TopCenter))
     }
 }
 
