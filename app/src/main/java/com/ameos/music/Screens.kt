@@ -737,6 +737,10 @@ private fun StatCard(width: androidx.compose.ui.unit.Dp, label: String, bigText:
 @Composable
 fun LibraryScreen(vm: MainViewModel) {
     val ctx = androidx.compose.ui.platform.LocalContext.current
+    // signed in but the list is empty: load it when the Library opens
+    LaunchedEffect(vm.ytSignedIn) {
+        if (vm.ytSignedIn && vm.ytPlaylists.isEmpty()) vm.refreshYt()
+    }
     var showAll by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     val w = LocalConfiguration.current.screenWidthDp
     val big = w >= 600

@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -121,6 +122,12 @@ fun SettingsScreen(vm: MainViewModel) {
                 modifier = Modifier.padding(top = 6.dp)
             )
 
+            SectionLabel("Open app on")
+            QualityChips(vm.startTab, listOf("Home", "Explore", "Your type", "Library")) { vm.updateStartTab(it) }
+
+            SectionLabel("Tablet player width")
+            QualityChips(if (vm.panelWide) 1 else 0, listOf("Normal", "Wide")) { vm.setPanelWideOn(it == 1) }
+
             SectionLabel("Your taste")
             Row(
                 Modifier.fillMaxWidth().clickable { vm.showOnboarding = true },
@@ -216,6 +223,11 @@ fun SettingsScreen(vm: MainViewModel) {
                 modifier = Modifier.padding(top = 10.dp)
             )
             QualityChips(vm.lyricsSize, listOf("Small", "Medium", "Large")) { vm.updateLyricsSize(it) }
+            Text(
+                "Lyrics alignment", fontSize = 16.sp, color = Color.White,
+                modifier = Modifier.padding(top = 10.dp)
+            )
+            QualityChips(if (vm.lyricsLeft) 1 else 0, listOf("Centered", "Left")) { vm.setLyricsLeftOn(it == 1) }
             SwitchRow(
                 "Keep screen on in lyrics", "The screen stays awake while the lyrics are open.",
                 vm.keepScreenLyrics
@@ -236,6 +248,7 @@ fun SettingsScreen(vm: MainViewModel) {
                 "Check for updates",
                 if (vm.updateStatus.isEmpty()) "Looks for a newer VAME on GitHub" else vm.updateStatus
             ) { vm.checkUpdate(true) }
+            PlayProtectHelp()
 
             SectionLabel("About")
             Text(
@@ -305,7 +318,7 @@ private fun QualityChips(
     onPick: (Int) -> Unit
 ) {
     Row(
-        Modifier.fillMaxWidth().padding(top = 8.dp),
+        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(top = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         names.forEachIndexed { i, n ->

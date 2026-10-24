@@ -1,5 +1,6 @@
 package com.ameos.music
 
+import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -29,6 +30,16 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.StarBorder
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -41,120 +52,204 @@ fun artistKey(s: String): String = artistName(s).lowercase().filter { it.isLette
 // ---------------- ARTIST PAGE ----------------
 
 @Composable
+private fun ArtistRoundBtn(icon: ImageVector, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .size(60.dp)
+            .clip(CircleShape)
+            .background(Color(0x22FFFFFF))
+            .border(1.dp, Color(0x55FFFFFF), CircleShape)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(icon, null, tint = Color.White, modifier = Modifier.size(26.dp))
+    }
+}
+
+@Composable
 fun ArtistScreen(vm: MainViewModel) {
     BackHandler(enabled = vm.artistOpen) { vm.closeArtist() }
+    val ctx = LocalContext.current
     val name = vm.openArtistName
     val songs = vm.artistSongs
     val cover = songs.firstOrNull()?.cover
     val fav = vm.isArtistLiked(name)
+    val album = vm.artistAlbum
+    val tint = rememberCoverTint(cover)
+    val bg = lerp(tint, Color.Black, 0.62f)
+    val light = lerp(tint, Color.White, 0.78f)
+    val dark = lerp(tint, Color.Black, 0.75f)
 
     Box(
         Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(Pal.bgTop, Pal.bgMid, Pal.bgBot)
-                )
-            )
+            .background(bg)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
             ) { }
     ) {
-        Column(Modifier.fillMaxSize().statusBarsPadding()) {
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = { vm.closeArtist() }) {
-                    Icon(Icons.Filled.ArrowBack, null, tint = Color.White)
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 170.dp)
+        ) {
+            // big picture that fades into the page, with the name on top of the fade
+            item {
+                Box(Modifier.fillMaxWidth().height(480.dp)) {
+                    Cover(cover, Modifier.fillMaxSize(), RectangleShape, hiRes = true)
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.verticalGradient(
+                                    0.5f to Color.Transparent,
+                                    1f to bg
+                                )
+                            )
+                    )
+                    Text(
+                        name, fontSize = 44.sp, fontWeight = FontWeight.ExtraBold,
+                        color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(horizontal = 20.dp, vertical = 4.dp)
+                    )
                 }
-                Spacer(Modifier.weight(1f))
             }
-            LazyColumn(
-                Modifier.weight(1f),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 170.dp)
-            ) {
-                item {
-                    Column(
-                        Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+            // shuffle, big play, favourite star
+            item {
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 14.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    ArtistRoundBtn(Icons.Filled.Shuffle) { vm.playArtist(true) }
+                    Spacer(Modifier.width(26.dp))
+                    Box(
+                        Modifier
+                            .size(88.dp)
+                            .clip(CircleShape)
+                            .background(light)
+                            .clickable { vm.playArtist(false) },
+                        contentAlignment = Alignment.Center
                     ) {
-                        Cover(
-                            cover,
-                            Modifier
-                                .size(170.dp)
-                                .border(1.dp, Pal.accent.copy(alpha = 0.2f), CircleShape),
-                            CircleShape,
-                            hiRes = true
+                        Icon(
+                            Icons.Filled.PlayArrow, null, tint = dark,
+                            modifier = Modifier.size(48.dp)
                         )
-                        Spacer(Modifier.height(14.dp))
-                        Text(
-                            name, fontSize = 28.sp, fontWeight = FontWeight.Bold,
-                            color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            if (vm.artistLoading) "Loading songs..."
-                            else songs.size.toString() + " songs",
-                            fontSize = 13.sp, color = Pal.muted,
-                            modifier = Modifier.padding(top = 2.dp)
-                        )
-                        Spacer(Modifier.height(14.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Row(
-                                Modifier
-                                    .clip(RoundedCornerShape(50))
-                                    .background(if (fav) Pal.accent.copy(alpha = 0.53f) else Color(0x33FFFFFF))
-                                    .clickable { vm.toggleArtistLike(name, cover) }
-                                    .padding(horizontal = 16.dp, vertical = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    if (fav) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                                    null, tint = Color.White, modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    if (fav) "Liked" else "Like artist",
-                                    fontSize = 14.sp, color = Color.White
-                                )
-                            }
-                            Spacer(Modifier.width(14.dp))
-                            Row(
-                                Modifier.clip(RoundedCornerShape(50)).background(Color(0xFF5A1A1A)),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                IconButton(onClick = { vm.playArtist(true) }) {
-                                    Icon(Icons.Filled.Shuffle, null, tint = Color.White)
-                                }
-                                Box(
-                                    Modifier
-                                        .size(52.dp)
-                                        .clip(CircleShape)
-                                        .background(Color(0xFFD9381E))
-                                        .clickable { vm.playArtist(false) },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        Icons.Filled.PlayArrow, null, tint = Color.White,
-                                        modifier = Modifier.size(30.dp)
-                                    )
-                                }
-                            }
-                        }
+                    }
+                    Spacer(Modifier.width(26.dp))
+                    ArtistRoundBtn(if (fav) Icons.Filled.Star else Icons.Outlined.StarBorder) {
+                        vm.toggleArtistLike(name, cover)
                     }
                 }
-                item { SectionLabel("Songs") }
-                if (vm.artistLoading && songs.isEmpty()) {
-                    item {
-                        Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(
-                                Modifier.size(28.dp), color = Pal.accent, strokeWidth = 3.dp
+            }
+            // the artist's top album
+            if (album != null) {
+                item {
+                    val cardShape = RoundedCornerShape(32.dp)
+                    val saved = vm.isAlbumSaved(album)
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(start = 16.dp, end = 16.dp, top = 28.dp)
+                            .clip(cardShape)
+                            .background(Color(0x26FFFFFF))
+                            .border(1.dp, Color(0x33FFFFFF), cardShape)
+                            .clickable { vm.openAlbum(album) }
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Cover(album.cover, Modifier.size(104.dp), RoundedCornerShape(18.dp))
+                        Spacer(Modifier.width(16.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text("Popular album", fontSize = 14.sp, color = Color(0xCCFFFFFF))
+                            Text(
+                                album.title, fontSize = 20.sp, fontWeight = FontWeight.Bold,
+                                color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                artistName(album.artist), fontSize = 15.sp, color = Color(0xCCFFFFFF),
+                                maxLines = 1, overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        Box(
+                            Modifier
+                                .size(46.dp)
+                                .clip(CircleShape)
+                                .border(1.dp, Color(0x66FFFFFF), CircleShape)
+                                .clickable { vm.toggleSaveAlbum(album) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                if (saved) Icons.Filled.Check else Icons.Filled.Add,
+                                null, tint = Color.White, modifier = Modifier.size(24.dp)
                             )
                         }
                     }
                 }
-                items(songs) { s -> SongRow(s, vm, songs) }
+            }
+            item {
+                Text(
+                    "Top songs", fontSize = 30.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                    modifier = Modifier.padding(start = 16.dp, top = 30.dp, bottom = 10.dp)
+                )
+            }
+            if (vm.artistLoading && songs.isEmpty()) {
+                item {
+                    Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(
+                            Modifier.size(28.dp), color = Color.White, strokeWidth = 3.dp
+                        )
+                    }
+                }
+            }
+            items(songs) { s ->
+                Box(Modifier.padding(horizontal = 16.dp)) { SongRow(s, vm, songs) }
+            }
+        }
+        // back button and share, floating over the picture
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                Modifier
+                    .size(46.dp)
+                    .clip(CircleShape)
+                    .background(Color(0x66000000))
+                    .border(1.dp, Color(0x33FFFFFF), CircleShape)
+                    .clickable { vm.closeArtist() },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Filled.ArrowBack, null, tint = Color.White)
+            }
+            Box(
+                Modifier
+                    .size(46.dp)
+                    .clip(CircleShape)
+                    .background(Color(0x66000000))
+                    .border(1.dp, Color(0x33FFFFFF), CircleShape)
+                    .clickable {
+                        try {
+                            val send = Intent(Intent.ACTION_SEND)
+                                .setType("text/plain")
+                                .putExtra(Intent.EXTRA_TEXT, "Listening to " + name + " on VAME Music")
+                            ctx.startActivity(
+                                Intent.createChooser(send, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            )
+                        } catch (e: Exception) {
+                        }
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Filled.Share, null, tint = Color.White)
             }
         }
         MiniPlayer(

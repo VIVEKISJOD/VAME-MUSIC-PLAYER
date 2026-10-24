@@ -33,7 +33,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val player = PlayerHolder.get(app)
 
     // navigation: 0 Home, 1 Search, 2 Your Type, 3 Library
-    var tab by mutableIntStateOf(0)
+    var tab by mutableIntStateOf(Prefs.startTab(app))
     var showPlayer by mutableStateOf(false)
     var showSettings by mutableStateOf(false)
     var showLyrics by mutableStateOf(false)
@@ -935,6 +935,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val key = artistKey(clean)
         openArtistName = clean
         artistOpen = true
+        artistAlbum = null
         artistJob?.cancel()
         // songs we already know by this artist show first
         val known = ArrayList<Song>()
@@ -945,6 +946,19 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         artistSongs = known
         artistLoading = true
         artistJob = viewModelScope.launch {
+            // the artist's top album for the card on the artist page
+            launch {
+                try {
+                    val al = MusicRepo.searchAlbums(clean)
+                    artistAlbum = al.firstOrNull {
+                        val k = artistKey(it.artist)
+                        k.isNotEmpty() && (k.contains(key) || key.contains(k))
+                    } ?: al.firstOrNull()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                }
+            }
             try {
                 val all = ArrayList<Song>()
                 for (q in listOf(clean + " songs", clean + " best songs", clean + " hits")) {
@@ -1262,6 +1276,27 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setKeepScreenLyricsOn(on: Boolean) {
         keepScreenLyrics = on
         Prefs.setKeepScreenLyrics(getApplication<Application>(), on)
+    }
+
+    // start tab, lyrics alignment, tablet player width, artist page album card
+    var startTab by mutableIntStateOf(Prefs.startTab(app))
+    var lyricsLeft by mutableStateOf(Prefs.lyricsLeft(app))
+    var panelWide by mutableStateOf(Prefs.panelWide(app))
+    var artistAlbum by mutableStateOf<Album?>(null)
+
+    fun updateStartTab(i: Int) {
+        startTab = i
+        Prefs.setStartTab(getApplication<Application>(), i)
+    }
+
+    fun setLyricsLeftOn(on: Boolean) {
+        lyricsLeft = on
+        Prefs.setLyricsLeft(getApplication<Application>(), on)
+    }
+
+    fun setPanelWideOn(on: Boolean) {
+        panelWide = on
+        Prefs.setPanelWide(getApplication<Application>(), on)
     }
 
     private fun toast(msg: String) {

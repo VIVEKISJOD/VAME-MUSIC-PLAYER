@@ -187,6 +187,15 @@ object Prefs {
     fun keepScreenLyrics(c: Context): Boolean = sp(c).getBoolean("keepScreenLyrics", true)
     fun setKeepScreenLyrics(c: Context, v: Boolean) = sp(c).edit().putBoolean("keepScreenLyrics", v).apply()
 
+    fun startTab(c: Context): Int = sp(c).getInt("startTab", 0)
+    fun setStartTab(c: Context, v: Int) = sp(c).edit().putInt("startTab", v).apply()
+
+    fun lyricsLeft(c: Context): Boolean = sp(c).getBoolean("lyricsLeft", false)
+    fun setLyricsLeft(c: Context, v: Boolean) = sp(c).edit().putBoolean("lyricsLeft", v).apply()
+
+    fun panelWide(c: Context): Boolean = sp(c).getBoolean("panelWide", false)
+    fun setPanelWide(c: Context, v: Boolean) = sp(c).edit().putBoolean("panelWide", v).apply()
+
     // your name on the Library stats cards
     fun userName(c: Context): String = sp(c).getString("userName", "") ?: ""
     fun setUserName(c: Context, v: String) = sp(c).edit().putString("userName", v).apply()

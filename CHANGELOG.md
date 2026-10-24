@@ -1,4 +1,14 @@
-# VAME Music - full changelog (up to zip step25, v0.13.0, 24 Oct 2026)
+# VAME Music - full changelog (up to zip step26, v0.14.0, 24 Oct 2026)
+
+## step26 (v0.14.0)
+- Fixed: on a tablet the Now Playing panel on the right now fills the whole right side (touches the top, right and bottom edges, no empty corner).
+- Changed: artist page redesigned. Big picture at the top that fades into the page, round back and share buttons floating on it, big artist name, a row with shuffle, a big play button and a star (favourite artist), a "Popular album" glass card with a + (save album) button, then "Top songs".
+- New: Play Protect help text in the update dialog and in Settings > Updates (how to continue the install and how to turn the warning off). The warning itself comes from Google because VAME is not from the Play Store; the app cannot hide it.
+- New: Settings > Open app on (Home, Explore, Your type, Library).
+- New: Settings > Tablet player width (Normal or Wide).
+- New: Settings > Lyrics alignment (Centered or Left).
+- New: the YouTube Music row in Library loads by itself when you are signed in but the list is empty.
+- Settings chips can scroll sideways when they do not fit.
 
 ## step25 (v0.13.0)
 - Fixed: tablet logo (top left of the side rail) now changes together with the app icon you pick in Settings > App icon.

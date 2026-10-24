@@ -253,6 +253,7 @@ private fun LyricsList(vm: MainViewModel, pos: Long) {
         2 -> 40
         else -> 34
     }
+    val al = if (vm.lyricsLeft) TextAlign.Start else TextAlign.Center
     val active = if (synced) lines.indexOfLast { it.timeMs <= pos } else -1
     val state = rememberLazyListState()
     LaunchedEffect(active) {
@@ -303,13 +304,13 @@ private fun LyricsList(vm: MainViewModel, pos: Long) {
                 }
                 Text(
                     styled, fontSize = fs.sp, lineHeight = (fs + 8).sp,
-                    fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.Bold, textAlign = al,
                     modifier = mod
                 )
             } else {
                 Text(
                     text, fontSize = fs.sp, lineHeight = (fs + 8).sp,
-                    fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.Bold, textAlign = al,
                     color = Color.White.copy(alpha = a),
                     modifier = mod
                 )

@@ -340,17 +340,13 @@ private fun MainPages(vm: MainViewModel, tablet: Boolean, dockFolded: Boolean, o
 @Composable
 private fun PlayerPanel(vm: MainViewModel) {
     val w = LocalConfiguration.current.screenWidthDp
-    val panelW = (w * 0.36f).dp.coerceIn(360.dp, 470.dp)
-    val shape = RoundedCornerShape(30.dp)
+    val panelW = if (vm.panelWide) (w * 0.46f).dp.coerceIn(400.dp, 620.dp)
+    else (w * 0.36f).dp.coerceIn(360.dp, 470.dp)
+    // full height, touches the top, right and bottom edge (the player draws its own insets)
     Box(
         Modifier
             .width(panelW)
             .fillMaxHeight()
-            .statusBarsPadding()
-            .navigationBarsPadding()
-            .padding(top = 8.dp, end = 12.dp, bottom = 12.dp)
-            .clip(shape)
-            .border(1.dp, GlassEdge, shape)
     ) {
         NowPlayingScreen(vm)
     }

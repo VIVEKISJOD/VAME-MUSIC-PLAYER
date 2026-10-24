@@ -214,6 +214,18 @@ object Updater {
     }
 }
 
+// Play Protect warns about every app that is not from the Play Store. The code cannot hide that.
+@Composable
+fun PlayProtectHelp() {
+    Text(
+        "Play Protect warning? Tap More details, then Install anyway. To stop it for good: " +
+            "Play Store > your profile picture > Play Protect > gear icon > turn off " +
+            "Scan apps with Play Protect.",
+        fontSize = 12.sp,
+        modifier = Modifier.padding(top = 12.dp)
+    )
+}
+
 @Composable
 fun UpdateDialog(vm: MainViewModel) {
     val info = vm.updateInfo ?: return
@@ -234,6 +246,7 @@ fun UpdateDialog(vm: MainViewModel) {
                 if (info.notes.isNotBlank()) {
                     Text(info.notes.trim().take(800), fontSize = 13.sp, modifier = Modifier)
                 }
+                PlayProtectHelp()
                 if (busy) {
                     Text(
                         "Downloading... " + vm.updateProgress + "%",
