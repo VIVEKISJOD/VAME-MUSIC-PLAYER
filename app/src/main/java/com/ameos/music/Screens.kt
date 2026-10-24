@@ -236,8 +236,8 @@ fun HomeScreen(vm: MainViewModel) {
                 }
             }
         }
-        item { SectionLabel("Last played albums") }
-        item {
+        if (UiOpts.homeLastAlbums) item { SectionLabel("Last played albums") }
+        if (UiOpts.homeLastAlbums) item {
             val lw = if (LocalConfiguration.current.screenWidthDp >= 600) 220.dp else 176.dp
             LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 items(lastAlbums) { s ->
@@ -253,7 +253,7 @@ fun HomeScreen(vm: MainViewModel) {
             }
         }
         val picks = vm.recommended.drop(4).take(12)
-        if (picks.isNotEmpty()) {
+        if (UiOpts.homeQuick && picks.isNotEmpty()) {
             item { SectionLabel("Quick picks") }
             item {
                 val qw = if (LocalConfiguration.current.screenWidthDp >= 600) 220.dp else 176.dp
@@ -271,11 +271,11 @@ fun HomeScreen(vm: MainViewModel) {
                 }
             }
         }
-        for (sh in vm.genreShelves) {
+        for (sh in (if (UiOpts.homeShelves) vm.genreShelves else emptyList())) {
             item { SectionLabel(sh.name) }
             item { SongShelf(vm, sh.songs) }
         }
-        if (vm.likedArtists.isNotEmpty()) {
+        if (UiOpts.homeArtists && vm.likedArtists.isNotEmpty()) {
             item { SectionLabel("Your artists") }
             item {
                 val aw = if (LocalConfiguration.current.screenWidthDp >= 600) 130.dp else 104.dp
@@ -869,6 +869,12 @@ fun LibraryScreen(vm: MainViewModel) {
         vm.importStatus = ""
         vm.importedId = null
         vm.showImportDialog = true
+    })
+    tiles.add(LibTile("Spotify", "Connect, copy, merge", null, Icons.Filled.Cloud, listOf(Color(0xFF1F9D55), Color(0xFF0B4D2A))) {
+        SpotifyHub.open = true
+    })
+    tiles.add(LibTile("Move to another app", "Take your music with you", null, Icons.Filled.SwapHoriz, listOf(Color(0xFF3A5BD9), Color(0xFF7B3FD0))) {
+        DataMove.open = true
     })
     tiles.add(LibTile(
         "Liked Songs", vm.liked.size.toString() + " songs", null,

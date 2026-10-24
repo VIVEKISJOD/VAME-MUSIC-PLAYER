@@ -85,10 +85,10 @@ object AppIcons {
 
 // Settings > App icon: tap a logo to make it the home screen icon
 @Composable
-fun AppIconSection() {
+fun AppIconSection(label: Boolean = true) {
     val ctx = LocalContext.current
     var selected by remember { mutableStateOf(AppIcons.current(ctx)) }
-    SectionLabel("App icon")
+    if (label) SectionLabel("App icon")
     Row(
         Modifier
             .fillMaxWidth()

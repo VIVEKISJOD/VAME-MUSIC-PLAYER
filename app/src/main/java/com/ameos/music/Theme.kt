@@ -4,6 +4,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.graphics.Color
 
 val AmeosSeed = Color(0xFFC8283D)
@@ -48,9 +51,14 @@ fun AmeosTheme(content: @Composable () -> Unit) {
         outline = Pal.muted,
         error = Color(0xFFFFB4AB)
     )
-    MaterialTheme(
-        colorScheme = colors,
-        typography = Typography(),
-        content = content
-    )
+    // Settings > Interface size scales every dp / sp in the app
+    val base = LocalDensity.current
+    val scaled = Density(base.density * UiOpts.sizeScale, base.fontScale)
+    CompositionLocalProvider(LocalDensity provides scaled) {
+        MaterialTheme(
+            colorScheme = colors,
+            typography = Typography(),
+            content = content
+        )
+    }
 }

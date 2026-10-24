@@ -1,4 +1,18 @@
-# VAME Music - full changelog (up to zip step34, v0.18.2, 24 Oct 2026)
+# VAME Music - full changelog (up to zip step35, v0.19.0, 24 Oct 2026)
+
+## step35 (v0.19.0) - includes everything up to step34
+- New: Standby mode for phones. Turn the phone sideways while music plays and a big landscape player opens by itself: cover on the left, title, progress bar, rewind / play / forward, volume, lyrics, sound output, repeat and queue on the right, plus a small clock. Turn the phone back and it closes.
+- New: Standby lyrics. Tap the lyrics button (or the lyric line) in Standby: cover and song name on the left, synced lyrics on the right, back button bottom right. Settings > Player > Standby opens with: Player or Lyrics.
+- New: Standby can keep the screen on and hide the status bar (both have a switch).
+- Changed: a phone held sideways no longer gets the tablet side rail. Only screens with a short side of 600dp or more count as tablets.
+- New: the tablet small box is bigger (156dp), shows the song name and has previous / play / next buttons.
+- New: Settings > Player > Tablet small player: Box or Pill. The pill is a medium bar (not full width) in the middle of the bottom. Pill width: Compact, Medium, Wide.
+- New: the music (pill or box) stays on top of Settings so you can pause or skip while changing something. Tap it to leave Settings and open the player.
+- New: Settings has a new look: one glass card per group with a round icon, wider cards on tablets, nicer switches.
+- New: more customisation: Interface size (Small / Normal / Large), Glass strength, bottom bar names on/off, Calmer animations, and Home shelves on/off (Last played albums, Quick picks, Genre shelves, Your artists).
+- New: Spotify page (Library > Spotify, or Settings > Spotify). Connect with the official Spotify login (one-time free app on developer.spotify.com, paste its Client ID). Listen inside VAME with Spotify's web player, copy a VAME playlist to a new Spotify playlist, merge a VAME playlist into an existing Spotify playlist, copy a Spotify playlist into VAME.
+- New: Move to another app (Library or Settings). Moves playlists, liked songs, followed artists and saved albums straight to Spotify, playlists and liked songs to YouTube Music, or saves a CSV list (for other apps and transfer websites) and a VAME backup file. A backup file can be restored.
+- Note: Spotify rules (2026): the app owner needs Premium and only accounts added in the dashboard can connect. The web player needs Premium and may not play on every phone (protected audio), there is a button to open the Spotify app instead.
 
 ## step34 (v0.18.2) - includes step28 fix and steps 29 to 33
 - Fixed: the update window looked stuck on "Downloading..." because the percentage was hidden under the long notes. Progress now sits at the top of the window, always visible.

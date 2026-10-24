@@ -68,6 +68,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Pal.load(applicationContext)
+        UiOpts.load(applicationContext)
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(AndroidColor.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.dark(AndroidColor.TRANSPARENT)
@@ -106,6 +107,29 @@ fun AmeosRoot(vm: MainViewModel) {
     BackHandler(enabled = vm.tab != 0) { vm.tab = 0 }
     if (vm.showUpdate && vm.updateInfo != null) UpdateDialog(vm)
     val tablet = isTabletLandscape()
+    val phoneLand = isPhoneLandscape()
+    // Standby: a phone turned sideways while music plays opens the big landscape player by itself,
+    // and closes it again when the phone is turned back (only if it was opened this way)
+    LaunchedEffect(vm.showPlayer) {
+        if (!vm.showPlayer) UiOpts.standbyByRotate = false
+    }
+    LaunchedEffect(phoneLand) {
+        if (phoneLand) {
+            val busy = vm.showSettings || vm.showOnboarding || vm.showLogin || vm.recapOpen ||
+                SpotifyHub.open || DataMove.open
+            if (UiOpts.standby && vm.current != null && vm.isPlaying && !vm.showPlayer &&
+                !vm.showLyrics && !busy
+            ) {
+                vm.showPlayer = true
+                if (UiOpts.standbyLyrics) vm.showLyrics = true
+                UiOpts.standbyByRotate = true
+            }
+        } else if (UiOpts.standbyByRotate) {
+            UiOpts.standbyByRotate = false
+            vm.showLyrics = false
+            vm.showPlayer = false
+        }
+    }
     // scroll down = bottom bar folds into one slim row, scroll up = opens again
     var dockFolded by remember { mutableStateOf(false) }
     LaunchedEffect(vm.tab) { dockFolded = false }
@@ -158,7 +182,6 @@ fun AmeosRoot(vm: MainViewModel) {
                         PlayerPanel(vm)
                     }
                 }
-                TabletMiniBox(vm)
                 // lyrics on a tablet: full screen, cover + name on the left, lyrics on the right
                 AnimatedVisibility(
                     visible = vm.showLyrics && vm.current != null,
@@ -176,14 +199,15 @@ fun AmeosRoot(vm: MainViewModel) {
                     visible = vm.showPlayer && vm.current != null,
                     originX = 0.5f, originY = 0.92f, startScaleX = 0.92f, startScaleY = 0.08f
                 ) {
-                    NowPlayingScreen(vm)
+                    if (phoneLand) StandbyPlayer(vm) else NowPlayingScreen(vm)
                 }
                 // lyrics grow from the bottom left (where the lyrics button is) and shrink back
                 MorphLayer(
                     visible = vm.showLyrics && vm.current != null,
                     originX = 0.15f, originY = 0.95f, startScaleX = 0.3f, startScaleY = 0.2f
                 ) {
-                    LyricsScreen(vm)
+                    // sideways phone: cover + title on the left, lyrics on the right
+                    if (phoneLand) TabletLyricsScreen(vm) else LyricsScreen(vm)
                 }
             }
             MorphLayer(
@@ -191,6 +215,27 @@ fun AmeosRoot(vm: MainViewModel) {
                 originX = 0.92f, originY = 0.04f, startScaleX = 0.25f, startScaleY = 0.25f
             ) {
                 SettingsScreen(vm)
+            }
+            // the music stays on top of Settings (pill or box), so it can be stopped from there
+            if (tablet) {
+                TabletMini(vm)
+            } else {
+                AnimatedVisibility(
+                    visible = vm.showSettings && vm.current != null,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                    enter = slideInVertically(tween(300)) { it } + fadeIn(tween(200)),
+                    exit = slideOutVertically(tween(240)) { it } + fadeOut(tween(160))
+                ) {
+                    MiniPlayer(
+                        vm,
+                        Modifier.navigationBarsPadding().padding(horizontal = 16.dp, vertical = 10.dp),
+                        force = true,
+                        onOpen = {
+                            vm.showSettings = false
+                            vm.showPlayer = true
+                        }
+                    )
+                }
             }
             MorphLayer(
                 visible = vm.recapOpen,
@@ -210,6 +255,18 @@ fun AmeosRoot(vm: MainViewModel) {
                 originX = 0.5f, originY = 0.7f, startScaleX = 0.7f, startScaleY = 0.7f
             ) {
                 LoginScreen(vm)
+            }
+            MorphLayer(
+                visible = SpotifyHub.open,
+                originX = 0.5f, originY = 0.6f, startScaleX = 0.8f, startScaleY = 0.8f
+            ) {
+                SpotifyScreen(vm)
+            }
+            MorphLayer(
+                visible = DataMove.open,
+                originX = 0.5f, originY = 0.6f, startScaleX = 0.8f, startScaleY = 0.8f
+            ) {
+                SwitchAppScreen(vm)
             }
         }
         QuickSheet(vm)
@@ -356,9 +413,12 @@ private fun MorphLayer(
     startScaleY: Float,
     content: @Composable () -> Unit
 ) {
+    val morphSpec: androidx.compose.animation.core.AnimationSpec<Float> =
+        if (UiOpts.reduceMotion) androidx.compose.animation.core.snap()
+        else spring(dampingRatio = 0.88f, stiffness = 300f)
     val p by animateFloatAsState(
         if (visible) 1f else 0f,
-        spring(dampingRatio = 0.88f, stiffness = 300f),
+        morphSpec,
         label = "morph"
     )
     if (visible || p > 0.002f) {

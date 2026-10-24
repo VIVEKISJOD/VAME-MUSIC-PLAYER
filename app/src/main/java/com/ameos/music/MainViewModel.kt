@@ -1670,4 +1670,53 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (isAlbumSaved(a)) savedAlbums.removeAll { it.url == a.url } else savedAlbums.add(0, a)
         Prefs.saveSavedAlbums(getApplication<Application>(), savedAlbums.toList())
     }
+
+    // ---------- bulk helpers (Spotify copy, backup restore) ----------
+
+    // a new VAME playlist from a list of songs, returns its id
+    fun addImportedPlaylist(name: String, songs: List<Song>, syncYt: Boolean = true): String {
+        var id = System.currentTimeMillis().toString() + playlists.size.toString()
+        while (playlists.any { it.id == id }) id += "x"
+        playlists.add(Playlist(id, name.take(40).ifBlank { "Imported playlist" }, null, songs.distinctBy { it.url }))
+        savePlaylists()
+        if (syncYt) ytPush(id)
+        return id
+    }
+
+    // adds songs to Liked songs (only the ones that are not there yet), returns how many were new
+    fun addLikedBulk(songs: List<Song>): Int {
+        var n = 0
+        for (s in songs.reversed()) {
+            if (!isLiked(s)) {
+                liked.add(0, s)
+                n++
+            }
+        }
+        if (n > 0) Prefs.saveLikes(getApplication<Application>(), liked.toList())
+        return n
+    }
+
+    fun addLikedArtistsBulk(list: List<ArtistItem>): Int {
+        var n = 0
+        for (a in list) {
+            if (a.name.isNotBlank() && !isArtistLiked(a.name)) {
+                likedArtists.add(0, ArtistItem(artistName(a.name), a.cover))
+                n++
+            }
+        }
+        if (n > 0) Prefs.saveLikedArtists(getApplication<Application>(), likedArtists.toList())
+        return n
+    }
+
+    fun addSavedAlbumsBulk(list: List<Album>): Int {
+        var n = 0
+        for (a in list) {
+            if (!isAlbumSaved(a)) {
+                savedAlbums.add(0, a)
+                n++
+            }
+        }
+        if (n > 0) Prefs.saveSavedAlbums(getApplication<Application>(), savedAlbums.toList())
+        return n
+    }
 }

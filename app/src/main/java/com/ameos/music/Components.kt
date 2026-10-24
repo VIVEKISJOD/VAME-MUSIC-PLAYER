@@ -124,11 +124,20 @@ fun Modifier.glass(shape: Shape, top: Color = Pal.glassTop, bottom: Color = Pal.
         .border(1.dp, GlassEdge, shape)
 
 // light glass fill for cards, rows, round buttons (put .clip(shape) before it, add a border if wanted)
-fun Modifier.glassFill(): Modifier =
-    if (Pal.mode == 1) this.background(Pal.surface)
-    else this
-        .background(Brush.verticalGradient(listOf(Color(0x2EFFFFFF), Color(0x14FFFFFF))))
+fun Modifier.glassFill(): Modifier {
+    if (Pal.mode == 1) return this.background(Pal.surface)
+    // Settings > Glass strength: soft / normal / strong
+    val k = when (UiOpts.glass) {
+        0 -> 0.55f
+        2 -> 1.6f
+        else -> 1f
+    }
+    val a1 = (0x2E / 255f * k).coerceIn(0f, 1f)
+    val a2 = (0x14 / 255f * k).coerceIn(0f, 1f)
+    return this
+        .background(Brush.verticalGradient(listOf(Color.White.copy(alpha = a1), Color.White.copy(alpha = a2))))
         .background(GlassSheen)
+}
 
 // glass for sheets and dialogs: dark glass with a sheen and a light edge
 fun Modifier.glassPanel(shape: Shape): Modifier =
@@ -267,10 +276,16 @@ fun SongRow(song: Song, vm: MainViewModel, list: List<Song>) {
 }
 
 @Composable
-fun MiniPlayer(vm: MainViewModel, modifier: Modifier = Modifier) {
+fun MiniPlayer(
+    vm: MainViewModel,
+    modifier: Modifier = Modifier,
+    force: Boolean = false,
+    onOpen: (() -> Unit)? = null
+) {
     val song = vm.current ?: return
     // tablet held sideways: the side player and the small floating box replace the pill on every page
-    if (isTabletLandscape()) return
+    // (force = true is used by the tablet pill and by the pill on top of Settings)
+    if (!force && isTabletLandscape()) return
     val shape = RoundedCornerShape(32.dp)
     val enter = remember { Animatable(0f) }
     LaunchedEffect(Unit) { enter.animateTo(1f, spring(dampingRatio = 0.8f, stiffness = 300f)) }
@@ -284,7 +299,14 @@ fun MiniPlayer(vm: MainViewModel, modifier: Modifier = Modifier) {
             }
             .pressScale(0.97f)
             .clip(shape)
-            .clickable { vm.showPlayer = !vm.showPlayer }
+            .clickable {
+                val go = onOpen
+                if (go != null) {
+                    go()
+                } else {
+                    vm.showPlayer = !vm.showPlayer
+                }
+            }
             .background(Brush.horizontalGradient(listOf(Pal.miniA, Pal.miniB)))
             .glassFill()
             .border(1.dp, Brush.verticalGradient(listOf(Pal.accent.copy(alpha = 0.4f), Pal.accent.copy(alpha = 0.13f))), shape)
@@ -364,11 +386,13 @@ fun BottomBar(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modif
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Icon(item.icon, null, tint = col, modifier = Modifier.size(22.dp))
-                Text(
-                    item.label, fontSize = 11.sp, color = col,
-                    fontWeight = if (on) FontWeight.Bold else FontWeight.Normal
-                )
+                Icon(item.icon, null, tint = col, modifier = Modifier.size(if (UiOpts.tabLabels) 22.dp else 26.dp))
+                if (UiOpts.tabLabels) {
+                    Text(
+                        item.label, fontSize = 11.sp, color = col,
+                        fontWeight = if (on) FontWeight.Bold else FontWeight.Normal
+                    )
+                }
             }
         }
     }

@@ -148,7 +148,7 @@ private fun Modifier.swipeDown(onClose: () -> Unit): Modifier = this.pointerInpu
 
 // Thick rounded bar (progress + volume). Gets a little thicker while the finger is on it.
 @Composable
-private fun Scrubber(
+internal fun Scrubber(
     fraction: Float,
     onStart: () -> Unit,
     onChange: (Float) -> Unit,
@@ -216,7 +216,7 @@ private fun Scrubber(
 
 // Real phone volume (music stream), speaker icons on both sides.
 @Composable
-private fun VolumeBar() {
+internal fun VolumeBar() {
     val ctx = LocalContext.current
     val am = remember { ctx.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
     val maxV = remember { am.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1) }
@@ -248,7 +248,7 @@ private fun VolumeBar() {
 }
 
 @Composable
-private fun BarIcon(icon: ImageVector, tint: Color = Color(0xDDFFFFFF), onClick: () -> Unit) {
+internal fun BarIcon(icon: ImageVector, tint: Color = Color(0xDDFFFFFF), onClick: () -> Unit) {
     Box(
         Modifier
             .size(52.dp)
@@ -613,7 +613,7 @@ private fun queueKeys(q: List<Song>): List<String> {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun QueuePanel(vm: MainViewModel, onClose: () -> Unit) {
+internal fun QueuePanel(vm: MainViewModel, heightFrac: Float = 0.62f, onClose: () -> Unit) {
     val ctx = LocalContext.current
     val haptic = LocalHapticFeedback.current
     val itemPx = with(LocalDensity.current) { 60.dp.toPx() }
@@ -624,7 +624,7 @@ private fun QueuePanel(vm: MainViewModel, onClose: () -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
-            .fillMaxHeight(0.62f)
+            .fillMaxHeight(heightFrac)
             .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
             .background(Color(0xF2200B0F))
             .navigationBarsPadding()

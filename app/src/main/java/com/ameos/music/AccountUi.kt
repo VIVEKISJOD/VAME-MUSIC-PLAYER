@@ -165,8 +165,8 @@ private fun AccButton(text: String, onClick: () -> Unit) {
 
 // Settings > Account (optional, never part of onboarding)
 @Composable
-fun AccountSection(vm: MainViewModel) {
-    SectionLabel("Account (optional)")
+fun AccountSection(vm: MainViewModel, label: Boolean = true) {
+    if (label) SectionLabel("Account (optional)")
     if (!vm.ytSignedIn) {
         Text(
             "Sign in with Google to see your YouTube Music playlists and liked songs inside " +

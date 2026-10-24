@@ -10,16 +10,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -36,6 +33,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
+private fun SettingsField(value: String, onChange: (String) -> Unit) {
+    TextField(
+        value = value,
+        onValueChange = onChange,
+        singleLine = true,
+        shape = RoundedCornerShape(20.dp),
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = Color(0x33FFFFFF),
+            unfocusedContainerColor = Color(0x33FFFFFF),
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent
+        ),
+        modifier = Modifier.fillMaxWidth()
+    )
+}
+
+@Composable
 fun SettingsScreen(vm: MainViewModel) {
     BackHandler { vm.showSettings = false }
     val ctx = LocalContext.current
@@ -43,6 +57,8 @@ fun SettingsScreen(vm: MainViewModel) {
         vm.refreshCacheSize()
         vm.refreshDownloadBytes()
     }
+    val tabletNow = isTabletLandscape()
+    val phoneNow = isPhoneLandscape()
     Box(
         Modifier
             .fillMaxSize()
@@ -59,6 +75,8 @@ fun SettingsScreen(vm: MainViewModel) {
     ) {
         Column(
             Modifier
+                .align(Alignment.TopCenter)
+                .widthIn(max = 760.dp)
                 .fillMaxSize()
                 .statusBarsPadding()
                 .navigationBarsPadding()
@@ -66,305 +84,323 @@ fun SettingsScreen(vm: MainViewModel) {
                 .verticalScroll(rememberScrollState())
         ) {
             Row(
-                Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp),
+                Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { vm.showSettings = false }) {
                     Icon(Icons.Filled.ArrowBack, null, tint = Color.White)
                 }
-                Text(
-                    "Settings", fontSize = 34.sp, fontWeight = FontWeight.SemiBold,
-                    color = Color.White
-                )
-            }
-
-            AppearanceSection()
-            AppIconSection()
-            AccountSection(vm)
-
-            SectionLabel("Home title")
-            TextField(
-                value = vm.title,
-                onValueChange = { vm.updateTitle(it) },
-                singleLine = true,
-                shape = RoundedCornerShape(20.dp),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color(0x33FFFFFF),
-                    unfocusedContainerColor = Color(0x33FFFFFF),
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
-            Text(
-                "Whatever you type replaces the big word at the top of Home.",
-                fontSize = 12.sp, color = Pal.muted,
-                modifier = Modifier.padding(top = 6.dp)
-            )
-
-            SectionLabel("Your name")
-            TextField(
-                value = vm.userName,
-                onValueChange = { vm.updateUserName(it) },
-                singleLine = true,
-                shape = RoundedCornerShape(20.dp),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color(0x33FFFFFF),
-                    unfocusedContainerColor = Color(0x33FFFFFF),
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
-            Text(
-                "Shown on your Library stats cards.",
-                fontSize = 12.sp, color = Pal.muted,
-                modifier = Modifier.padding(top = 6.dp)
-            )
-
-            SectionLabel("Open app on")
-            QualityChips(vm.startTab, listOf("Home", "Explore", "Your type", "Library")) { vm.updateStartTab(it) }
-
-            SectionLabel("Home songs language")
-            Text(
-                "Home shelves are built from the genres you picked. Choose which languages they use.",
-                fontSize = 12.sp, color = Pal.muted, modifier = Modifier.padding(bottom = 8.dp)
-            )
-            QualityChips(vm.homeLang, listOf("English + Hindi", "English", "Hindi")) {
-                vm.chooseHomeLang(it)
-            }
-            SectionLabel("Artist page")
-            Text(
-                "Picture", fontSize = 16.sp, color = Color.White,
-                modifier = Modifier.padding(top = 2.dp)
-            )
-            QualityChips(if (vm.artistLatestPic) 0 else 1, listOf("Latest release", "Song cover")) {
-                vm.chooseArtistLatestPic(it == 0)
-            }
-            SwitchRow(
-                "Popular album card", "Shows the artist's top album under the play buttons.",
-                vm.artistAlbumCardOn
-            ) { vm.chooseArtistAlbumCard(it) }
-            Text(
-                "Top songs shown", fontSize = 16.sp, color = Color.White,
-                modifier = Modifier.padding(top = 10.dp)
-            )
-            QualityChips(vm.artistTop, listOf("10", "25", "All")) { vm.updateArtistTop(it) }
-
-            SectionLabel("Tablet player width")
-            QualityChips(if (vm.panelWide) 1 else 0, listOf("Normal", "Wide")) { vm.setPanelWideOn(it == 1) }
-
-            SectionLabel("Your taste")
-            Row(
-                Modifier.fillMaxWidth().clickable { vm.showOnboarding = true },
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text("Change music taste", fontSize = 16.sp, color = Color.White)
+                Column {
                     Text(
-                        if (vm.genres.isEmpty()) "Pick the types of songs you like."
-                        else vm.genres.joinToString(", "),
+                        "Settings", fontSize = 34.sp, fontWeight = FontWeight.SemiBold,
+                        color = Color.White
+                    )
+                    Text(
+                        "VAME " + Updater.currentVersion(ctx) +
+                            (if (vm.current != null) " - your music stays on at the bottom" else ""),
                         fontSize = 12.sp, color = Pal.muted
                     )
                 }
             }
 
-            SectionLabel("Playback")
-            SwitchRow(
-                "Endless queue", "When the queue ends, keep adding similar songs.",
-                vm.endless
-            ) { vm.setEndlessOn(it) }
-            SwitchRow(
-                "Stop when removed from recents", "Swipe the app away and the music stops completely.",
-                vm.stopOnSwipe
-            ) { vm.updateStopOnSwipe(it) }
-            Text(
-                "Audio quality", fontSize = 16.sp, color = Color.White,
-                modifier = Modifier.padding(top = 10.dp)
-            )
-            Text(
-                "Lower quality uses less data. Applies from the next song.",
-                fontSize = 12.sp, color = Pal.muted
-            )
-            QualityChips(vm.quality) { vm.updateQuality(it) }
+            // ---------------- look ----------------
+            KitHeader(Icons.Filled.Palette, "Look", "Colours, glass, icon and size")
+            KitCard {
+                AppearanceSection(false)
+            }
+            Spacer(Modifier.height(10.dp))
+            KitCard {
+                AppIconSection(false)
+            }
+            Spacer(Modifier.height(10.dp))
+            KitCard {
+                KitLabel("Interface size", "Makes everything in the app a little smaller or bigger.")
+                KitChips(UiOpts.uiSize, listOf("Small", "Normal", "Large")) {
+                    UiOpts.uiSize = it
+                    UiOpts.save(ctx)
+                }
+                KitDivider()
+                KitLabel("Glass strength", "How see-through the cards and buttons are (colour glass modes).")
+                KitChips(UiOpts.glass, listOf("Soft", "Normal", "Strong")) {
+                    UiOpts.glass = it
+                    UiOpts.save(ctx)
+                }
+                KitDivider()
+                KitSwitch(
+                    "Bottom bar names", "Show the word under each icon in the bottom bar.",
+                    UiOpts.tabLabels
+                ) {
+                    UiOpts.tabLabels = it
+                    UiOpts.save(ctx)
+                }
+                KitSwitch(
+                    "Calmer animations", "Screens open at once instead of growing and sliding.",
+                    UiOpts.reduceMotion
+                ) {
+                    UiOpts.reduceMotion = it
+                    UiOpts.save(ctx)
+                }
+            }
 
-            SwitchRow(
-                "Keep player in notification",
-                "Keeps the notification / Xiaomi island when paused for a long time.",
-                vm.keepAlive
-            ) { vm.setKeepAliveOn(it) }
-            ActionRow(
-                "Allow background use (battery)",
-                "Stops the phone from closing the player. Tap, then choose Allow."
-            ) {
-                try {
-                    val i = Intent(
-                        android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                        Uri.parse("package:" + ctx.packageName)
-                    )
-                    ctx.startActivity(i)
-                } catch (e: Exception) {
+            // ---------------- player ----------------
+            KitHeader(Icons.Filled.MusicNote, "Player", "Small player, tablet and Standby")
+            KitCard {
+                KitLabel(
+                    "Tablet small player" + (if (tabletNow) "" else " (turn the tablet sideways to see it)"),
+                    "Box: a draggable cover box with previous / play / next. Pill: a medium bar at the bottom."
+                )
+                KitChips(if (UiOpts.tabletPill) 1 else 0, listOf("Box", "Pill")) {
+                    UiOpts.tabletPill = it == 1
+                    UiOpts.save(ctx)
+                }
+                KitLabel("Pill width")
+                KitChips(UiOpts.pillWidth, listOf("Compact", "Medium", "Wide")) {
+                    UiOpts.pillWidth = it
+                    UiOpts.save(ctx)
+                }
+                KitDivider()
+                KitLabel("Tablet player width")
+                KitChips(if (vm.panelWide) 1 else 0, listOf("Normal", "Wide")) { vm.setPanelWideOn(it == 1) }
+                KitDivider()
+                KitSwitch(
+                    "Standby mode",
+                    "Turn the phone sideways while music plays and the big landscape player opens by itself. " +
+                        "Turn it back and it closes." + (if (phoneNow) " (on now)" else ""),
+                    UiOpts.standby
+                ) {
+                    UiOpts.standby = it
+                    UiOpts.save(ctx)
+                }
+                KitLabel("Standby opens with")
+                KitChips(if (UiOpts.standbyLyrics) 1 else 0, listOf("Player", "Lyrics")) {
+                    UiOpts.standbyLyrics = it == 1
+                    UiOpts.save(ctx)
+                }
+                KitSwitch(
+                    "Keep screen on in Standby", "The screen stays awake while the landscape player is open.",
+                    UiOpts.standbyAwake
+                ) {
+                    UiOpts.standbyAwake = it
+                    UiOpts.save(ctx)
+                }
+                KitSwitch(
+                    "Hide status bar in Standby", "Swipe from the edge to bring it back for a moment.",
+                    UiOpts.standbyHideBars
+                ) {
+                    UiOpts.standbyHideBars = it
+                    UiOpts.save(ctx)
+                }
+            }
+
+            // ---------------- home ----------------
+            KitHeader(Icons.Filled.Home, "Home and you", "What Home shows")
+            KitCard {
+                KitLabel("Home title", "Whatever you type replaces the big word at the top of Home.")
+                Spacer(Modifier.height(6.dp))
+                SettingsField(vm.title) { vm.updateTitle(it) }
+                Spacer(Modifier.height(10.dp))
+                KitLabel("Your name", "Shown on your Library stats cards.")
+                Spacer(Modifier.height(6.dp))
+                SettingsField(vm.userName) { vm.updateUserName(it) }
+                KitDivider()
+                KitLabel("Open app on")
+                KitChips(vm.startTab, listOf("Home", "Explore", "Your type", "Library")) { vm.updateStartTab(it) }
+                KitDivider()
+                KitLabel("Home songs language", "Home shelves are built from the genres you picked.")
+                KitChips(vm.homeLang, listOf("English + Hindi", "English", "Hindi")) { vm.chooseHomeLang(it) }
+                KitDivider()
+                KitSwitch("Last played albums", "Shelf with what you played before.", UiOpts.homeLastAlbums) {
+                    UiOpts.homeLastAlbums = it
+                    UiOpts.save(ctx)
+                }
+                KitSwitch("Quick picks", "A shelf of extra songs to tap.", UiOpts.homeQuick) {
+                    UiOpts.homeQuick = it
+                    UiOpts.save(ctx)
+                }
+                KitSwitch("Genre shelves", "One shelf for each genre you picked.", UiOpts.homeShelves) {
+                    UiOpts.homeShelves = it
+                    UiOpts.save(ctx)
+                }
+                KitSwitch("Your artists", "Round pictures of the artists you liked.", UiOpts.homeArtists) {
+                    UiOpts.homeArtists = it
+                    UiOpts.save(ctx)
+                }
+                KitDivider()
+                KitAction(
+                    "Change music taste",
+                    if (vm.genres.isEmpty()) "Pick the types of songs you like." else vm.genres.joinToString(", ")
+                ) { vm.showOnboarding = true }
+            }
+
+            KitHeader(Icons.Filled.Person, "Artist page")
+            KitCard {
+                KitLabel("Picture")
+                KitChips(if (vm.artistLatestPic) 0 else 1, listOf("Latest release", "Song cover")) {
+                    vm.chooseArtistLatestPic(it == 0)
+                }
+                KitSwitch(
+                    "Popular album card", "Shows the artist's top album under the play buttons.",
+                    vm.artistAlbumCardOn
+                ) { vm.chooseArtistAlbumCard(it) }
+                KitLabel("Top songs shown")
+                KitChips(vm.artistTop, listOf("10", "25", "All")) { vm.updateArtistTop(it) }
+            }
+
+            // ---------------- playback ----------------
+            KitHeader(Icons.Filled.PlayArrow, "Playback")
+            KitCard {
+                KitSwitch(
+                    "Endless queue", "When the queue ends, keep adding similar songs.",
+                    vm.endless
+                ) { vm.setEndlessOn(it) }
+                KitSwitch(
+                    "Stop when removed from recents", "Swipe the app away and the music stops completely.",
+                    vm.stopOnSwipe
+                ) { vm.updateStopOnSwipe(it) }
+                KitSwitch(
+                    "Keep player in notification",
+                    "Keeps the notification / Xiaomi island when paused for a long time.",
+                    vm.keepAlive
+                ) { vm.setKeepAliveOn(it) }
+                KitDivider()
+                KitLabel("Audio quality", "Lower quality uses less data. Applies from the next song.")
+                KitChips(vm.quality, listOf("High", "Normal", "Data saver")) { vm.updateQuality(it) }
+                KitDivider()
+                KitAction(
+                    "Allow background use (battery)",
+                    "Stops the phone from closing the player. Tap, then choose Allow."
+                ) {
                     try {
-                        val i2 = Intent(
-                            android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        val i = Intent(
+                            android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
                             Uri.parse("package:" + ctx.packageName)
                         )
-                        ctx.startActivity(i2)
-                    } catch (e2: Exception) {
+                        ctx.startActivity(i)
+                    } catch (e: Exception) {
+                        try {
+                            val i2 = Intent(
+                                android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                Uri.parse("package:" + ctx.packageName)
+                            )
+                            ctx.startActivity(i2)
+                        } catch (e2: Exception) {
+                        }
                     }
                 }
             }
 
-            SectionLabel("Downloads")
-            ActionRow(
-                "Open Downloads",
-                vm.downloads.size.toString() + " songs - " +
-                    String.format("%.1f MB", vm.downloadBytes / 1048576.0)
-            ) {
-                vm.showSettings = false
-                vm.downloadsOpen = true
+            KitHeader(Icons.Filled.Subject, "Songs and lyrics")
+            KitCard {
+                KitSwitch(
+                    "Official songs only",
+                    "Hides remixes, slowed + reverb, lofi, covers and lyrics-channel uploads.",
+                    vm.officialOnly
+                ) { vm.setOfficialOnlyOn(it) }
+                KitSwitch(
+                    "Hinglish lyrics", "Shows Hindi lyrics written in English letters.",
+                    vm.hinglish
+                ) { vm.setHinglishOn(it) }
+                KitDivider()
+                KitLabel("Lyrics size")
+                KitChips(vm.lyricsSize, listOf("Small", "Medium", "Large")) { vm.updateLyricsSize(it) }
+                KitLabel("Lyrics alignment")
+                KitChips(if (vm.lyricsLeft) 1 else 0, listOf("Centered", "Left")) { vm.setLyricsLeftOn(it == 1) }
+                KitSwitch(
+                    "Keep screen on in lyrics", "The screen stays awake while the lyrics are open.",
+                    vm.keepScreenLyrics
+                ) { vm.setKeepScreenLyricsOn(it) }
             }
-            Text(
-                "Download quality", fontSize = 16.sp, color = Color.White,
-                modifier = Modifier.padding(top = 10.dp)
-            )
-            Text(
-                "Applies to new downloads.",
-                fontSize = 12.sp, color = Pal.muted
-            )
-            QualityChips(vm.downloadQuality) { vm.updateDownloadQuality(it) }
 
-            SectionLabel("Songs")
-            SwitchRow(
-                "Official songs only",
-                "Hides remixes, slowed + reverb, lofi, covers and lyrics-channel uploads.",
-                vm.officialOnly
-            ) { vm.setOfficialOnlyOn(it) }
-            SwitchRow(
-                "Hinglish lyrics", "Shows Hindi lyrics written in English letters.",
-                vm.hinglish
-            ) { vm.setHinglishOn(it) }
-            Text(
-                "Lyrics size", fontSize = 16.sp, color = Color.White,
-                modifier = Modifier.padding(top = 10.dp)
-            )
-            QualityChips(vm.lyricsSize, listOf("Small", "Medium", "Large")) { vm.updateLyricsSize(it) }
-            Text(
-                "Lyrics alignment", fontSize = 16.sp, color = Color.White,
-                modifier = Modifier.padding(top = 10.dp)
-            )
-            QualityChips(if (vm.lyricsLeft) 1 else 0, listOf("Centered", "Left")) { vm.setLyricsLeftOn(it == 1) }
-            SwitchRow(
-                "Keep screen on in lyrics", "The screen stays awake while the lyrics are open.",
-                vm.keepScreenLyrics
-            ) { vm.setKeepScreenLyricsOn(it) }
-
-            SectionLabel("Storage")
-            ActionRow(
-                "Clear cache",
-                if (vm.cacheSize.isEmpty()) "Cached covers and song links"
-                else vm.cacheSize + " used by covers and song links"
-            ) { vm.clearCache() }
-            ActionRow(
-                "Clear listening history", "Resets Last played and Your Type suggestions."
-            ) { vm.clearHistory() }
-
-            SectionLabel("Updates")
-            ActionRow(
-                "Check for updates",
-                if (vm.updateStatus.isEmpty()) "Looks for a newer VAME on GitHub" else vm.updateStatus
-            ) { vm.checkUpdate(true) }
-            PlayProtectHelp()
-
-            SectionLabel("About")
-            Text(
-                "VAME Music v" + Updater.currentVersion(ctx) + " - made by vxvekggs",
-                fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White
-            )
-            Spacer(Modifier.height(10.dp))
-            InstagramButton(ctx)
-            Spacer(Modifier.height(10.dp))
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(50))
-                    .glassFill()
-                    .clickable { openUrl(ctx, "https://github.com/VIVEKISJOD/VAME-MUSIC-PLAYER") }
-                    .padding(vertical = 13.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Source code on GitHub", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            KitHeader(Icons.Filled.FileDownload, "Downloads")
+            KitCard {
+                KitAction(
+                    "Open Downloads",
+                    vm.downloads.size.toString() + " songs - " +
+                        String.format("%.1f MB", vm.downloadBytes / 1048576.0)
+                ) {
+                    vm.showSettings = false
+                    vm.downloadsOpen = true
+                }
+                KitDivider()
+                KitLabel("Download quality", "Applies to new downloads.")
+                KitChips(vm.downloadQuality, listOf("High", "Normal", "Data saver")) { vm.updateDownloadQuality(it) }
             }
-            Spacer(Modifier.height(14.dp))
-            Text(
-                "Open source under GPLv3. Interface inspired by AmeOS 16 by the AmeOS team " +
-                    "(CC BY 4.0). Built with NewPipeExtractor (GPLv3), AndroidX Media3, Compose, " +
-                    "Coil, OkHttp and Kotlin (Apache 2.0). Lyrics from LRCLIB. " +
-                    "VAME is not affiliated with YouTube, Spotify or Apple.",
-                fontSize = 12.sp, color = Pal.textDim
-            )
-            Spacer(Modifier.height(40.dp))
-        }
-    }
-}
 
-@Composable
-private fun SwitchRow(title: String, sub: String, checked: Boolean, onChange: (Boolean) -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().padding(vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(title, fontSize = 16.sp, color = Color.White)
-            Text(sub, fontSize = 12.sp, color = Pal.muted)
-        }
-        Switch(checked = checked, onCheckedChange = onChange)
-    }
-}
+            // ---------------- accounts and moving ----------------
+            KitHeader(Icons.Filled.Cloud, "Accounts", "Optional. VAME works fully without them")
+            KitCard {
+                AccountSection(vm, false)
+            }
+            Spacer(Modifier.height(10.dp))
+            KitCard {
+                KitAction(
+                    "Spotify",
+                    "Listen to your Spotify inside VAME, copy or merge playlists both ways."
+                ) { SpotifyHub.open = true }
+                KitDivider()
+                KitAction(
+                    "Move to another app",
+                    "Copy your playlists, liked songs, artists and albums to Spotify, YouTube Music or a file."
+                ) { DataMove.open = true }
+            }
 
-@Composable
-private fun ActionRow(title: String, sub: String, onClick: () -> Unit) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .clickable { onClick() }
-            .padding(vertical = 8.dp)
-    ) {
-        Text(title, fontSize = 16.sp, color = Color.White)
-        Text(sub, fontSize = 12.sp, color = Pal.muted)
-    }
-}
+            KitHeader(Icons.Filled.Storage, "Storage")
+            KitCard {
+                KitAction(
+                    "Clear cache",
+                    if (vm.cacheSize.isEmpty()) "Cached covers and song links"
+                    else vm.cacheSize + " used by covers and song links"
+                ) { vm.clearCache() }
+                KitDivider()
+                KitAction(
+                    "Clear listening history", "Resets Last played and Your Type suggestions."
+                ) { vm.clearHistory() }
+            }
 
-@Composable
-private fun QualityChips(
-    selected: Int,
-    names: List<String> = listOf("High", "Normal", "Data saver"),
-    onPick: (Int) -> Unit
-) {
-    Row(
-        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(top = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        names.forEachIndexed { i, n ->
-            val on = selected == i
-            Box(
-                Modifier
-                    .clip(RoundedCornerShape(50))
-                    .background(if (on) Pal.accent else Color(0x33FFFFFF))
-                    .clickable { onPick(i) }
-                    .padding(horizontal = 16.dp, vertical = 9.dp)
-            ) {
+            KitHeader(Icons.Filled.Update, "Updates")
+            KitCard {
+                KitAction(
+                    "Check for updates",
+                    if (vm.updateStatus.isEmpty()) "Looks for a newer VAME on GitHub" else vm.updateStatus
+                ) { vm.checkUpdate(true) }
+                PlayProtectHelp()
+            }
+
+            KitHeader(Icons.Filled.Info, "About")
+            KitCard {
                 Text(
-                    n, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-                    color = if (on) Pal.bgTop else Color.White
+                    "VAME Music v" + Updater.currentVersion(ctx) + " - made by vxvekggs",
+                    fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White
+                )
+                Spacer(Modifier.height(10.dp))
+                InstagramButton(ctx)
+                Spacer(Modifier.height(10.dp))
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(50))
+                        .glassFill()
+                        .clickable { openUrl(ctx, "https://github.com/VIVEKISJOD/VAME-MUSIC-PLAYER") }
+                        .padding(vertical = 13.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Source code on GitHub", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+                Spacer(Modifier.height(14.dp))
+                Text(
+                    "Open source under GPLv3. Interface inspired by AmeOS 16 by the AmeOS team " +
+                        "(CC BY 4.0). Built with NewPipeExtractor (GPLv3), AndroidX Media3, Compose, " +
+                        "Coil, OkHttp and Kotlin (Apache 2.0). Lyrics from LRCLIB. " +
+                        "VAME is not affiliated with YouTube, Spotify or Apple.",
+                    fontSize = 12.sp, color = Pal.textDim
                 )
             }
+            // room so the mini player on top of Settings never covers the last row
+            Spacer(Modifier.height(if (vm.current != null) 110.dp else 40.dp))
         }
     }
 }
-
 
 private fun openUrl(ctx: Context, url: String) {
     try {

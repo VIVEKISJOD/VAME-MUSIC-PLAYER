@@ -46,9 +46,9 @@ private val Presets = listOf(
 
 // Settings > Appearance: look (colour glass / AMOLED / AMOLED glass), palettes, custom colour
 @Composable
-fun AppearanceSection() {
+fun AppearanceSection(label: Boolean = true) {
     val ctx = LocalContext.current
-    SectionLabel("Appearance")
+    if (label) SectionLabel("Appearance")
 
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         listOf("Colour glass", "AMOLED", "AMOLED glass").forEachIndexed { i, name ->

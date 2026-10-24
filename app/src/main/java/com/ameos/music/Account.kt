@@ -517,4 +517,14 @@ object Account {
         b.put("playlistId", ytId.removePrefix("VL"))
         post(c, "playlist/delete", b)
     }
+
+    // thumbs up on YouTube Music (used by "Move to another app" > YouTube Music)
+    fun likeVideo(c: Context, videoId: String) {
+        val b = JSONObject()
+        b.put("context", context())
+        val t = JSONObject()
+        t.put("videoId", videoId)
+        b.put("target", t)
+        post(c, "like/like", b)
+    }
 }

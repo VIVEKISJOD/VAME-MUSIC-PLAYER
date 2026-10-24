@@ -87,29 +87,35 @@ fun TabletLyricsScreen(vm: MainViewModel) {
                 .statusBarsPadding()
                 .navigationBarsPadding()
         ) {
-            Column(
-                Modifier
-                    .weight(0.42f)
-                    .fillMaxHeight()
-                    .padding(start = 44.dp, end = 16.dp),
-                verticalArrangement = Arrangement.Center
-            ) {
-                Cover(
-                    song.cover,
-                    Modifier.widthIn(max = 440.dp).fillMaxWidth().aspectRatio(1f),
-                    RoundedCornerShape(28.dp),
-                    hiRes = true
-                )
-                Spacer(Modifier.height(22.dp))
-                Text(
-                    song.title, fontSize = 30.sp, fontWeight = FontWeight.Bold,
-                    color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    artistName(song.artist), fontSize = 18.sp, fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFFD0D0D0), maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
+            // left: cover + name. On a short screen (phone sideways, Standby) everything is smaller.
+            BoxWithConstraints(Modifier.weight(0.42f).fillMaxHeight()) {
+                val small = maxHeight < 520.dp
+                val side = minOf(maxWidth - 50.dp, 440.dp, maxHeight - (if (small) 100.dp else 150.dp))
+                    .coerceAtLeast(110.dp)
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(start = if (small) 26.dp else 44.dp, end = 16.dp),
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Cover(
+                        song.cover,
+                        Modifier.size(side),
+                        RoundedCornerShape(if (small) 20.dp else 28.dp),
+                        hiRes = true
+                    )
+                    Spacer(Modifier.height(if (small) 12.dp else 22.dp))
+                    Text(
+                        song.title, fontSize = if (small) 20.sp else 30.sp, fontWeight = FontWeight.Bold,
+                        color = Color.White, maxLines = if (small) 1 else 2, overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        artistName(song.artist), fontSize = if (small) 15.sp else 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFFD0D0D0), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
             }
             Box(Modifier.weight(0.58f).fillMaxHeight()) {
                 LyricsList(vm, pos)
