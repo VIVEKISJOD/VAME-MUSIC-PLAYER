@@ -22,6 +22,8 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.animation.core.tween
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -168,32 +170,30 @@ fun AmeosRoot(vm: MainViewModel) {
                 Box(Modifier.fillMaxSize().nestedScroll(dockScroll)) {
                     MainPages(vm, false, dockFolded) { dockFolded = false }
                 }
-                AnimatedVisibility(
+                // the player opens out of the mini player pill and collapses back into it
+                MorphLayer(
                     visible = vm.showPlayer && vm.current != null,
-                    enter = slideInVertically(tween(380)) { it } + fadeIn(tween(250)),
-                    exit = slideOutVertically(tween(320)) { it } + fadeOut(tween(200))
+                    originX = 0.5f, originY = 0.92f, startScaleX = 0.92f, startScaleY = 0.08f
                 ) {
                     NowPlayingScreen(vm)
                 }
-                AnimatedVisibility(
+                // lyrics grow from the bottom left (where the lyrics button is) and shrink back
+                MorphLayer(
                     visible = vm.showLyrics && vm.current != null,
-                    enter = slideInVertically(tween(380)) { it / 3 } + fadeIn(tween(300)),
-                    exit = slideOutVertically(tween(300)) { it / 3 } + fadeOut(tween(220))
+                    originX = 0.15f, originY = 0.95f, startScaleX = 0.3f, startScaleY = 0.2f
                 ) {
                     LyricsScreen(vm)
                 }
             }
-            AnimatedVisibility(
+            MorphLayer(
                 visible = vm.showSettings,
-                enter = slideInHorizontally(tween(360, easing = FastOutSlowInEasing)) { it } + fadeIn(tween(250)),
-                exit = slideOutHorizontally(tween(280)) { it } + fadeOut(tween(200))
+                originX = 0.92f, originY = 0.04f, startScaleX = 0.25f, startScaleY = 0.25f
             ) {
                 SettingsScreen(vm)
             }
-            AnimatedVisibility(
+            MorphLayer(
                 visible = vm.recapOpen,
-                enter = slideInVertically(tween(420, easing = FastOutSlowInEasing)) { it / 2 } + fadeIn(tween(300)),
-                exit = slideOutVertically(tween(320)) { it / 2 } + fadeOut(tween(240))
+                originX = 0.5f, originY = 0.5f, startScaleX = 0.8f, startScaleY = 0.8f
             ) {
                 RecapScreen(vm)
             }
@@ -204,10 +204,9 @@ fun AmeosRoot(vm: MainViewModel) {
             ) {
                 OnboardingScreen(vm)
             }
-            AnimatedVisibility(
+            MorphLayer(
                 visible = vm.showLogin,
-                enter = slideInVertically(tween(380, easing = FastOutSlowInEasing)) { it / 2 } + fadeIn(tween(260)),
-                exit = slideOutVertically(tween(300)) { it / 2 } + fadeOut(tween(200))
+                originX = 0.5f, originY = 0.7f, startScaleX = 0.7f, startScaleY = 0.7f
             ) {
                 LoginScreen(vm)
             }
@@ -349,5 +348,41 @@ private fun PlayerPanel(vm: MainViewModel) {
             .fillMaxHeight()
     ) {
         NowPlayingScreen(vm)
+    }
+}
+
+// One smooth "grow out of a spot / shrink back into it" animation, used for the player,
+// lyrics, settings, recap and sign-in. The layer scales from (originX, originY) with a soft
+// spring, fades in while it grows, and its corners round off while it is small.
+@Composable
+private fun MorphLayer(
+    visible: Boolean,
+    originX: Float,
+    originY: Float,
+    startScaleX: Float,
+    startScaleY: Float,
+    content: @Composable () -> Unit
+) {
+    val p by animateFloatAsState(
+        if (visible) 1f else 0f,
+        spring(dampingRatio = 0.88f, stiffness = 300f),
+        label = "morph"
+    )
+    if (visible || p > 0.002f) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    val q = p.coerceIn(0f, 1f)
+                    transformOrigin = TransformOrigin(originX, originY)
+                    scaleX = startScaleX + (1f - startScaleX) * p
+                    scaleY = startScaleY + (1f - startScaleY) * p
+                    alpha = ((q - 0.12f) / 0.45f).coerceIn(0f, 1f)
+                    shape = RoundedCornerShape(140.dp * (1f - q) * (1f - q))
+                    clip = q < 0.999f
+                }
+        ) {
+            content()
+        }
     }
 }

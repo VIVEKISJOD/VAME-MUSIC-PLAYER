@@ -25,6 +25,9 @@ data class Resolved(val audio: String, val related: List<Song>)
 
 data class Album(val title: String, val artist: String, val url: String, val cover: String?)
 
+// the newest official upload of an artist: the song, its big picture, and a short name
+data class LatestRelease(val song: Song, val picture: String?, val label: String)
+
 data class PlaylistData(val name: String, val artist: String, val cover: String?, val songs: List<Song>)
 
 object MusicRepo {
@@ -115,6 +118,65 @@ object MusicRepo {
             .filterIsInstance<StreamInfoItem>()
             .map { toSong(it) }
         applyFilter(all, query)
+    }
+
+    // "3 weeks ago" -> seconds (smaller = newer); null when it cannot be read
+    private fun ageSeconds(text: String?): Long? {
+        if (text == null) return null
+        val m = Regex("(\\d+)\\s+(second|minute|hour|day|week|month|year)s?\\s+ago", RegexOption.IGNORE_CASE)
+            .find(text) ?: return null
+        val n = m.groupValues[1].toLongOrNull() ?: return null
+        val unit = when (m.groupValues[2].lowercase()) {
+            "second" -> 1L
+            "minute" -> 60L
+            "hour" -> 3600L
+            "day" -> 86400L
+            "week" -> 604800L
+            "month" -> 2592000L
+            else -> 31536000L
+        }
+        return n * unit
+    }
+
+    // newest official video / song upload of the artist (used for the artist page picture)
+    suspend fun latestRelease(artist: String): LatestRelease? = withContext(Dispatchers.IO) {
+        val key = artist.lowercase().filter { it.isLetterOrDigit() }
+        if (key.isEmpty()) return@withContext null
+        val extractor = ServiceList.YouTube.getSearchExtractor(
+            artist + " official video",
+            listOf(YoutubeSearchQueryHandlerFactory.VIDEOS),
+            ""
+        )
+        extractor.fetchPage()
+        var best: StreamInfoItem? = null
+        var bestAge = Long.MAX_VALUE
+        for (item in extractor.initialPage.items) {
+            if (item !is StreamInfoItem) continue
+            val title = item.name ?: continue
+            val channel = (item.uploaderName ?: "").lowercase().filter { it.isLetterOrDigit() }
+            val titleKey = title.lowercase().filter { it.isLetterOrDigit() }
+            val byArtist = (channel.isNotEmpty() && (channel.contains(key) || key.contains(channel))) ||
+                titleKey.contains(key)
+            if (!byArtist) continue
+            if (junkChannel.containsMatchIn(item.uploaderName ?: "")) continue
+            if (strongJunk.containsMatchIn(title) || isCompilation(title, item.uploaderName ?: "")) continue
+            if (item.duration in 1L..44L || item.duration > 720L) continue
+            val age = ageSeconds(item.textualUploadDate) ?: continue
+            if (age < bestAge) {
+                bestAge = age
+                best = item
+            }
+        }
+        val b = best ?: return@withContext null
+        val pic = b.thumbnails.maxByOrNull { it.height }?.url
+        val label = title0(b.name ?: "")
+        LatestRelease(toSong(b), pic, label)
+    }
+
+    // "Softly (Official Video)" -> "Softly"
+    private fun title0(t: String): String {
+        val cleaned = t.replace(Regex("\\s*[\\(\\[][^\\)\\]]*[\\)\\]]"), "").trim()
+        return if (cleaned.isBlank()) t else cleaned
     }
 
     // albums (YouTube Music "Albums" search)

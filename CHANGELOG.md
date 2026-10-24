@@ -1,4 +1,18 @@
-# VAME Music - full changelog (up to zip step26, v0.14.0, 24 Oct 2026)
+# VAME Music - full changelog (up to zip step28, v0.16.0, 24 Oct 2026)
+
+## step28 (v0.16.0) - includes everything from step27
+- New: the Now Playing screen opens out of the mini player pill and, when you go back, it collapses smoothly back into the pill (soft spring, corners round off while it is small).
+- New: the same grow-and-shrink animation for Lyrics (from the lyrics button corner), Settings (from the top right), Recap and Sign in with Google.
+- Changed: the Play Protect help text now matches the real "App scan recommended" dialog (tap Scan app, wait a few seconds, then install) and says why it appears.
+- Note about Play Protect: it cannot be switched off from the app. It shows because Google has not seen this exact APK on many phones yet. Other open source apps are installed by thousands of people, so Google already knows their files. Every new VAME version is a new file, so it can show again after an update until enough phones have installed it. Real fixes: tap Scan app once, turn off Scan apps with Play Protect, or put VAME on the Play Store.
+
+## step27 (v0.15.0)
+- New: the artist page picture is now the artist's latest release. VAME finds the newest official upload of the artist and uses its big picture at the top (same iOS style look: fades into the page). If it cannot find one it uses the song cover.
+- New: a "Latest: song name" pill under the artist name. Tap it to play the latest release.
+- New: Settings > Artist page > Picture (Latest release or Song cover).
+- New: Settings > Artist page > Popular album card on or off.
+- New: Settings > Artist page > Top songs shown (10, 25 or All).
+- Changed: Share on the artist page also says the latest release name.
 
 ## step26 (v0.14.0)
 - Fixed: on a tablet the Now Playing panel on the right now fills the whole right side (touches the top, right and bottom edges, no empty corner).

@@ -218,9 +218,10 @@ object Updater {
 @Composable
 fun PlayProtectHelp() {
     Text(
-        "Play Protect warning? Tap More details, then Install anyway. To stop it for good: " +
-            "Play Store > your profile picture > Play Protect > gear icon > turn off " +
-            "Scan apps with Play Protect.",
+        "Play Protect says \"App scan recommended\" because very few phones have installed " +
+            "this exact file yet (every new version is a new file). Tap Scan app, wait a few " +
+            "seconds, then install. To stop it for good: Play Store > your profile picture > " +
+            "Play Protect > gear icon > turn off Scan apps with Play Protect.",
         fontSize = 12.sp,
         modifier = Modifier.padding(top = 12.dp)
     )

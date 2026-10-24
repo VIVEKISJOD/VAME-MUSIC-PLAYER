@@ -187,6 +187,16 @@ object Prefs {
     fun keepScreenLyrics(c: Context): Boolean = sp(c).getBoolean("keepScreenLyrics", true)
     fun setKeepScreenLyrics(c: Context, v: Boolean) = sp(c).edit().putBoolean("keepScreenLyrics", v).apply()
 
+    fun artistLatest(c: Context): Boolean = sp(c).getBoolean("artistLatest", true)
+    fun setArtistLatest(c: Context, v: Boolean) = sp(c).edit().putBoolean("artistLatest", v).apply()
+
+    fun artistAlbumCard(c: Context): Boolean = sp(c).getBoolean("artistAlbumCard", true)
+    fun setArtistAlbumCard(c: Context, v: Boolean) = sp(c).edit().putBoolean("artistAlbumCard", v).apply()
+
+    // top songs shown on the artist page: 0 = 10, 1 = 25, 2 = all
+    fun artistTop(c: Context): Int = sp(c).getInt("artistTop", 1)
+    fun setArtistTop(c: Context, v: Int) = sp(c).edit().putInt("artistTop", v).apply()
+
     fun startTab(c: Context): Int = sp(c).getInt("startTab", 0)
     fun setStartTab(c: Context, v: Int) = sp(c).edit().putInt("startTab", v).apply()
 

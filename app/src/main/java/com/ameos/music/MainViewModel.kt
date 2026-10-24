@@ -936,6 +936,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         openArtistName = clean
         artistOpen = true
         artistAlbum = null
+        artistLatestRelease = null
         artistJob?.cancel()
         // songs we already know by this artist show first
         val known = ArrayList<Song>()
@@ -946,6 +947,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         artistSongs = known
         artistLoading = true
         artistJob = viewModelScope.launch {
+            // the newest official upload: its picture is the artist page "canvas"
+            launch {
+                try {
+                    artistLatestRelease = MusicRepo.latestRelease(clean)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                }
+            }
             // the artist's top album for the card on the artist page
             launch {
                 try {
@@ -1283,6 +1293,25 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var lyricsLeft by mutableStateOf(Prefs.lyricsLeft(app))
     var panelWide by mutableStateOf(Prefs.panelWide(app))
     var artistAlbum by mutableStateOf<Album?>(null)
+    var artistLatestRelease by mutableStateOf<LatestRelease?>(null)
+    var artistLatestPic by mutableStateOf(Prefs.artistLatest(app))
+    var artistAlbumCardOn by mutableStateOf(Prefs.artistAlbumCard(app))
+    var artistTop by mutableIntStateOf(Prefs.artistTop(app))
+
+    fun setArtistLatestPic(on: Boolean) {
+        artistLatestPic = on
+        Prefs.setArtistLatest(getApplication<Application>(), on)
+    }
+
+    fun setArtistAlbumCardOn(on: Boolean) {
+        artistAlbumCardOn = on
+        Prefs.setArtistAlbumCard(getApplication<Application>(), on)
+    }
+
+    fun updateArtistTop(i: Int) {
+        artistTop = i
+        Prefs.setArtistTop(getApplication<Application>(), i)
+    }
 
     fun updateStartTab(i: Int) {
         startTab = i

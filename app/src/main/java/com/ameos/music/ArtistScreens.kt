@@ -74,8 +74,16 @@ fun ArtistScreen(vm: MainViewModel) {
     val songs = vm.artistSongs
     val cover = songs.firstOrNull()?.cover
     val fav = vm.isArtistLiked(name)
-    val album = vm.artistAlbum
-    val tint = rememberCoverTint(cover)
+    val album = if (vm.artistAlbumCardOn) vm.artistAlbum else null
+    val latest = vm.artistLatestRelease
+    // the picture: newest official upload (or the song cover when it is not found / switched off)
+    val heroPic = (if (vm.artistLatestPic) latest?.picture else null) ?: cover
+    val shown = when (vm.artistTop) {
+        0 -> songs.take(10)
+        1 -> songs.take(25)
+        else -> songs
+    }
+    val tint = rememberCoverTint(heroPic)
     val bg = lerp(tint, Color.Black, 0.62f)
     val light = lerp(tint, Color.White, 0.78f)
     val dark = lerp(tint, Color.Black, 0.75f)
@@ -96,7 +104,7 @@ fun ArtistScreen(vm: MainViewModel) {
             // big picture that fades into the page, with the name on top of the fade
             item {
                 Box(Modifier.fillMaxWidth().height(480.dp)) {
-                    Cover(cover, Modifier.fillMaxSize(), RectangleShape, hiRes = true)
+                    Cover(heroPic, Modifier.fillMaxSize(), RectangleShape, hiRes = true)
                     Box(
                         Modifier
                             .fillMaxSize()
@@ -107,14 +115,41 @@ fun ArtistScreen(vm: MainViewModel) {
                                 )
                             )
                     )
-                    Text(
-                        name, fontSize = 44.sp, fontWeight = FontWeight.ExtraBold,
-                        color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
+                    Column(
+                        Modifier
                             .align(Alignment.BottomCenter)
-                            .padding(horizontal = 20.dp, vertical = 4.dp)
-                    )
+                            .padding(horizontal = 20.dp, vertical = 4.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            name, fontSize = 44.sp, fontWeight = FontWeight.ExtraBold,
+                            color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center
+                        )
+                        if (latest != null) {
+                            Row(
+                                Modifier
+                                    .padding(top = 8.dp)
+                                    .clip(RoundedCornerShape(50))
+                                    .background(Color(0x55000000))
+                                    .clickable { vm.play(latest.song, listOf(latest.song)) }
+                                    .padding(start = 10.dp, end = 14.dp, top = 6.dp, bottom = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Filled.PlayArrow, null, tint = Color.White,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    "Latest: " + latest.label, fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold, color = Color.White,
+                                    maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.widthIn(max = 240.dp)
+                                )
+                            }
+                        }
+                    }
                 }
             }
             // shuffle, big play, favourite star
@@ -206,7 +241,7 @@ fun ArtistScreen(vm: MainViewModel) {
                     }
                 }
             }
-            items(songs) { s ->
+            items(shown) { s ->
                 Box(Modifier.padding(horizontal = 16.dp)) { SongRow(s, vm, songs) }
             }
         }
@@ -240,7 +275,11 @@ fun ArtistScreen(vm: MainViewModel) {
                         try {
                             val send = Intent(Intent.ACTION_SEND)
                                 .setType("text/plain")
-                                .putExtra(Intent.EXTRA_TEXT, "Listening to " + name + " on VAME Music")
+                                .putExtra(
+                                    Intent.EXTRA_TEXT,
+                                    if (latest != null) "Listening to " + name + " - " + latest.label + " on VAME Music"
+                                    else "Listening to " + name + " on VAME Music"
+                                )
                             ctx.startActivity(
                                 Intent.createChooser(send, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                             )
