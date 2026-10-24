@@ -105,7 +105,7 @@ fun AmeosRoot(vm: MainViewModel) {
     // This is registered first, so open pages and sheets still close before it.
     BackHandler(enabled = vm.tab != 0) { vm.tab = 0 }
     if (vm.showUpdate && vm.updateInfo != null) UpdateDialog(vm)
-    val tablet = LocalConfiguration.current.screenWidthDp >= 600
+    val tablet = isTabletLandscape()
     // scroll down = bottom bar folds into one slim row, scroll up = opens again
     var dockFolded by remember { mutableStateOf(false) }
     LaunchedEffect(vm.tab) { dockFolded = false }
@@ -158,6 +158,7 @@ fun AmeosRoot(vm: MainViewModel) {
                         PlayerPanel(vm)
                     }
                 }
+                TabletMiniBox(vm)
                 // lyrics on a tablet: full screen, cover + name on the left, lyrics on the right
                 AnimatedVisibility(
                     visible = vm.showLyrics && vm.current != null,
@@ -284,15 +285,7 @@ private fun MainPages(vm: MainViewModel, tablet: Boolean, dockFolded: Boolean, o
             if (err != null) {
                 Text(err, color = Color(0xFFFFB4AB), fontSize = 12.sp)
             }
-            if (tablet) {
-                AnimatedVisibility(
-                    visible = !(vm.showPlayer && vm.current != null),
-                    enter = fadeIn(tween(220)) + slideInVertically(tween(260)) { it / 2 },
-                    exit = fadeOut(tween(160)) + slideOutVertically(tween(220)) { it / 2 }
-                ) {
-                    MiniPlayer(vm)
-                }
-            } else {
+            if (!tablet) {
                 Dock(vm, dockFolded, onExpand)
             }
         }

@@ -197,6 +197,11 @@ object Prefs {
     fun artistTop(c: Context): Int = sp(c).getInt("artistTop", 1)
     fun setArtistTop(c: Context, v: Int) = sp(c).edit().putInt("artistTop", v).apply()
 
+    fun boxRight(c: Context): Boolean = sp(c).getBoolean("boxRight", true)
+    fun boxBottom(c: Context): Int = sp(c).getInt("boxBottom", 24)
+    fun setBox(c: Context, right: Boolean, bottom: Int) =
+        sp(c).edit().putBoolean("boxRight", right).putInt("boxBottom", bottom).apply()
+
     fun homeLang(c: Context): Int = sp(c).getInt("homeLang", 0)
     fun setHomeLang(c: Context, v: Int) = sp(c).edit().putInt("homeLang", v).apply()
 

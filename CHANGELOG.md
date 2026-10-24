@@ -1,4 +1,13 @@
-# VAME Music - full changelog (up to zip step32, v0.18.0, 24 Oct 2026)
+# VAME Music - full changelog (up to zip step33, v0.18.1, 24 Oct 2026)
+
+## step33 (v0.18.1) - includes step28 fix and steps 29 to 32
+- Changed: a tablet held upright (portrait) now works like a normal phone: bottom bar, mini player pill and full screen player. The side rail and side player only show when the tablet is sideways.
+- New: tablet sideways with the side player closed: a small floating box with the song cover (replaces the pill). Tap it to open the side player.
+- New: the box can be dragged anywhere. When you let go it snaps to the left or right edge.
+- New: the box remembers its side and height after closing the app.
+- New: play / pause button on the box.
+- New: the box hides while the side player or lyrics are open and comes back when they close.
+- Fixed: the pill no longer shows on any page on a sideways tablet (the box takes its place).
 
 ## step32 (v0.18.0) - includes step28 fix, step29, step30, step31
 - New: Home now has a full library of shelves built from the genres you picked when you signed up (up to 6 genres). Each genre gets its own row of big song cards, up to 20 songs.

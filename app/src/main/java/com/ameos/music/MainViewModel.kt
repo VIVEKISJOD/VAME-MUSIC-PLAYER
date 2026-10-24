@@ -152,6 +152,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     // Home genre shelves (declared up here because loadHome() runs in the first init block)
     var genreShelves by mutableStateOf<List<GenreShelf>>(emptyList())
     var homeLang by mutableIntStateOf(Prefs.homeLang(app))
+    // tablet (sideways): where the small floating player box sits (side + distance from the bottom)
+    var boxRight by mutableStateOf(Prefs.boxRight(app))
+    var boxBottomDp by mutableIntStateOf(Prefs.boxBottom(app))
+    fun saveBoxPos(right: Boolean, bottomDp: Int) {
+        boxRight = right
+        boxBottomDp = bottomDp
+        Prefs.setBox(getApplication<Application>(), right, bottomDp)
+    }
     private var shelfJob: Job? = null
     var showOnboarding by mutableStateOf(!Prefs.onboarded(app))
 
