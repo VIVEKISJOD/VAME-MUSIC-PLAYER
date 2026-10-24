@@ -131,12 +131,12 @@ fun SettingsScreen(vm: MainViewModel) {
                 modifier = Modifier.padding(top = 2.dp)
             )
             QualityChips(if (vm.artistLatestPic) 0 else 1, listOf("Latest release", "Song cover")) {
-                vm.setArtistLatestPic(it == 0)
+                vm.chooseArtistLatestPic(it == 0)
             }
             SwitchRow(
                 "Popular album card", "Shows the artist's top album under the play buttons.",
                 vm.artistAlbumCardOn
-            ) { vm.setArtistAlbumCardOn(it) }
+            ) { vm.chooseArtistAlbumCard(it) }
             Text(
                 "Top songs shown", fontSize = 16.sp, color = Color.White,
                 modifier = Modifier.padding(top = 10.dp)

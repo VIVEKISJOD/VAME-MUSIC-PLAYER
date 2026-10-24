@@ -64,6 +64,7 @@ object Account {
 
     fun signOut(c: Context) {
         sp(c).edit().clear().apply()
+        clearMap(c)
         try {
             CookieManager.getInstance().removeAllCookies(null)
             CookieManager.getInstance().flush()
@@ -435,4 +436,85 @@ object Account {
             }
             out.distinctBy { it.url }
         }
+
+    // ---------- saving VAME playlists to YouTube Music (write access) ----------
+
+    fun syncOn(c: Context): Boolean = sp(c).getBoolean("syncPlaylists", true)
+
+    fun saveSyncOn(c: Context, v: Boolean) = sp(c).edit().putBoolean("syncPlaylists", v).apply()
+
+    private fun mapSp(c: Context) = c.getSharedPreferences("ytmap", Context.MODE_PRIVATE)
+
+    fun ytIdOf(c: Context, localId: String): String? {
+        val v = mapSp(c).getString(localId, "") ?: ""
+        return if (v.isBlank()) null else v
+    }
+
+    fun mapId(c: Context, localId: String, ytId: String) = mapSp(c).edit().putString(localId, ytId).apply()
+
+    fun unmapId(c: Context, localId: String) = mapSp(c).edit().remove(localId).apply()
+
+    fun mappedIds(c: Context): Set<String> {
+        val out = HashSet<String>()
+        for (e in mapSp(c).all.values) {
+            val s = e as? String
+            if (s != null && s.isNotBlank()) out.add(s)
+        }
+        return out
+    }
+
+    fun clearMap(c: Context) = mapSp(c).edit().clear().apply()
+
+    fun videoId(url: String): String? {
+        val i = url.indexOf("v=")
+        if (i < 0) return null
+        val id = url.substring(i + 2).substringBefore("&")
+        return if (id.isBlank()) null else id
+    }
+
+    // makes a private playlist on the account, returns its id (blank if YouTube gave none)
+    fun createPlaylist(c: Context, title: String, videoIds: List<String>): String {
+        val b = JSONObject()
+        b.put("context", context())
+        b.put("title", title)
+        b.put("description", "Made in VAME")
+        b.put("privacyStatus", "PRIVATE")
+        val arr = JSONArray()
+        for (v in videoIds) arr.put(v)
+        b.put("videoIds", arr)
+        val r = post(c, "playlist/create", b)
+        return r.optString("playlistId", "")
+    }
+
+    private fun editPlaylist(c: Context, ytId: String, action: JSONObject) {
+        val b = JSONObject()
+        b.put("context", context())
+        b.put("playlistId", ytId.removePrefix("VL"))
+        val actions = JSONArray()
+        actions.put(action)
+        b.put("actions", actions)
+        post(c, "browse/edit_playlist", b)
+    }
+
+    fun addVideo(c: Context, ytId: String, videoId: String) {
+        val o = JSONObject()
+        o.put("action", "ACTION_ADD_VIDEO")
+        o.put("addedVideoId", videoId)
+        o.put("dedupeOption", "DEDUPE_OPTION_SKIP")
+        editPlaylist(c, ytId, o)
+    }
+
+    fun renamePlaylist(c: Context, ytId: String, name: String) {
+        val o = JSONObject()
+        o.put("action", "ACTION_SET_PLAYLIST_NAME")
+        o.put("playlistName", name)
+        editPlaylist(c, ytId, o)
+    }
+
+    fun deletePlaylist(c: Context, ytId: String) {
+        val b = JSONObject()
+        b.put("context", context())
+        b.put("playlistId", ytId.removePrefix("VL"))
+        post(c, "playlist/delete", b)
+    }
 }

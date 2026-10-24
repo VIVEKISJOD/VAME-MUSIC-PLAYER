@@ -1,4 +1,23 @@
-# VAME Music - full changelog (up to zip step28, v0.16.0, 24 Oct 2026)
+# VAME Music - full changelog (up to zip step30, v0.17.0, 24 Oct 2026)
+
+## step30 (v0.17.0) - includes step28 fix and step29
+- Fixed: the step28 build error (Platform declaration clash on setArtistLatestPic / setArtistAlbumCardOn in MainViewModel). Functions renamed, no visible change.
+- New: when you are signed in with Google, your profile picture shows top right on Home, Explore and Library instead of the plain account icon (tap it for Settings).
+- New: playlists you make in VAME are also saved to your YouTube Music account as private playlists.
+- New: songs you add to a VAME playlist are added on YouTube Music too. Renaming or deleting a VAME playlist does the same there. Only playlists VAME made are touched.
+- New: imported playlists (YouTube / Spotify link, pasted list) are saved to YouTube Music too.
+- New: Settings > Account > "Save new playlists to YouTube Music" ON/OFF switch (default ON).
+- New: Settings > Account > "Upload my VAME playlists to YouTube Music" sends the playlists you already have.
+- Changed: a playlist VAME created on YouTube Music is not shown twice (Library and Home > Playlists show only the VAME copy).
+- Includes step29: no mini player pill on tablet pages while the side player is open, and Home > Playlists shows your real playlists as a grid.
+
+## step29 (v0.16.1)
+- Fixed: on a tablet the mini player pill no longer shows on the artist, playlist, album, liked or downloads pages while the player panel is open on the right.
+- Fixed: Home > Playlists now shows your real playlists (VAME playlists and, if signed in, your YouTube Music playlists), not the three fake Daily / Bangers / Evening boxes.
+- New: Home > Playlists is a grid of cover tiles (2 per row on phone, 4 on tablet) like the Library.
+- New: Home > Playlists has Liked Songs, New playlist and Import playlist tiles at the top.
+- New: tapping the Playlists chip loads your YouTube Music playlists if you are signed in and the list is empty.
+- New: the Playlists title shows how many playlists you have, and an empty list shows a short hint.
 
 ## step28 (v0.16.0) - includes everything from step27
 - New: the Now Playing screen opens out of the mini player pill and, when you go back, it collapses smoothly back into the pill (soft spring, corners round off while it is small).

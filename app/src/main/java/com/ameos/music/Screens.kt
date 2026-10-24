@@ -57,6 +57,19 @@ fun ScreenTitle(text: String, trailing: @Composable () -> Unit = {}) {
     }
 }
 
+// Top right button: your Google photo when signed in, otherwise the plain account icon
+@Composable
+fun ProfileButton(vm: MainViewModel, size: androidx.compose.ui.unit.Dp, tappable: Boolean) {
+    val photo = vm.ytPhoto
+    val base = Modifier.size(size).clip(CircleShape)
+    val mod = if (tappable) base.clickable { vm.showSettings = true } else base
+    if (vm.ytSignedIn && photo != null) {
+        Cover(photo, mod, CircleShape)
+    } else {
+        Icon(Icons.Filled.AccountCircle, null, tint = Color.White, modifier = mod)
+    }
+}
+
 // ---------------- HOME ----------------
 
 @Composable
@@ -67,13 +80,7 @@ fun HomeScreen(vm: MainViewModel) {
     LazyColumn(contentPadding = ScreenPad) {
         item {
             ScreenTitle(vm.title.ifBlank { "Music" }) {
-                Icon(
-                    Icons.Filled.AccountCircle, null, tint = Color.White,
-                    modifier = Modifier
-                        .size(34.dp)
-                        .clip(CircleShape)
-                        .clickable { vm.showSettings = true }
-                )
+                ProfileButton(vm, 34.dp, true)
             }
         }
         item {
@@ -243,13 +250,50 @@ fun HomeScreen(vm: MainViewModel) {
             items(vm.podcasts) { s -> SongRow(s, vm, vm.podcasts) }
         }
         if (vm.homeFilter == 3) {
-            item { SectionLabel("Playlists") }
+            item { SectionLabel("Playlists (" + (vm.playlists.size + vm.ytPlaylistsShown.size) + ")") }
             item {
-                TwoColumn(listOf("Daily", "Bangers", "Evening")) { n, m ->
-                    LibItem(m, n, null, null) {
-                        vm.searchFor("$n songs")
-                        vm.tab = 1
+                val hw = LocalConfiguration.current.screenWidthDp
+                val cols = if (hw >= 600) 4 else 2
+                val hl = ArrayList<LibTile>()
+                hl.add(LibTile("New playlist", "Save your own mix", null, Icons.Filled.Add, null) {
+                    vm.editPlaylistId = null
+                    vm.pendingSong = null
+                    vm.showPlaylistDialog = true
+                })
+                hl.add(LibTile("Import playlist", "From a playlist link", null, Icons.Filled.FileDownload, null) {
+                    vm.importStatus = ""
+                    vm.importedId = null
+                    vm.showImportDialog = true
+                })
+                hl.add(LibTile(
+                    "Liked Songs", vm.liked.size.toString() + " songs", null,
+                    Icons.Filled.Favorite, listOf(Color(0xFF8B6CF0), Color(0xFFEF5DA8))
+                ) { vm.likedOpen = true })
+                for (p in vm.playlists) {
+                    hl.add(LibTile(p.name, p.songs.size.toString() + " songs", p.shownCover(), Icons.Filled.LibraryMusic, null) {
+                        vm.openPlaylist(p.id)
+                    })
+                }
+                for (yp in vm.ytPlaylistsShown) {
+                    hl.add(LibTile(yp.title, yp.subtitle.ifBlank { "Playlist" }, yp.cover, Icons.Filled.LibraryMusic, null) {
+                        vm.openYtPlaylist(yp)
+                    })
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    for (rowTiles in hl.chunked(cols)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                            for (t in rowTiles) PlTile(t, Modifier.weight(1f))
+                            for (k in rowTiles.size until cols) Spacer(Modifier.weight(1f))
+                        }
                     }
+                }
+            }
+            if (vm.playlists.isEmpty() && vm.ytPlaylistsShown.isEmpty()) {
+                item {
+                    Text(
+                        "No playlists yet. Make one in Library, or sign in there to see your YouTube Music playlists.",
+                        fontSize = 13.sp, color = Pal.textDim, modifier = Modifier.padding(top = 14.dp)
+                    )
                 }
             }
         }
@@ -377,13 +421,7 @@ fun ExploreScreen(vm: MainViewModel) {
     LazyColumn(contentPadding = ScreenPad) {
         item {
             ScreenTitle("Explore") {
-                Icon(
-                    Icons.Filled.AccountCircle, null, tint = Color.White,
-                    modifier = Modifier
-                        .size(34.dp)
-                        .clip(CircleShape)
-                        .clickable { vm.showSettings = true }
-                )
+                ProfileButton(vm, 34.dp, true)
             }
         }
         item {
@@ -793,7 +831,7 @@ fun LibraryScreen(vm: MainViewModel) {
                         Icon(Icons.Filled.History, null, tint = Color.White)
                     }
                     IconButton(onClick = { vm.showSettings = true }) {
-                        Icon(Icons.Filled.AccountCircle, null, tint = Color.White, modifier = Modifier.size(30.dp))
+                        ProfileButton(vm, 30.dp, false)
                     }
                 }
             }
@@ -855,7 +893,7 @@ fun LibraryScreen(vm: MainViewModel) {
                     "Liked songs", "On YouTube Music", null,
                     Icons.Filled.ThumbUp, listOf(Color(0xFFE53935), Color(0xFF8E1B1B))
                 ) { vm.openYtLiked() })
-                for (yp in vm.ytPlaylists) {
+                for (yp in vm.ytPlaylistsShown) {
                     ytTiles.add(LibTile(yp.title, yp.subtitle.ifBlank { "Playlist" }, yp.cover, Icons.Filled.LibraryMusic, null) {
                         vm.openYtPlaylist(yp)
                     })

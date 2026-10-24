@@ -391,6 +391,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun pickFilter(i: Int) {
         homeFilter = i
         if (i == 2 && podcasts.isEmpty()) loadPodcasts()
+        if (i == 3 && ytSignedIn && ytPlaylists.isEmpty()) refreshYt()
     }
 
     fun search() {
@@ -657,6 +658,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         playlists.add(Playlist(id, clean, null, if (firstSong != null) listOf(firstSong) else emptyList()))
         savePlaylists()
         if (coverUri != null) setPlaylistCover(id, coverUri)
+        ytPush(id)
     }
 
     fun editPlaylist(id: String, name: String, coverUri: Uri?) {
@@ -666,6 +668,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         playlists[i] = old.copy(name = name.trim().ifBlank { old.name })
         savePlaylists()
         if (coverUri != null) setPlaylistCover(id, coverUri)
+        ytRename(id)
     }
 
     private fun setPlaylistCover(id: String, uri: Uri) {
@@ -708,6 +711,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         playlists.removeAll { it.id == id }
         savePlaylists()
         deleteCoverFile(pl?.cover)
+        ytDelete(id)
     }
 
     fun addToPlaylist(id: String, song: Song): Boolean {
@@ -717,6 +721,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (pl.songs.any { it.url == song.url }) return false
         playlists[i] = pl.copy(songs = pl.songs + song)
         savePlaylists()
+        ytAdd(id, song)
         return true
     }
 
@@ -1197,6 +1202,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 playlists.add(Playlist(id, name.take(40).ifBlank { "Imported playlist" }, null, songs))
                 savePlaylists()
                 importedId = id
+                ytPush(id)
                 importStatus = "Ho gaya! " + songs.size + " songs ki playlist \"" + name + "\" ban gayi."
             } catch (e: CancellationException) {
                 throw e
@@ -1288,6 +1294,104 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         Prefs.setKeepScreenLyrics(getApplication<Application>(), on)
     }
 
+    // ---- save VAME playlists to the person's YouTube Music account (write access) ----
+    var ytSync by mutableStateOf(Account.syncOn(app))
+    private val ytPushing = HashSet<String>()
+
+    fun toggleYtSync() {
+        ytSync = !ytSync
+        Account.saveSyncOn(getApplication<Application>(), ytSync)
+        toast(if (ytSync) "New playlists are saved to YouTube Music too" else "Playlists stay only in VAME")
+    }
+
+    // YouTube playlists that VAME created itself are already shown as VAME playlists, so hide the copy
+    val ytPlaylistsShown: List<YtPlaylist>
+        get() {
+            val mapped = Account.mappedIds(getApplication<Application>())
+            return ytPlaylists.filter { it.id.removePrefix("VL") !in mapped }
+        }
+
+    fun ytPush(id: String) {
+        if (!ytSignedIn || !ytSync) return
+        if (Account.ytIdOf(getApplication<Application>(), id) != null) return
+        if (!ytPushing.add(id)) return
+        val pl = playlists.firstOrNull { it.id == id }
+        if (pl == null) {
+            ytPushing.remove(id)
+            return
+        }
+        viewModelScope.launch {
+            try {
+                val ids = pl.songs.mapNotNull { Account.videoId(it.url) }.distinct().take(300)
+                val yid = withContext(Dispatchers.IO) {
+                    Account.createPlaylist(getApplication<Application>(), pl.name, ids)
+                }
+                if (yid.isNotBlank()) Account.mapId(getApplication<Application>(), id, yid)
+            } catch (e: Exception) {
+                toast("YouTube Music: " + (e.message ?: "playlist not saved"))
+            } finally {
+                ytPushing.remove(id)
+            }
+        }
+    }
+
+    private fun ytAdd(id: String, song: Song) {
+        if (!ytSignedIn || !ytSync) return
+        val yid = Account.ytIdOf(getApplication<Application>(), id)
+        if (yid == null) {
+            ytPush(id)
+            return
+        }
+        val vid = Account.videoId(song.url) ?: return
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) { Account.addVideo(getApplication<Application>(), yid, vid) }
+            } catch (e: Exception) {
+                toast("YouTube Music: " + (e.message ?: "song not added"))
+            }
+        }
+    }
+
+    private fun ytRename(id: String) {
+        if (!ytSignedIn) return
+        val yid = Account.ytIdOf(getApplication<Application>(), id) ?: return
+        val name = playlists.firstOrNull { it.id == id }?.name ?: return
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) { Account.renamePlaylist(getApplication<Application>(), yid, name) }
+            } catch (e: Exception) {
+            }
+        }
+    }
+
+    private fun ytDelete(id: String) {
+        val yid = Account.ytIdOf(getApplication<Application>(), id) ?: return
+        Account.unmapId(getApplication<Application>(), id)
+        if (!ytSignedIn) return
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) { Account.deletePlaylist(getApplication<Application>(), yid) }
+            } catch (e: Exception) {
+            }
+        }
+    }
+
+    // uploads every VAME playlist that is not on YouTube Music yet
+    fun ytPushAll() {
+        if (!ytSignedIn) return
+        var n = 0
+        for (p in playlists.toList()) {
+            if (Account.ytIdOf(getApplication<Application>(), p.id) == null && p.songs.isNotEmpty()) {
+                val was = ytSync
+                ytSync = true
+                ytPush(p.id)
+                ytSync = was
+                n++
+            }
+        }
+        toast(if (n == 0) "All playlists are already on YouTube Music" else "Uploading " + n + " playlists to YouTube Music...")
+    }
+
     // start tab, lyrics alignment, tablet player width, artist page album card
     var startTab by mutableIntStateOf(Prefs.startTab(app))
     var lyricsLeft by mutableStateOf(Prefs.lyricsLeft(app))
@@ -1298,12 +1402,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var artistAlbumCardOn by mutableStateOf(Prefs.artistAlbumCard(app))
     var artistTop by mutableIntStateOf(Prefs.artistTop(app))
 
-    fun setArtistLatestPic(on: Boolean) {
+    fun chooseArtistLatestPic(on: Boolean) {
         artistLatestPic = on
         Prefs.setArtistLatest(getApplication<Application>(), on)
     }
 
-    fun setArtistAlbumCardOn(on: Boolean) {
+    fun chooseArtistAlbumCard(on: Boolean) {
         artistAlbumCardOn = on
         Prefs.setArtistAlbumCard(getApplication<Application>(), on)
     }

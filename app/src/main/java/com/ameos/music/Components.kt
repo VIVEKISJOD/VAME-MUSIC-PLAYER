@@ -269,6 +269,8 @@ fun SongRow(song: Song, vm: MainViewModel, list: List<Song>) {
 @Composable
 fun MiniPlayer(vm: MainViewModel, modifier: Modifier = Modifier) {
     val song = vm.current ?: return
+    // tablet: the player panel is open on the right, so no pill on any page
+    if (vm.showPlayer && androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= 600) return
     val shape = RoundedCornerShape(32.dp)
     val enter = remember { Animatable(0f) }
     LaunchedEffect(Unit) { enter.animateTo(1f, spring(dampingRatio = 0.8f, stiffness = 300f)) }

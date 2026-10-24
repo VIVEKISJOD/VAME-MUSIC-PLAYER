@@ -195,12 +195,16 @@ fun AccountSection(vm: MainViewModel) {
         }
         AccButton("Refresh YouTube library") { vm.refreshYt() }
         AccButton("Copy YouTube likes to my Liked songs") { vm.importYtLikes() }
+        AccButton("Save new playlists to YouTube Music: " + (if (vm.ytSync) "ON" else "OFF")) { vm.toggleYtSync() }
+        AccButton("Upload my VAME playlists to YouTube Music") { vm.ytPushAll() }
         AccButton("Sign out") { vm.signOutYt() }
     }
     Text(
-        "Unofficial: VAME reads your library the same way the YouTube Music website does, so it " +
-            "can stop working when YouTube changes something. It only reads (it never likes, " +
-            "deletes or edits anything on your account). Your login stays on this phone. " +
+        "Unofficial: VAME talks to YouTube Music the same way the website does, so it " +
+            "can stop working when YouTube changes something. It reads your library and, only " +
+            "if the switch above is ON, saves the playlists you make in VAME as private " +
+            "playlists on your account (create, add songs, rename, delete those only). It never " +
+            "touches your other playlists or likes. Your login stays on this phone. " +
             "Songs still play without ads through NewPipe.",
         fontSize = 12.sp, color = Pal.muted, modifier = Modifier.padding(top = 2.dp, bottom = 6.dp)
     )
