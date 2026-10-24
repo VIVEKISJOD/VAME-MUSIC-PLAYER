@@ -148,9 +148,9 @@ fun PlaylistScreen(vm: MainViewModel) {
 
             if (pl.songs.isEmpty()) {
                 Box(Modifier.weight(1f).fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                    Text(
-                        "No songs yet. Open the \"...\" menu on any song and tap Add to playlist.",
-                        fontSize = 15.sp, color = PDim
+                    EmptyState(
+                        Icons.Filled.LibraryMusic, "No songs yet",
+                        "Open the \"...\" menu on any song and tap Add to playlist."
                     )
                 }
             } else {

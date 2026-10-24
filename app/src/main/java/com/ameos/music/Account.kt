@@ -182,10 +182,39 @@ object Account {
         return post(c, "browse", b)
     }
 
+    // same as post(), but without a login (YouTube Music Home works for everyone)
+    private fun postAnon(endpoint: String, body: JSONObject): JSONObject {
+        val req = Request.Builder()
+            .url(ORIGIN + "/youtubei/v1/" + endpoint + "?prettyPrint=false")
+            .post(body.toString().toRequestBody(jsonType))
+            .header("User-Agent", UA)
+            .header("Accept", "*/*")
+            .header("Origin", ORIGIN)
+            .header("Referer", ORIGIN + "/")
+            .header("X-Origin", ORIGIN)
+            .header("X-YouTube-Client-Name", "67")
+            .header("X-YouTube-Client-Version", version())
+            .build()
+        return client.newCall(req).execute().use { r ->
+            val text = r.body?.string() ?: ""
+            if (!r.isSuccessful) throw IllegalStateException("YouTube HTTP " + r.code)
+            JSONObject(text)
+        }
+    }
+
+    // YouTube Music Home page (first page, or the next one when a token is given).
+    // Signed in = personal shelves (Listen again, From your library...), else the general ones.
+    fun homeFeed(c: Context, token: String?): JSONObject {
+        val b = JSONObject()
+        b.put("context", context())
+        if (token == null) b.put("browseId", "FEmusic_home") else b.put("continuation", token)
+        return if (signedIn(c)) post(c, "browse", b) else postAnon("browse", b)
+    }
+
     // ---------- reading the answer (YouTube changes this format, so we search for keys) ----------
 
     // first value of a key anywhere inside the node (document order)
-    private fun firstValue(node: Any?, key: String): Any? {
+    internal fun firstValue(node: Any?, key: String): Any? {
         if (node is JSONObject) {
             if (node.has(key)) return node.opt(key)
             val keys = node.keys()
@@ -203,7 +232,7 @@ object Account {
     }
 
     // every object stored under a key anywhere inside the node (document order)
-    private fun collect(node: Any?, key: String, out: MutableList<JSONObject>) {
+    internal fun collect(node: Any?, key: String, out: MutableList<JSONObject>) {
         if (node is JSONObject) {
             val v = node.optJSONObject(key)
             if (v != null) out.add(v)
@@ -216,7 +245,7 @@ object Account {
         }
     }
 
-    private fun runsText(runs: JSONArray?): String {
+    internal fun runsText(runs: JSONArray?): String {
         if (runs == null) return ""
         val sb = StringBuilder()
         for (i in 0 until runs.length()) {
@@ -233,7 +262,7 @@ object Account {
     }
 
     // the biggest picture inside an item
-    private fun coverOf(item: JSONObject): String? {
+    internal fun coverOf(item: JSONObject): String? {
         val arr = firstValue(item, "thumbnails") as? JSONArray ?: return null
         if (arr.length() == 0) return null
         val last = arr.optJSONObject(arr.length() - 1) ?: return null
@@ -250,7 +279,7 @@ object Account {
         return total
     }
 
-    private fun continuationOf(root: JSONObject): String? {
+    internal fun continuationOf(root: JSONObject): String? {
         val a = ArrayList<JSONObject>()
         collect(root, "nextContinuationData", a)
         for (o in a) {
@@ -267,7 +296,7 @@ object Account {
     }
 
     // one row of a song list -> Song (null when the song is not playable)
-    private fun toSong(item: JSONObject): Song? {
+    internal fun toSong(item: JSONObject): Song? {
         val videoId = firstValue(item, "videoId") as? String ?: return null
         if (videoId.isBlank()) return null
         val cols = item.optJSONArray("flexColumns") ?: return null

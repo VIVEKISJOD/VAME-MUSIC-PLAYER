@@ -37,6 +37,11 @@ object UiOpts {
     var homeShelves by mutableStateOf(true)
     var homeLastAlbums by mutableStateOf(true)
 
+    // step36: Home shelves from YouTube Music, soft vibration on taps, cover colour on every page
+    var homeYt by mutableStateOf(true)
+    var haptics by mutableStateOf(true)
+    var pageTint by mutableStateOf(true)
+
     // not saved: true while the player was opened by turning the phone sideways
     var standbyByRotate by mutableStateOf(false)
 
@@ -72,6 +77,9 @@ object UiOpts {
         homeArtists = p.getBoolean("homeArtists", true)
         homeShelves = p.getBoolean("homeShelves", true)
         homeLastAlbums = p.getBoolean("homeLastAlbums", true)
+        homeYt = p.getBoolean("homeYt", true)
+        haptics = p.getBoolean("haptics", true)
+        pageTint = p.getBoolean("pageTint", true)
     }
 
     fun save(c: Context) {
@@ -90,6 +98,9 @@ object UiOpts {
             .putBoolean("homeArtists", homeArtists)
             .putBoolean("homeShelves", homeShelves)
             .putBoolean("homeLastAlbums", homeLastAlbums)
+            .putBoolean("homeYt", homeYt)
+            .putBoolean("haptics", haptics)
+            .putBoolean("pageTint", pageTint)
             .apply()
     }
 }

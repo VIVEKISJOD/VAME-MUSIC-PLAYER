@@ -140,6 +140,20 @@ fun SettingsScreen(vm: MainViewModel) {
                     UiOpts.reduceMotion = it
                     UiOpts.save(ctx)
                 }
+                KitSwitch(
+                    "Vibration on tap", "A soft tick when you tap cards, buttons and the player.",
+                    UiOpts.haptics
+                ) {
+                    UiOpts.haptics = it
+                    UiOpts.save(ctx)
+                }
+                KitSwitch(
+                    "Cover colour on pages", "The colour of the playing song tints the top of every page.",
+                    UiOpts.pageTint
+                ) {
+                    UiOpts.pageTint = it
+                    UiOpts.save(ctx)
+                }
             }
 
             // ---------------- player ----------------
@@ -209,8 +223,12 @@ fun SettingsScreen(vm: MainViewModel) {
                 KitLabel("Home songs language", "Home shelves are built from the genres you picked.")
                 KitChips(vm.homeLang, listOf("English + Hindi", "English", "Hindi")) { vm.chooseHomeLang(it) }
                 KitDivider()
-                KitSwitch("Last played albums", "Shelf with what you played before.", UiOpts.homeLastAlbums) {
+                KitSwitch("Recents", "Shelf with the songs you played last (grid button shows all).", UiOpts.homeLastAlbums) {
                     UiOpts.homeLastAlbums = it
+                    UiOpts.save(ctx)
+                }
+                KitSwitch("YouTube Music shelves", "Listen again, Featured playlists, Trending and more from YouTube Music.", UiOpts.homeYt) {
+                    UiOpts.homeYt = it
                     UiOpts.save(ctx)
                 }
                 KitSwitch("Quick picks", "A shelf of extra songs to tap.", UiOpts.homeQuick) {

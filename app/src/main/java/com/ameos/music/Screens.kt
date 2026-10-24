@@ -30,6 +30,8 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -70,30 +72,28 @@ fun ProfileButton(vm: MainViewModel, size: androidx.compose.ui.unit.Dp, tappable
     }
 }
 
-// A row of big song cards (used for the genre shelves on Home)
-@Composable
-private fun SongShelf(vm: MainViewModel, songs: List<Song>) {
-    val w = if (LocalConfiguration.current.screenWidthDp >= 600) 200.dp else 160.dp
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-        items(songs) { s ->
-            Column(Modifier.width(w).pressScale().clickable { vm.play(s, songs) }) {
-                Cover(s.cover, Modifier.size(w), RoundedCornerShape(18.dp), hiRes = true)
-                Text(s.title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White, maxLines = 1,
-                    overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
-                Text(s.artist, fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1,
-                    overflow = TextOverflow.Ellipsis)
-            }
-        }
+private fun songItem(vm: MainViewModel, s: Song, list: List<Song>): ShelfItem =
+    ShelfItem(s.cover, s.title, "Song \u2022 " + artistName(s.artist), false, vm.current?.url == s.url) {
+        vm.play(s, list)
     }
+
+private fun ytItems(vm: MainViewModel, sh: YtShelf): List<ShelfItem> = sh.cards.map { c ->
+    ShelfItem(
+        c.cover, c.title, c.sub, c.kind == "artist",
+        c.kind == "song" && vm.current?.url == c.id
+    ) { vm.openYtCard(c, sh.cards) }
 }
 
 // ---------------- HOME ----------------
+// Everything on Home is a big cover card with the name under the picture (no tiny picture with
+// a wide name). Shelves: Recents, YouTube Music shelves, your own songs, albums, genres, artists.
 
 @Composable
 fun HomeScreen(vm: MainViewModel) {
-    val recs = vm.recommended.take(6)
-    val lastAlbums = if (vm.played.size > 1) vm.played.toList() else vm.recommended.drop(5)
+    val big = LocalConfiguration.current.screenWidthDp >= 600
+    val cw = shelfW()
+    val cols = if (big) 5 else 2
+    val ytShelves = if (UiOpts.homeYt) vm.ytHome else emptyList()
 
     LazyColumn(contentPadding = ScreenPad) {
         item {
@@ -102,6 +102,7 @@ fun HomeScreen(vm: MainViewModel) {
             }
         }
         item {
+            val tick = rememberTick()
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("All", "Music", "Podcasts", "Playlists").forEachIndexed { i, t ->
                     val chipBg by animateColorAsState(
@@ -113,201 +114,142 @@ fun HomeScreen(vm: MainViewModel) {
                         modifier = Modifier
                             .clip(RoundedCornerShape(50))
                             .background(chipBg)
-                            .clickable { vm.pickFilter(i) }
+                            .clickable {
+                                tick()
+                                vm.pickFilter(i)
+                            }
                             .padding(horizontal = 14.dp, vertical = 8.dp)
                     )
                 }
             }
         }
         if (vm.homeFilter == 0) {
-        // Liked songs shelf (replaces the old Last Played banner)
-        item {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                SectionLabel(if (vm.liked.isNotEmpty()) "Liked songs" else "Songs for you")
-                if (vm.liked.isNotEmpty()) {
-                    Text(
-                        "See all", fontSize = 13.sp, color = Pal.textDim,
-                        modifier = Modifier
-                            .padding(top = 10.dp)
-                            .clip(RoundedCornerShape(50))
-                            .clickable { vm.likedOpen = true }
-                            .padding(horizontal = 10.dp, vertical = 4.dp)
+            // Recents: cards, and the grid button opens all of them as a grid
+            if (UiOpts.homeLastAlbums && vm.played.isNotEmpty()) {
+                item {
+                    val showAll = remember { mutableStateOf(false) }
+                    val rec = vm.played.toList()
+                    val cards = rec.map { s -> songItem(vm, s, rec) }
+                    Column {
+                        ShelfTitle("Recents") {
+                            Box(
+                                Modifier.size(40.dp).clip(CircleShape).clickable { showAll.value = !showAll.value },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Filled.GridView, null,
+                                    tint = if (showAll.value) Pal.accent else Color.White,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+                        if (showAll.value) CardGrid(cards, cols) else CardShelf(cards.take(14), cw)
+                    }
+                }
+            }
+            // first two YouTube Music shelves (Listen again, Quick picks...)
+            for (sh in ytShelves.take(2)) {
+                item { ShelfTitle(sh.title, sh.sub) }
+                item { CardShelf(ytItems(vm, sh), cw) }
+            }
+            // songs you liked (or songs for you)
+            item {
+                ShelfTitle(if (vm.liked.isNotEmpty()) "Liked songs" else "Songs for you") {
+                    if (vm.liked.isNotEmpty()) {
+                        Text(
+                            "See all", fontSize = 13.sp, color = Pal.textDim,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50))
+                                .clickable { vm.likedOpen = true }
+                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+            }
+            item {
+                val shelf = if (vm.liked.isNotEmpty()) vm.liked.toList() else vm.recommended.take(12)
+                if (shelf.isEmpty()) {
+                    ShimmerShelf(cw)
+                } else {
+                    CardShelf(shelf.map { s -> songItem(vm, s, shelf) }, cw)
+                }
+            }
+            if (vm.recommendedAlbums.isNotEmpty()) {
+                item { ShelfTitle("Albums for you") }
+                item {
+                    CardShelf(
+                        vm.recommendedAlbums.map { a ->
+                            ShelfItem(a.cover, a.title, "Album \u2022 " + a.artist) { vm.openAlbum(a) }
+                        },
+                        cw
                     )
                 }
             }
-        }
-        item {
-            val shelf = if (vm.liked.isNotEmpty()) vm.liked.toList() else vm.recommended.take(12)
-            val big = LocalConfiguration.current.screenWidthDp >= 600
-            val sz = if (big) 230.dp else 184.dp
-            if (shelf.isEmpty()) {
-                Box(
-                    Modifier.fillMaxWidth().height(sz).clip(RoundedCornerShape(24.dp))
-                        .glassFill().border(1.dp, Stroke, RoundedCornerShape(24.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Tap the heart on a song and it shows up here", fontSize = 14.sp, color = Pal.textDim)
-                }
-            } else {
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    items(shelf) { s ->
-                        Column(
-                            Modifier.width(sz).appear().pressScale(0.97f)
-                                .clip(RoundedCornerShape(20.dp))
-                                .clickable { vm.play(s, shelf) }
-                        ) {
-                            Box(Modifier.size(sz)) {
-                                Cover(s.cover, Modifier.fillMaxSize(), RoundedCornerShape(20.dp), hiRes = true)
-                                Box(
-                                    Modifier.fillMaxSize().clip(RoundedCornerShape(20.dp))
-                                        .border(1.dp, GlassEdge, RoundedCornerShape(20.dp))
-                                )
-                                Box(
-                                    Modifier.align(Alignment.BottomEnd).padding(8.dp).size(36.dp)
-                                        .clip(CircleShape).glass(CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(Icons.Filled.PlayArrow, null, tint = Color.White, modifier = Modifier.size(22.dp))
-                                }
-                            }
-                            Text(s.title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
-                                maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
-                            Text(s.artist, fontSize = 12.sp, color = Pal.textDim, maxLines = 1,
-                                overflow = TextOverflow.Ellipsis)
-                        }
+            val picks = vm.recommended.drop(4).take(12)
+            if (UiOpts.homeQuick && picks.isNotEmpty()) {
+                item { ShelfTitle("Quick picks") }
+                item { CardShelf(picks.map { s -> songItem(vm, s, picks) }, cw) }
+            }
+            for (sh in (if (UiOpts.homeShelves) vm.genreShelves else emptyList())) {
+                item { ShelfTitle(sh.name) }
+                item { CardShelf(sh.songs.map { s -> songItem(vm, s, sh.songs) }, cw) }
+            }
+            // the rest of the YouTube Music shelves, or a loading / error state
+            for (sh in ytShelves.drop(2)) {
+                item { ShelfTitle(sh.title, sh.sub) }
+                item { CardShelf(ytItems(vm, sh), cw) }
+            }
+            if (UiOpts.homeYt && vm.ytHome.isEmpty()) {
+                if (vm.ytHomeLoading) {
+                    item { ShelfTitle("Loading YouTube Music") }
+                    item { ShimmerShelf(cw) }
+                } else if (vm.ytHomeError != null) {
+                    item {
+                        EmptyState(
+                            Icons.Filled.CloudOff, "Could not load YouTube Music shelves",
+                            "Check your internet and try again.", "Try again"
+                        ) { vm.loadYtHome() }
                     }
                 }
             }
-        }
-        item { SectionLabel("Recommended Albums", "NEW") }
-        item {
-            if (vm.recommendedAlbums.isNotEmpty()) {
-                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    vm.recommendedAlbums.chunked(2).forEach { pair ->
-                        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                            pair.forEach { a ->
-                                Row(
-                                    Modifier.weight(1f).pressScale().clickable { vm.openAlbum(a) },
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Cover(a.cover, Modifier.size(66.dp), RoundedCornerShape(12.dp))
-                                    Spacer(Modifier.width(10.dp))
-                                    Column {
-                                        Text(a.title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
-                                            maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                        Text(a.artist, fontSize = 14.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    }
-                                }
-                            }
-                            if (pair.size == 1) Spacer(Modifier.weight(1f))
-                        }
-                    }
-                }
-            } else {
-                val rows = recs.chunked(2)
-                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    rows.forEach { pair ->
-                        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                            pair.forEach { s ->
-                                Row(
-                                    Modifier.weight(1f).pressScale().clickable { vm.play(s, vm.recommended) },
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Cover(s.cover, Modifier.size(66.dp), RoundedCornerShape(12.dp))
-                                    Spacer(Modifier.width(10.dp))
-                                    Column {
-                                        Text(s.title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
-                                            maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                        Text(s.artist, fontSize = 14.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    }
-                                }
-                            }
-                            if (pair.size == 1) Spacer(Modifier.weight(1f))
-                        }
-                    }
+            if (UiOpts.homeArtists && vm.likedArtists.isNotEmpty()) {
+                item { ShelfTitle("Your artists") }
+                item {
+                    CardShelf(
+                        vm.likedArtists.toList().map { a ->
+                            ShelfItem(a.cover, a.name, "Artist", true) { vm.openArtist(a.name) }
+                        },
+                        if (big) 150.dp else 118.dp
+                    )
                 }
             }
-        }
-        if (UiOpts.homeLastAlbums) item { SectionLabel("Last played albums") }
-        if (UiOpts.homeLastAlbums) item {
-            val lw = if (LocalConfiguration.current.screenWidthDp >= 600) 220.dp else 176.dp
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                items(lastAlbums) { s ->
-                    Column(Modifier.width(lw).pressScale().clickable { vm.play(s, lastAlbums) }) {
-                        Cover(s.cover, Modifier.size(lw), RoundedCornerShape(20.dp), hiRes = true)
-                        Text(s.title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White, maxLines = 1,
-                            overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
-                        Text(s.artist, fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1,
-                            overflow = TextOverflow.Ellipsis)
-                    }
+            if (vm.suggestions.isNotEmpty()) {
+                item { ShelfTitle("Suggested for you") }
+                item {
+                    val sg = vm.suggestions.take(12)
+                    CardShelf(sg.map { s -> songItem(vm, s, vm.suggestions) }, cw)
                 }
             }
-        }
-        val picks = vm.recommended.drop(4).take(12)
-        if (UiOpts.homeQuick && picks.isNotEmpty()) {
-            item { SectionLabel("Quick picks") }
-            item {
-                val qw = if (LocalConfiguration.current.screenWidthDp >= 600) 220.dp else 176.dp
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    items(picks) { s ->
-                        Column(Modifier.width(qw).pressScale().clickable { vm.play(s, picks) }) {
-                            Cover(s.cover, Modifier.size(qw), RoundedCornerShape(20.dp), hiRes = true)
-                            Text(s.title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White, maxLines = 1,
-                                overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
-                            Text(s.artist, fontSize = 13.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1,
-                                overflow = TextOverflow.Ellipsis)
-                        }
-                    }
-                }
-            }
-        }
-        for (sh in (if (UiOpts.homeShelves) vm.genreShelves else emptyList())) {
-            item { SectionLabel(sh.name) }
-            item { SongShelf(vm, sh.songs) }
-        }
-        if (UiOpts.homeArtists && vm.likedArtists.isNotEmpty()) {
-            item { SectionLabel("Your artists") }
-            item {
-                val aw = if (LocalConfiguration.current.screenWidthDp >= 600) 130.dp else 104.dp
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    items(vm.likedArtists.toList()) { a ->
-                        Column(
-                            Modifier.width(aw).pressScale().clickable { vm.openArtist(a.name) },
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Cover(a.cover, Modifier.size(aw), CircleShape, hiRes = true)
-                            Text(a.name, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
-                                maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
-                        }
-                    }
-                }
-            }
-        }
-        if (vm.suggestions.isNotEmpty()) {
-            item { SectionLabel("Suggested for you") }
-            items(vm.suggestions.take(6)) { s -> SongRow(s, vm, vm.suggestions) }
-        }
         }
         if (vm.homeFilter == 1) {
-            item { SectionLabel("Songs for you") }
-            items(vm.recommended) { s -> SongRow(s, vm, vm.recommended) }
+            item { ShelfTitle("Songs for you") }
+            item {
+                if (vm.recommended.isEmpty()) {
+                    ShimmerShelf(cw)
+                } else {
+                    CardGrid(vm.recommended.map { s -> songItem(vm, s, vm.recommended) }, cols)
+                }
+            }
         }
         if (vm.homeFilter == 2) {
-            item { SectionLabel("Podcasts") }
-            if (vm.podcasts.isEmpty()) {
-                item { Text("Loading...", color = Pal.textDim) }
+            item { ShelfTitle("Podcasts") }
+            item {
+                if (vm.podcasts.isEmpty()) {
+                    ShimmerShelf(cw)
+                } else {
+                    CardGrid(vm.podcasts.map { s -> songItem(vm, s, vm.podcasts) }, cols)
+                }
             }
-            items(vm.podcasts) { s -> SongRow(s, vm, vm.podcasts) }
         }
         if (vm.homeFilter == 3) {
             item { SectionLabel("Playlists (" + (vm.playlists.size + vm.ytPlaylistsShown.size) + ")") }
@@ -350,9 +292,9 @@ fun HomeScreen(vm: MainViewModel) {
             }
             if (vm.playlists.isEmpty() && vm.ytPlaylistsShown.isEmpty()) {
                 item {
-                    Text(
-                        "No playlists yet. Make one in Library, or sign in there to see your YouTube Music playlists.",
-                        fontSize = 13.sp, color = Pal.textDim, modifier = Modifier.padding(top = 14.dp)
+                    EmptyState(
+                        Icons.Filled.LibraryMusic, "No playlists yet",
+                        "Make one with the New playlist tile, or sign in from Library to see your YouTube Music playlists."
                     )
                 }
             }
@@ -512,7 +454,7 @@ fun ExploreScreen(vm: MainViewModel) {
         }
         if (vm.loading) {
             item {
-                Text("Loading...", color = Pal.textDim, modifier = Modifier.padding(top = 12.dp))
+                Box(Modifier.padding(top = 12.dp)) { ShimmerShelf(shelfW()) }
             }
         }
         if (!vm.searched) {

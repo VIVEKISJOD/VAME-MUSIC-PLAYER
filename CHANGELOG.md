@@ -1,4 +1,19 @@
-# VAME Music - full changelog (up to zip step35, v0.19.0, 24 Oct 2026)
+# VAME Music - full changelog (up to zip step36, v0.20.0, 24 Oct 2026)
+
+## step36 (v0.20.0) - includes everything up to step35
+- Changed: Home is now all big cover cards with the name under the picture. No more small-picture rows with a wide name. Recommended Albums, Suggested for you and the Music / Podcasts tabs are cards or grids now.
+- New: Recents shelf at the top of Home. The grid button next to the title opens all your recent songs as a grid.
+- New: YouTube Music shelves on Home (Listen again, Quick picks, Featured playlists, Covers and remixes, Trending, India's biggest hits and more). Signed in = your own shelves, signed out = the general ones. Tap a song to play it, an album or playlist to open its page, an artist to open the artist page. Settings > Home > YouTube Music shelves turns them off.
+- New: shelf titles are bigger with a small dim line under them, cards show "Song / Album . Artist", and the song that is playing shows its name in the accent colour. About two cards and a piece of the third show on a phone.
+- New: the player is sucked into the mini player pill when you close it, and pops out of it when you open it. The screen squeezes flat towards the pill and the big cover flies down onto the pill cover.
+- New: on a sideways tablet the side player grows out of the small box (or pill) and shrinks back into it.
+- New: album, artist, playlist, liked and downloads pages grow out of the card you tapped and shrink back into it.
+- New: loading shimmer (soft moving grey cards) on Home, Explore and Podcasts while songs load.
+- New: nicer empty and error screens (no playlists, no songs, nothing downloaded, no liked songs, YouTube Music shelves failed with a Try again button).
+- New: soft vibration on taps (cards, chips, bottom bar, mini player). Settings > Interface > Vibration on tap.
+- New: the colour of the playing cover tints the top of every page. Settings > Interface > Cover colour on pages.
+- Changed: Settings > Home "Last played albums" is now "Recents".
+- NOT built yet (asked for, left for later): update download as a notification that keeps going with the app closed, and multi-column tablet grids on Explore and Library (Home already uses bigger cards on tablets).
 
 ## step35 (v0.19.0) - includes everything up to step34
 - New: Standby mode for phones. Turn the phone sideways while music plays and a big landscape player opens by itself: cover on the left, title, progress bar, rewind / play / forward, volume, lyrics, sound output, repeat and queue on the right, plus a small clock. Turn the phone back and it closes.

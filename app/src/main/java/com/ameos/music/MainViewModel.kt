@@ -152,6 +152,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     // Home genre shelves (declared up here because loadHome() runs in the first init block)
     var genreShelves by mutableStateOf<List<GenreShelf>>(emptyList())
     var homeLang by mutableIntStateOf(Prefs.homeLang(app))
+    // YouTube Music Home shelves (declared up here because loadHome() runs in the first init block)
+    var ytHome by mutableStateOf<List<YtShelf>>(emptyList())
+    var ytHomeLoading by mutableStateOf(false)
+    var ytHomeError by mutableStateOf<String?>(null)
+    private var ytHomeJob: Job? = null
     // tablet (sideways): where the small floating player box sits (side + distance from the bottom)
     var boxRight by mutableStateOf(Prefs.boxRight(app))
     var boxBottomDp by mutableIntStateOf(Prefs.boxBottom(app))
@@ -314,6 +319,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun loadHome() {
         loadAlbums()
         loadGenreShelves()
+        loadYtHome()
         viewModelScope.launch {
             try {
                 val g = genres.toList().shuffled().take(3)
@@ -1452,6 +1458,49 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    // YouTube Music Home shelves: first page + up to two more, shown as each page arrives
+    fun loadYtHome() {
+        ytHomeJob?.cancel()
+        ytHomeJob = viewModelScope.launch {
+            ytHomeLoading = true
+            ytHomeError = null
+            val all = ArrayList<YtShelf>()
+            try {
+                var token: String? = null
+                var n = 0
+                while (n < 3) {
+                    val pg = YtHome.page(getApplication<Application>(), token)
+                    for (sh in pg.shelves) {
+                        if (all.none { it.title == sh.title }) all.add(sh)
+                    }
+                    ytHome = all.toList()
+                    token = pg.next ?: break
+                    n++
+                }
+                if (all.isEmpty()) ytHomeError = "No shelves came back from YouTube Music."
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                if (all.isEmpty()) ytHomeError = e.message ?: e.javaClass.simpleName
+            }
+            ytHomeLoading = false
+        }
+    }
+
+    // tap on a YouTube Music Home card: play the song, open the album / playlist / artist page
+    fun openYtCard(card: YtCard, shelf: List<YtCard>) {
+        when (card.kind) {
+            "song" -> {
+                val songs = shelf.filter { it.kind == "song" }
+                    .map { Song(it.title, it.artist, it.id, it.cover, 0L) }
+                val me = songs.firstOrNull { it.url == card.id } ?: return
+                play(me, songs)
+            }
+            "artist" -> openArtist(card.title)
+            else -> openYtPlaylist(YtPlaylist(card.id, card.title, card.sub, card.cover))
+        }
+    }
+
     fun loadGenreShelves() {
         shelfJob?.cancel()
         shelfJob = viewModelScope.launch {
@@ -1550,6 +1599,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         ytSignedIn = true
         showLogin = false
         refreshYt()
+        loadYtHome()
     }
 
     fun refreshYt() {
@@ -1595,6 +1645,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         ytStatus = ""
         ytPlaylists.clear()
         ytArtists.clear()
+        loadYtHome()
     }
 
     // opens a YouTube library playlist on the album page (songs stay on YouTube, nothing is copied)
@@ -1606,7 +1657,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         albumJob?.cancel()
         albumJob = viewModelScope.launch {
             try {
-                val songs = Account.playlistSongs(getApplication<Application>(), p.id)
+                val raw = Account.playlistSongs(getApplication<Application>(), p.id)
+                // album tracks come without a picture / artist: take them from the album card
+                val songs = if (p.id.startsWith("MPRE")) {
+                    raw.map { it.copy(cover = it.cover ?: p.cover, artist = it.artist.ifBlank { YtHome.artistOf(p.subtitle) }) }
+                } else raw
                 albumSongs = songs
                 val cur = albumInfo
                 if (cur != null && cur.cover == null && songs.isNotEmpty()) {

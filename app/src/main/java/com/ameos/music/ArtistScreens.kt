@@ -368,9 +368,9 @@ fun LikedScreen(vm: MainViewModel) {
                     Modifier.weight(1f).fillMaxWidth().padding(32.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        "No liked songs yet. Tap the heart on any song.",
-                        fontSize = 15.sp, color = Pal.textDim
+                    EmptyState(
+                        Icons.Filled.Favorite, "No liked songs yet",
+                        "Tap the heart on any song and it shows up here."
                     )
                 }
             } else {

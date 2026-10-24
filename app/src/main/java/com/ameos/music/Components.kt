@@ -59,6 +59,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -287,6 +289,7 @@ fun MiniPlayer(
     // (force = true is used by the tablet pill and by the pill on top of Settings)
     if (!force && isTabletLandscape()) return
     val shape = RoundedCornerShape(32.dp)
+    val tick = rememberTick()
     val enter = remember { Animatable(0f) }
     LaunchedEffect(Unit) { enter.animateTo(1f, spring(dampingRatio = 0.8f, stiffness = 300f)) }
     Box(
@@ -300,6 +303,7 @@ fun MiniPlayer(
             .pressScale(0.97f)
             .clip(shape)
             .clickable {
+                tick()
                 val go = onOpen
                 if (go != null) {
                     go()
@@ -320,7 +324,11 @@ fun MiniPlayer(
             Modifier.fillMaxSize().padding(horizontal = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Cover(song.cover, Modifier.size(44.dp), RoundedCornerShape(12.dp))
+            Cover(
+                song.cover,
+                Modifier.size(44.dp).onGloballyPositioned { PillPos.rect = it.boundsInRoot() },
+                RoundedCornerShape(12.dp)
+            )
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(
@@ -335,7 +343,10 @@ fun MiniPlayer(
             IconButton(onClick = { vm.prev() }) {
                 Icon(Icons.Filled.SkipPrevious, null, tint = Color.White)
             }
-            IconButton(onClick = { vm.toggle() }) {
+            IconButton(onClick = {
+                tick()
+                vm.toggle()
+            }) {
                 if (vm.loading) {
                     CircularProgressIndicator(
                         Modifier.size(22.dp), color = Color.White, strokeWidth = 2.dp
@@ -367,6 +378,7 @@ fun BottomBar(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modif
         TabItem("Library", Icons.Filled.LibraryMusic)
     )
     val shape = RoundedCornerShape(32.dp)
+    val tick = rememberTick()
     Row(
         modifier
             .fillMaxWidth()
@@ -382,7 +394,10 @@ fun BottomBar(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modif
                     .weight(1f)
                     .fillMaxHeight()
                     .pressScale(0.9f)
-                    .clickable { onSelect(i) },
+                    .clickable {
+                        tick()
+                        onSelect(i)
+                    },
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {

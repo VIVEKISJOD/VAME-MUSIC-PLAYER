@@ -315,10 +315,9 @@ fun DownloadsScreen(vm: MainViewModel) {
                 }
                 if (songs.isEmpty() && active.isEmpty()) {
                     item {
-                        Text(
-                            "Nothing downloaded yet. Open the \"...\" menu on a song and tap Download.",
-                            fontSize = 15.sp, color = ADim,
-                            modifier = Modifier.padding(24.dp)
+                        EmptyState(
+                            Icons.Filled.Download, "Nothing downloaded yet",
+                            "Open the \"...\" menu on a song and tap Download."
                         )
                     }
                 }

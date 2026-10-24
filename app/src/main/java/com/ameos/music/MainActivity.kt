@@ -14,6 +14,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
@@ -52,6 +55,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.coerceIn
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -163,6 +167,18 @@ fun AmeosRoot(vm: MainViewModel) {
                 )
             )
     ) {
+        // the colour of the playing cover tints the top of every page
+        if (UiOpts.pageTint && vm.current != null) {
+            val pageTint = rememberCoverTint(vm.current?.cover)
+            Box(
+                Modifier.fillMaxSize().background(
+                    Brush.verticalGradient(
+                        listOf(pageTint.copy(alpha = if (Pal.amoled) 0.30f else 0.42f), Color.Transparent),
+                        endY = 1100f
+                    )
+                )
+            )
+        }
         Box(
             Modifier
                 .fillMaxSize()
@@ -174,10 +190,16 @@ fun AmeosRoot(vm: MainViewModel) {
                     Box(Modifier.weight(1f).fillMaxHeight().nestedScroll(dockScroll)) {
                         MainPages(vm, true, dockFolded) { dockFolded = false }
                     }
+                    // the panel grows out of the small box / pill and shrinks back into it
+                    val origin = panelOrigin(vm)
                     AnimatedVisibility(
                         visible = vm.showPlayer && vm.current != null,
-                        enter = slideInHorizontally(tween(380)) { it } + fadeIn(tween(250)),
-                        exit = slideOutHorizontally(tween(320)) { it } + fadeOut(tween(200))
+                        enter = if (UiOpts.reduceMotion) fadeIn(tween(200)) else
+                            scaleIn(tween(420, easing = FastOutSlowInEasing), initialScale = 0.18f, transformOrigin = origin) +
+                                fadeIn(tween(260)),
+                        exit = if (UiOpts.reduceMotion) fadeOut(tween(160)) else
+                            scaleOut(tween(340, easing = FastOutSlowInEasing), targetScale = 0.18f, transformOrigin = origin) +
+                                fadeOut(tween(220))
                     ) {
                         PlayerPanel(vm)
                     }
@@ -195,9 +217,10 @@ fun AmeosRoot(vm: MainViewModel) {
                     MainPages(vm, false, dockFolded) { dockFolded = false }
                 }
                 // the player opens out of the mini player pill and collapses back into it
-                MorphLayer(
+                PlayerMorph(
                     visible = vm.showPlayer && vm.current != null,
-                    originX = 0.5f, originY = 0.92f, startScaleX = 0.92f, startScaleY = 0.08f
+                    cover = vm.current?.cover,
+                    fly = !phoneLand
                 ) {
                     if (phoneLand) StandbyPlayer(vm) else NowPlayingScreen(vm)
                 }
@@ -348,36 +371,36 @@ private fun MainPages(vm: MainViewModel, tablet: Boolean, dockFolded: Boolean, o
         }
         AnimatedVisibility(
             visible = vm.playlistOpen,
-            enter = slideInHorizontally(tween(360, easing = FastOutSlowInEasing)) { it } + fadeIn(tween(250)),
-            exit = slideOutHorizontally(tween(280)) { it } + fadeOut(tween(200))
+            enter = detailIn(),
+            exit = detailOut()
         ) {
             PlaylistScreen(vm)
         }
         AnimatedVisibility(
             visible = vm.likedOpen,
-            enter = slideInHorizontally(tween(360, easing = FastOutSlowInEasing)) { it } + fadeIn(tween(250)),
-            exit = slideOutHorizontally(tween(280)) { it } + fadeOut(tween(200))
+            enter = detailIn(),
+            exit = detailOut()
         ) {
             LikedScreen(vm)
         }
         AnimatedVisibility(
             visible = vm.albumOpen,
-            enter = slideInHorizontally(tween(360, easing = FastOutSlowInEasing)) { it } + fadeIn(tween(250)),
-            exit = slideOutHorizontally(tween(280)) { it } + fadeOut(tween(200))
+            enter = detailIn(),
+            exit = detailOut()
         ) {
             AlbumScreen(vm)
         }
         AnimatedVisibility(
             visible = vm.downloadsOpen,
-            enter = slideInHorizontally(tween(360, easing = FastOutSlowInEasing)) { it } + fadeIn(tween(250)),
-            exit = slideOutHorizontally(tween(280)) { it } + fadeOut(tween(200))
+            enter = detailIn(),
+            exit = detailOut()
         ) {
             DownloadsScreen(vm)
         }
         AnimatedVisibility(
             visible = vm.artistOpen,
-            enter = slideInHorizontally(tween(360, easing = FastOutSlowInEasing)) { it } + fadeIn(tween(250)),
-            exit = slideOutHorizontally(tween(280)) { it } + fadeOut(tween(200))
+            enter = detailIn(),
+            exit = detailOut()
         ) {
             ArtistScreen(vm)
         }
@@ -388,9 +411,7 @@ private fun MainPages(vm: MainViewModel, tablet: Boolean, dockFolded: Boolean, o
 // the pages stay usable on the left.
 @Composable
 private fun PlayerPanel(vm: MainViewModel) {
-    val w = LocalConfiguration.current.screenWidthDp
-    val panelW = if (vm.panelWide) (w * 0.46f).dp.coerceIn(400.dp, 620.dp)
-    else (w * 0.36f).dp.coerceIn(360.dp, 470.dp)
+    val panelW = panelWidthDp(vm, LocalConfiguration.current.screenWidthDp)
     // full height, touches the top, right and bottom edge (the player draws its own insets)
     Box(
         Modifier
@@ -399,6 +420,48 @@ private fun PlayerPanel(vm: MainViewModel) {
     ) {
         NowPlayingScreen(vm)
     }
+}
+
+private fun panelWidthDp(vm: MainViewModel, w: Int): Dp =
+    if (vm.panelWide) (w * 0.46f).dp.coerceIn(400.dp, 620.dp)
+    else (w * 0.36f).dp.coerceIn(360.dp, 470.dp)
+
+// Tablet: the point (inside the side panel) where the small box or pill sits,
+// so the panel can grow out of it and shrink back into it.
+@Composable
+private fun panelOrigin(vm: MainViewModel): TransformOrigin {
+    val c = LocalConfiguration.current
+    val w = c.screenWidthDp.toFloat()
+    val h = c.screenHeightDp.toFloat()
+    val pw = panelWidthDp(vm, c.screenWidthDp).value
+    val left = w - pw
+    val cx: Float
+    val cy: Float
+    if (UiOpts.tabletPill) {
+        cx = 92f + (w - 92f) / 2f
+        cy = h - 48f
+    } else {
+        cx = if (vm.boxRight) w - 16f - 78f else 104f + 78f
+        cy = h - vm.boxBottomDp - 102f
+    }
+    return TransformOrigin(((cx - left) / pw).coerceIn(0f, 1f), (cy / h).coerceIn(0f, 1f))
+}
+
+// detail pages (album, artist, playlist, liked, downloads) grow out of the card you tapped
+private fun detailIn(): EnterTransition {
+    if (UiOpts.reduceMotion) return fadeIn(tween(160))
+    return fadeIn(tween(240)) + scaleIn(
+        tween(400, easing = FastOutSlowInEasing), initialScale = 0.78f,
+        transformOrigin = TransformOrigin(DetailOrigin.fx, DetailOrigin.fy)
+    )
+}
+
+private fun detailOut(): ExitTransition {
+    if (UiOpts.reduceMotion) return fadeOut(tween(140))
+    return fadeOut(tween(200)) + scaleOut(
+        tween(300, easing = FastOutSlowInEasing), targetScale = 0.86f,
+        transformOrigin = TransformOrigin(DetailOrigin.fx, DetailOrigin.fy)
+    )
 }
 
 // One smooth "grow out of a spot / shrink back into it" animation, used for the player,
