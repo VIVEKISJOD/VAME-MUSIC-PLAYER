@@ -143,7 +143,7 @@ fun BigCard(item: ShelfItem, w: Dp, modifier: Modifier = Modifier) {
 
 @Composable
 fun CardShelf(list: List<ShelfItem>, w: Dp) {
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+    LazyRow(Modifier.appear(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
         items(list) { card -> BigCard(card, w) }
     }
 }
@@ -167,7 +167,7 @@ fun CardGrid(list: List<ShelfItem>, cols: Int) {
 @Composable
 fun ShelfTitle(title: String, sub: String = "", trailing: (@Composable () -> Unit)? = null) {
     Row(
-        Modifier.fillMaxWidth().padding(top = 26.dp, bottom = 12.dp),
+        Modifier.appear().fillMaxWidth().padding(top = 26.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(Modifier.weight(1f)) {

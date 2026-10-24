@@ -2,6 +2,7 @@ package com.ameos.music
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
@@ -102,6 +103,16 @@ fun HomeScreen(vm: MainViewModel) {
             }
         }
         item {
+            val hour = remember { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) }
+            val hi = if (hour < 5) "Late night" else if (hour < 12) "Good morning"
+            else if (hour < 17) "Good afternoon" else if (hour < 22) "Good evening" else "Late night"
+            val nm = vm.userName.ifBlank { vm.ytName }
+            Text(
+                if (nm.isBlank()) hi else hi + ", " + nm,
+                fontSize = 15.sp, color = Pal.textDim, modifier = Modifier.padding(bottom = 12.dp)
+            )
+        }
+        item {
             val tick = rememberTick()
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("All", "Music", "Podcasts", "Playlists").forEachIndexed { i, t ->
@@ -130,7 +141,7 @@ fun HomeScreen(vm: MainViewModel) {
                     val showAll = remember { mutableStateOf(false) }
                     val rec = vm.played.toList()
                     val cards = rec.map { s -> songItem(vm, s, rec) }
-                    Column {
+                    Column(Modifier.animateContentSize()) {
                         ShelfTitle("Recents") {
                             Box(
                                 Modifier.size(40.dp).clip(CircleShape).clickable { showAll.value = !showAll.value },

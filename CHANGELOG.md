@@ -1,4 +1,13 @@
-# VAME Music - full changelog (up to zip step36, v0.20.0, 24 Oct 2026)
+# VAME Music - full changelog (up to zip step37, v0.20.1, 24 Oct 2026)
+
+## step37 (v0.20.1) - includes everything up to step36
+- Fixed: the player animation was too fast to see on the phone and not smooth on the tablet. It now takes about half a second with a soft landing. On the phone the whole player screen melts onto the mini player pill while the big cover flies down onto the pill cover. On the tablet the side player shrinks into the small box or pill and grows back out.
+- Fixed: both animations are drawn once and then only moved, so they no longer stutter while the player is heavy.
+- New: Settings, Lyrics, Recap, Sign in, Spotify and Move to another app use the same soft half-second grow and shrink.
+- New: greeting under the Home title (Good morning / afternoon / evening, with your name).
+- New: Home titles and shelves rise in softly as you scroll to them.
+- New: the Recents grid opens and closes with a smooth animation.
+- New: soft vibration on the tablet box buttons (previous, play, next).
 
 ## step36 (v0.20.0) - includes everything up to step35
 - Changed: Home is now all big cover cards with the name under the picture. No more small-picture rows with a wide name. Recommended Albums, Suggested for you and the Music / Podcasts tabs are cards or grids now.

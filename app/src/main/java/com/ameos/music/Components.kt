@@ -296,6 +296,7 @@ fun MiniPlayer(
         modifier
             .fillMaxWidth()
             .height(64.dp)
+            .onGloballyPositioned { PillPos.pill = it.boundsInRoot() }
             .graphicsLayer {
                 alpha = enter.value.coerceIn(0f, 1f)
                 translationY = (1f - enter.value) * 80f

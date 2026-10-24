@@ -26,6 +26,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -192,15 +193,7 @@ fun AmeosRoot(vm: MainViewModel) {
                     }
                     // the panel grows out of the small box / pill and shrinks back into it
                     val origin = panelOrigin(vm)
-                    AnimatedVisibility(
-                        visible = vm.showPlayer && vm.current != null,
-                        enter = if (UiOpts.reduceMotion) fadeIn(tween(200)) else
-                            scaleIn(tween(420, easing = FastOutSlowInEasing), initialScale = 0.18f, transformOrigin = origin) +
-                                fadeIn(tween(260)),
-                        exit = if (UiOpts.reduceMotion) fadeOut(tween(160)) else
-                            scaleOut(tween(340, easing = FastOutSlowInEasing), targetScale = 0.18f, transformOrigin = origin) +
-                                fadeOut(tween(220))
-                    ) {
+                    PanelMorph(vm.showPlayer && vm.current != null, origin) {
                         PlayerPanel(vm)
                     }
                 }
@@ -478,7 +471,7 @@ private fun MorphLayer(
 ) {
     val morphSpec: androidx.compose.animation.core.AnimationSpec<Float> =
         if (UiOpts.reduceMotion) androidx.compose.animation.core.snap()
-        else spring(dampingRatio = 0.88f, stiffness = 300f)
+        else tween(if (visible) 560 else 480, easing = MorphEase)
     val p by animateFloatAsState(
         if (visible) 1f else 0f,
         morphSpec,
@@ -496,6 +489,8 @@ private fun MorphLayer(
                     alpha = ((q - 0.12f) / 0.45f).coerceIn(0f, 1f)
                     shape = RoundedCornerShape(140.dp * (1f - q) * (1f - q))
                     clip = q < 0.999f
+                    compositingStrategy =
+                        if (q < 0.999f) CompositingStrategy.Offscreen else CompositingStrategy.Auto
                 }
         ) {
             content()

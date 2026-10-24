@@ -105,11 +105,15 @@ private fun TabletPill(vm: MainViewModel, visible: Boolean, onOpen: () -> Unit) 
 
 @Composable
 private fun BoxBtn(icon: androidx.compose.ui.graphics.vector.ImageVector, size: Int, onClick: () -> Unit) {
+    val tick = rememberTick()
     Box(
         Modifier
             .size(size.dp)
             .clip(CircleShape)
-            .clickable { onClick() },
+            .clickable {
+                tick()
+                onClick()
+            },
         contentAlignment = Alignment.Center
     ) {
         Icon(icon, null, tint = Color.White, modifier = Modifier.size((size * 0.62f).dp))
@@ -127,6 +131,7 @@ private fun TabletMiniBox(vm: MainViewModel, visible: Boolean, onOpen: () -> Uni
         exit = fadeOut() + scaleOut(targetScale = 0.6f)
     ) {
         val cover = song?.cover
+        val tick = rememberTick()
         val density = LocalDensity.current
         val scope = rememberCoroutineScope()
         val shape = RoundedCornerShape(26.dp)
@@ -214,7 +219,10 @@ private fun TabletMiniBox(vm: MainViewModel, visible: Boolean, onOpen: () -> Uni
                             .size(42.dp)
                             .clip(CircleShape)
                             .background(Color(0x40FFFFFF))
-                            .clickable { vm.toggle() },
+                            .clickable {
+                                tick()
+                                vm.toggle()
+                            },
                         contentAlignment = Alignment.Center
                     ) {
                         if (vm.loading) {
