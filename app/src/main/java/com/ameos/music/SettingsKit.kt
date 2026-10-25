@@ -108,11 +108,11 @@ fun KitSwitch(title: String, sub: String, checked: Boolean, onChange: (Boolean) 
             onCheckedChange = onChange,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = Color.White,
-                checkedTrackColor = Pal.accent,
-                checkedBorderColor = Pal.accent,
-                uncheckedThumbColor = Color(0xFFD0D0D0),
-                uncheckedTrackColor = Color(0x33FFFFFF),
-                uncheckedBorderColor = Color(0x55FFFFFF)
+                checkedTrackColor = Color(0xFF2FBF71),
+                checkedBorderColor = Color(0xFF2FBF71),
+                uncheckedThumbColor = Color(0xFF8A8A92),
+                uncheckedTrackColor = Color(0xFF2C2C32),
+                uncheckedBorderColor = Color(0xFF5A5A62)
             )
         )
     }

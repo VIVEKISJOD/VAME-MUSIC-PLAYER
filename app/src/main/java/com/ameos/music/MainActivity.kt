@@ -83,6 +83,7 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= 31) need.add(Manifest.permission.BLUETOOTH_CONNECT)
         if (need.isNotEmpty()) permLauncher.launch(need.toTypedArray())
         vm.connectStart()
+        vm.widgetStart()
         setContent {
             AmeosTheme {
                 AmeosRoot(vm)

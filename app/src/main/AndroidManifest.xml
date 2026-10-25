@@ -131,6 +131,32 @@
             </intent-filter>
         </activity-alias>
 
+        <receiver
+            android:name=".WideWidget"
+            android:exported="true"
+            android:label="VAME 4x1">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_wide_info" />
+        </receiver>
+        <receiver
+            android:name=".SquareWidget"
+            android:exported="true"
+            android:label="VAME 2x2">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_square_info" />
+        </receiver>
+        <receiver
+            android:name=".WidgetActionReceiver"
+            android:exported="false" />
+
         <service
             android:name=".PlaybackService"
             android:exported="true"

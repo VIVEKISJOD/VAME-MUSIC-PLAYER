@@ -28,6 +28,7 @@ object UiOpts {
     // standby (phone sideways): open the big landscape player by itself while music plays
     var standby by mutableStateOf(true)
     var standbyLyrics by mutableStateOf(false)
+    var lyricsBlur by mutableStateOf(0)   // 0 = blur, 1 = light blur, 2 = no blur
     var standbyAwake by mutableStateOf(true)
     var standbyHideBars by mutableStateOf(true)
     var tabStandbyBtn by mutableStateOf(true)
@@ -73,6 +74,7 @@ object UiOpts {
         pillWidth = p.getInt("pillWidth", 1).coerceIn(0, 2)
         standby = p.getBoolean("standby", true)
         standbyLyrics = p.getBoolean("standbyLyrics", false)
+        lyricsBlur = p.getInt("lyricsBlur", 0)
         standbyAwake = p.getBoolean("standbyAwake", true)
         standbyHideBars = p.getBoolean("standbyHideBars", true)
         tabStandbyBtn = p.getBoolean("tabStandbyBtn", true)
@@ -96,6 +98,7 @@ object UiOpts {
             .putInt("pillWidth", pillWidth)
             .putBoolean("standby", standby)
             .putBoolean("standbyLyrics", standbyLyrics)
+            .putInt("lyricsBlur", lyricsBlur)
             .putBoolean("standbyAwake", standbyAwake)
             .putBoolean("standbyHideBars", standbyHideBars)
             .putBoolean("tabStandbyBtn", tabStandbyBtn)

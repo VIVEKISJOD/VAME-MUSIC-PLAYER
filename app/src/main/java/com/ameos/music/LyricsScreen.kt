@@ -272,12 +272,18 @@ private fun LyricsList(vm: MainViewModel, pos: Long) {
     ) {
         itemsIndexed(lines) { i, line ->
             val dist = if (active < 0) 0 else abs(i - active)
-            val blurTarget = if (!synced || active < 0) 0.dp else when (dist) {
-                0 -> 0.dp
-                1 -> 4.dp
-                2 -> 8.dp
-                else -> 12.dp
+            val blurK = when (UiOpts.lyricsBlur) {
+                1 -> 0.4f
+                2 -> 0f
+                else -> 1f
             }
+            val blurBase = when (dist) {
+                0 -> 0f
+                1 -> 4f
+                2 -> 8f
+                else -> 12f
+            }
+            val blurTarget = if (!synced || active < 0) 0.dp else (blurBase * blurK).dp
             val alphaTarget = if (!synced) 0.85f else when {
                 active < 0 -> 0.6f
                 dist == 0 -> 1f

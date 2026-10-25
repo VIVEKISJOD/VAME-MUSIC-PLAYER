@@ -1,4 +1,11 @@
-# VAME Music - full changelog (up to zip step42, v0.21.2, 24 Oct 2026)
+# VAME Music - full changelog (up to zip step43, v0.22.0, 24 Oct 2026)
+
+## step43 (v0.22.0) - includes everything up to step42
+- New: home screen widget 4x1 - cover on the left, song and artist in the middle, previous / play-pause / next on the right. Tap the widget to open VAME.
+- New: home screen widget 2x2 - big rounded cover with the song and artist on it and a small play / pause button. Tap to open VAME.
+- New: both widgets follow the song and play / pause by themselves. They are in the widget list as "VAME 4x1" and "VAME 2x2".
+- New: Settings > Player > "Lyrics blur": Blur (as before), Light blur, No blur.
+- Fixed: Settings on / off switches looked all white. ON is now green with a white knob, OFF is dark grey with a grey knob and a clear border.
 
 ## step42 (v0.21.2) - includes everything up to step41
 - Removed: sending VAME playlists to Spotify (the "Copy" and "Merge" buttons and the "Your VAME playlists" card on the Spotify page). Listening to Spotify inside VAME and "To VAME" (bringing a Spotify playlist into VAME) stay. Texts in Library and Settings updated.

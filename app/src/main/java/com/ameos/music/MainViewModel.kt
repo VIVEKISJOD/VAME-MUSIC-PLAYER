@@ -234,6 +234,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
         PlaybackBridge.onNext = { next() }
         PlaybackBridge.onPrev = { prev() }
+        PlaybackBridge.onToggle = { toggle() }
         loadHome()
     }
 
@@ -271,6 +272,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         StatsStore.save(getApplication<Application>(), stats)
         PlaybackBridge.onNext = null
         PlaybackBridge.onPrev = null
+        PlaybackBridge.onToggle = null
         super.onCleared()
     }
 
@@ -919,6 +921,41 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 error = "Play fail: " + e.javaClass.simpleName + " | " + (e.message ?: "-")
             }
             loading = false
+        }
+    }
+
+    // ---------- home screen widgets (4x1 and 2x2) ----------
+
+    private var widgetJob: kotlinx.coroutines.Job? = null
+
+    fun widgetStart() {
+        val app = getApplication<Application>()
+        widgetJob?.cancel()
+        widgetJob = viewModelScope.launch {
+            var lastUrl: String? = null
+            androidx.compose.runtime.snapshotFlow { Pair(current, isPlaying) }.collect { st ->
+                val c = st.first
+                val sp = app.getSharedPreferences("vame_widget", android.content.Context.MODE_PRIVATE)
+                if (c == null) {
+                    sp.edit().clear().apply()
+                    WidgetUpdater.clearArt(app)
+                    lastUrl = null
+                    WidgetUpdater.refresh(app)
+                } else {
+                    sp.edit()
+                        .putString("t", c.title)
+                        .putString("a", artistName(c.artist))
+                        .putBoolean("p", st.second)
+                        .apply()
+                    if (c.url != lastUrl) {
+                        lastUrl = c.url
+                        WidgetUpdater.clearArt(app)
+                        WidgetUpdater.refresh(app)
+                        WidgetUpdater.saveArt(app, c.cover)
+                    }
+                    WidgetUpdater.refresh(app)
+                }
+            }
         }
     }
 

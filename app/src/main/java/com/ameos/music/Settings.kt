@@ -185,6 +185,11 @@ fun SettingsScreen(vm: MainViewModel) {
                     UiOpts.standby = it
                     UiOpts.save(ctx)
                 }
+                KitLabel("Lyrics blur", "Blur: the lines far from the song fade out. Light blur: a little. No blur: every line is sharp.")
+                KitChips(UiOpts.lyricsBlur, listOf("Blur", "Light blur", "No blur")) {
+                    UiOpts.lyricsBlur = it
+                    UiOpts.save(ctx)
+                }
                 KitLabel("Standby opens with")
                 KitChips(if (UiOpts.standbyLyrics) 1 else 0, listOf("Player", "Lyrics")) {
                     UiOpts.standbyLyrics = it == 1

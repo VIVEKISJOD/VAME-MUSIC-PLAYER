@@ -11,6 +11,7 @@ import androidx.media3.session.MediaSessionService
 object PlaybackBridge {
     var onNext: (() -> Unit)? = null
     var onPrev: (() -> Unit)? = null
+    var onToggle: (() -> Unit)? = null
 }
 
 private class QueuePlayer(p: Player) : ForwardingPlayer(p) {
