@@ -1,4 +1,15 @@
-# VAME Music - full changelog (up to zip step48, v0.26.1, 27 Oct 2026)
+# VAME Music - full changelog (up to zip step49, v0.27.0, 27 Oct 2026)
+
+## step49 (v0.27.0) - includes everything up to step48
+- New: TV left bar is back. VAME logo, Home / Explore / Your type / Library / Settings, and at the bottom the song that is playing now (cover, name, artist, play / pause badge). Press OK on it and the player opens. The pill at the bottom is gone on TV.
+- New: TV player is now three parts: left = canvas (big cover with a very slow zoom), middle = controls (title, artist, seek bar, previous / play / next, shuffle, repeat, like, lyrics, play on another device, and a big Queue button), right = the queue.
+- New: the queue has an X button on top. Press it (or Back) and the queue closes, the player becomes two parts (canvas + controls). The Queue button is always there to open it again. When the queue opens the remote goes to the X, when it closes it goes back to the Queue button.
+- New: TV queue shows the whole list with the current song marked, OK on a song plays it, a shuffle button on top. The middle part also shows a "Next: ..." line.
+- Fixed: the genre page ("What type of songs do you like?") now works with the remote. It shows 4 genres per row on TV, the first one is selected at start, Down goes to Continue.
+- Fixed: Settings now works with the remote (up / down / left / right / OK). The first button is selected when it opens, every chip, switch, button and row gets a white ring, and the back arrow is a big button.
+- New: colour sliders in Settings > Look work with the remote (Left / Right change the value).
+- Fixed: signing in to YouTube on TV: the keyboard opens by itself when the cursor is on a text field, the first field is selected when the page loads, and there is a Keyboard button on top in case it does not.
+- Phone and tablet: no visible change.
 
 ## step48 (v0.26.1) - includes everything up to step47
 - Fixed: the TV remote did not move anything on the "What type of songs do you like?" page and other full pages. Cause: every full page had an invisible "catch all touches" layer that the remote landed on, and the TV Home underneath also stayed selectable. Now the remote only reaches what is on top: first-launch genres, Settings, Recap, Sign in, album / artist / playlist / liked pages, the player and the lyrics.

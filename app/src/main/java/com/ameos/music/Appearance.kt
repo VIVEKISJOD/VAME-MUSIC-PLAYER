@@ -63,7 +63,7 @@ fun AppearanceSection(label: Boolean = true) {
                         if (on) Pal.accent else Color(0x33FFFFFF),
                         RoundedCornerShape(18.dp)
                     )
-                    .clickable {
+                    .padRing(RoundedCornerShape(18.dp)) {
                         Pal.mode = i
                         Pal.save(ctx)
                     }
@@ -128,7 +128,7 @@ fun AppearanceSection(label: Boolean = true) {
             Column(
                 Modifier
                     .clip(RoundedCornerShape(14.dp))
-                    .clickable {
+                    .padRing(RoundedCornerShape(14.dp)) {
                         Pal.hue = p.hue
                         Pal.sat = p.sat
                         Pal.save(ctx)
@@ -158,31 +158,21 @@ fun AppearanceSection(label: Boolean = true) {
     }
 
     Text("Custom colour", fontSize = 16.sp, color = Color.White, modifier = Modifier.padding(top = 14.dp))
-    Slider(
+    PadSlider(
         value = Pal.hue,
-        onValueChange = {
+        onChange = {
             Pal.hue = it
             if (Pal.sat < 0.05f) Pal.sat = 1f
         },
-        onValueChangeFinished = { Pal.save(ctx) },
-        valueRange = 0f..359f,
-        colors = SliderDefaults.colors(
-            thumbColor = Pal.accent,
-            activeTrackColor = Pal.accent,
-            inactiveTrackColor = Color(0x33FFFFFF)
-        )
+        onFinished = { Pal.save(ctx) },
+        range = 0f..359f
     )
     Text("Colour strength", fontSize = 16.sp, color = Color.White)
-    Slider(
+    PadSlider(
         value = Pal.sat,
-        onValueChange = { Pal.sat = it },
-        onValueChangeFinished = { Pal.save(ctx) },
-        valueRange = 0f..1f,
-        colors = SliderDefaults.colors(
-            thumbColor = Pal.accent,
-            activeTrackColor = Pal.accent,
-            inactiveTrackColor = Color(0x33FFFFFF)
-        )
+        onChange = { Pal.sat = it },
+        onFinished = { Pal.save(ctx) },
+        range = 0f..1f
     )
     Spacer(Modifier.height(4.dp))
 }

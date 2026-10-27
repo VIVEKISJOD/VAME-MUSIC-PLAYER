@@ -101,7 +101,7 @@ fun AppIconSection(label: Boolean = true) {
             Column(
                 Modifier
                     .clip(RoundedCornerShape(18.dp))
-                    .clickable {
+                    .padRing(RoundedCornerShape(18.dp)) {
                         if (selected != v.id) {
                             AppIcons.set(ctx, v.id)
                             AppIcons.live = v.id

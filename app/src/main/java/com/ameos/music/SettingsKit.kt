@@ -99,10 +99,10 @@ fun KitSwitch(title: String, sub: String, checked: Boolean, onChange: (Boolean) 
         Modifier
             .fillMaxWidth()
             .then(
-                if (UiOpts.tv) Modifier.clip(RoundedCornerShape(14.dp)).clickable { onChange(!checked) }
+                if (UiOpts.tv) Modifier.padRing(RoundedCornerShape(14.dp)) { onChange(!checked) }
                 else Modifier
             )
-            .padding(vertical = 6.dp),
+            .padding(vertical = 6.dp, horizontal = if (UiOpts.tv) 8.dp else 0.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(Modifier.weight(1f).padding(end = 12.dp)) {
@@ -131,8 +131,8 @@ fun KitAction(title: String, sub: String, onClick: () -> Unit) {
         Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .clickable { onClick() }
-            .padding(vertical = 8.dp)
+            .padRing(RoundedCornerShape(12.dp)) { onClick() }
+            .padding(vertical = 8.dp, horizontal = if (UiOpts.tv) 8.dp else 0.dp)
     ) {
         Text(title, fontSize = 16.sp, color = Color.White)
         Text(sub, fontSize = 12.sp, color = Pal.muted)
@@ -149,9 +149,7 @@ fun KitChips(selected: Int, names: List<String>, onPick: (Int) -> Unit) {
             val on = selected == i
             Box(
                 Modifier
-                    .clip(RoundedCornerShape(50))
-                    .background(if (on) Pal.accent else Color(0x33FFFFFF))
-                    .clickable { onPick(i) }
+                    .padClick(RoundedCornerShape(50), if (on) Pal.accent else Color(0x33FFFFFF), 1.05f) { onPick(i) }
                     .padding(horizontal = 16.dp, vertical = 9.dp)
             ) {
                 Text(
@@ -175,7 +173,7 @@ fun KitButton(text: String, primary: Boolean = false, enabled: Boolean = true, o
                 if (primary) Modifier.background(Pal.accent)
                 else Modifier.glassFill().border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(50))
             )
-            .clickable(enabled = enabled) { onClick() }
+            .padRing(RoundedCornerShape(50), enabled) { onClick() }
             .padding(vertical = 13.dp, horizontal = 16.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
@@ -195,9 +193,7 @@ fun KitSmallBtn(text: String, enabled: Boolean = true, onClick: () -> Unit) {
     Box(
         Modifier
             .alpha(if (enabled) 1f else 0.45f)
-            .clip(RoundedCornerShape(50))
-            .background(Color(0x33FFFFFF))
-            .clickable(enabled = enabled) { onClick() }
+            .padClick(RoundedCornerShape(50), Color(0x33FFFFFF), 1.05f) { if (enabled) onClick() }
             .padding(horizontal = 14.dp, vertical = 7.dp)
     ) {
         Text(text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color.White)

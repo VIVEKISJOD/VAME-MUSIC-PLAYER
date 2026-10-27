@@ -300,10 +300,7 @@ fun AmeosRoot(vm: MainViewModel) {
             }
             // the music stays on top of Settings (pill or box), so it can be stopped from there
             if (UiOpts.tv) {
-                // TV: the pill is always at the bottom (hidden only behind the full screen player / lyrics)
-                if (!vm.showPlayer && !vm.showLyrics && !vm.showOnboarding && !vm.recapOpen && !vm.showLogin && !SpotifyHub.open) {
-                    TvPill(vm, Modifier.align(Alignment.BottomCenter))
-                }
+                // TV: no pill. The song that is playing is shown in the left bar (TvRail in Tv.kt).
             } else if (tablet) {
                 if (!vm.tabStandby) TabletMini(vm)
             } else {

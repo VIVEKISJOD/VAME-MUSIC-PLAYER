@@ -99,6 +99,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.QueueMusic
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.ui.unit.coerceIn
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -219,8 +234,161 @@ private fun TvIconBtn(
     }
 }
 
+// ---------- remote helpers used by every TV page ----------
+
+// Puts the remote on `first` when a page opens (it retries for a few seconds because the screen can
+// still be in touch mode) and catches the first D-pad key when nothing on the page is focused.
+// It stops by itself as soon as anything on the page has focus, so it never steals focus later.
+fun Modifier.tvPageFocus(first: FocusRequester, active: Boolean = true): Modifier = composed {
+    var has by remember { mutableStateOf(false) }
+    LaunchedEffect(active) {
+        if (UiOpts.tv && active) {
+            var n = 0
+            while (n < 24 && !has) {
+                delay(350)
+                if (!has) {
+                    try {
+                        first.requestFocus()
+                    } catch (e: Exception) {
+                    }
+                }
+                n++
+            }
+        }
+    }
+    this
+        .onFocusChanged { has = it.hasFocus }
+        .onPreviewKeyEvent { e ->
+            val k = e.key
+            val pad = k == Key.DirectionUp || k == Key.DirectionDown ||
+                k == Key.DirectionLeft || k == Key.DirectionRight || k == Key.DirectionCenter
+            if (UiOpts.tv && active && pad && !has && e.type == KeyEventType.KeyDown) {
+                try {
+                    first.requestFocus()
+                } catch (ex: Exception) {
+                }
+                true
+            } else {
+                false
+            }
+        }
+}
+
+// A clickable surface that has its own background. On a phone / tablet it is the normal
+// clip + background + clickable, on a TV it is a tvClick (ring + grow while the remote is on it).
+fun Modifier.padClick(
+    shape: Shape,
+    bg: Color = Color.Transparent,
+    grow: Float = 1.03f,
+    onClick: () -> Unit
+): Modifier =
+    if (UiOpts.tv) this.tvClick(shape, grow, bg, onClick)
+    else this.clip(shape).background(bg).clickable { onClick() }
+
+// A clickable for something that is already drawn with its own background / border: on a TV it only
+// adds the white focus ring on top, on a phone / tablet it is a plain clickable.
+fun Modifier.padRing(shape: Shape, enabled: Boolean = true, onClick: () -> Unit): Modifier =
+    if (UiOpts.tv) {
+        if (enabled) this.tvClick(shape, 1f, Color.Transparent, onClick) else this
+    } else {
+        this.clickable(enabled = enabled) { onClick() }
+    }
+
+// back / close button: a normal IconButton on phone / tablet, a big focus ring button on a TV
 @Composable
-private fun TvTab(
+fun BackBtn(
+    modifier: Modifier = Modifier,
+    icon: ImageVector = Icons.Filled.ArrowBack,
+    onClick: () -> Unit
+) {
+    if (UiOpts.tv) {
+        Box(
+            modifier
+                .size(52.dp)
+                .tvClick(CircleShape, 1.1f, Color(0x33FFFFFF)) { onClick() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, "Back", tint = Color.White, modifier = Modifier.size(28.dp))
+        }
+    } else {
+        IconButton(onClick = onClick, modifier = modifier) {
+            Icon(icon, null, tint = Color.White)
+        }
+    }
+}
+
+// slider: the normal Slider on phone / tablet; on a TV Left / Right change the value in 5% steps
+@Composable
+fun PadSlider(
+    value: Float,
+    onChange: (Float) -> Unit,
+    onFinished: () -> Unit,
+    range: ClosedFloatingPointRange<Float>
+) {
+    if (!UiOpts.tv) {
+        Slider(
+            value = value,
+            onValueChange = onChange,
+            onValueChangeFinished = onFinished,
+            valueRange = range,
+            colors = SliderDefaults.colors(
+                thumbColor = Pal.accent,
+                activeTrackColor = Pal.accent,
+                inactiveTrackColor = Color(0x33FFFFFF)
+            )
+        )
+        return
+    }
+    var f by remember { mutableStateOf(false) }
+    val span = range.endInclusive - range.start
+    val frac = ((value - range.start) / span).coerceIn(0f, 1f)
+    val shape = RoundedCornerShape(14.dp)
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .onFocusChanged { f = it.isFocused }
+            .focusable()
+            .onKeyEvent { e ->
+                val left = e.key == Key.DirectionLeft
+                val right = e.key == Key.DirectionRight
+                if (left || right) {
+                    if (e.type == KeyEventType.KeyDown) {
+                        val step = span / 20f
+                        onChange((value + (if (right) step else -step)).coerceIn(range.start, range.endInclusive))
+                    } else if (e.type == KeyEventType.KeyUp) {
+                        onFinished()
+                    }
+                    true
+                } else {
+                    false
+                }
+            }
+            .then(if (f) Modifier.background(Color(0x2EFFFFFF), shape).border(3.dp, Color.White, shape) else Modifier)
+            .padding(horizontal = 14.dp),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .clip(RoundedCornerShape(50))
+                .background(Color(0x33FFFFFF))
+        )
+        Box(
+            Modifier
+                .fillMaxWidth(frac)
+                .height(8.dp)
+                .clip(RoundedCornerShape(50))
+                .background(Pal.accent)
+        )
+    }
+}
+
+// ---------- left bar ----------
+
+@Composable
+private fun TvRailItem(
     name: String,
     icon: ImageVector,
     on: Boolean,
@@ -229,17 +397,19 @@ private fun TvTab(
 ) {
     Row(
         modifier
+            .fillMaxWidth()
+            .height(48.dp)
             .tvClick(
-                RoundedCornerShape(24.dp), 1.05f,
+                RoundedCornerShape(16.dp), 1.03f,
                 if (on) Color(0x33FFFFFF) else Color.Transparent
             ) { onClick() }
-            .padding(horizontal = 16.dp, vertical = 9.dp),
+            .padding(horizontal = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, null, tint = if (on) Color.White else Pal.textDim, modifier = Modifier.size(22.dp))
-        Spacer(Modifier.width(8.dp))
+        Icon(icon, null, tint = if (on) Pal.accent else Pal.textDim, modifier = Modifier.size(24.dp))
+        Spacer(Modifier.width(12.dp))
         Text(
-            name, fontSize = 15.sp,
+            name, fontSize = 16.sp,
             color = if (on) Color.White else Pal.textDim,
             fontWeight = if (on) FontWeight.Bold else FontWeight.Normal,
             maxLines = 1
@@ -247,48 +417,94 @@ private fun TvTab(
     }
 }
 
-// top bar like the Spotify TV app: logo, tabs in the middle, "Welcome name" (opens Settings) on the right
+// The left bar: logo, the pages, Settings, and at the bottom the song that is playing now.
+// OK on the song opens the player.
 @Composable
-private fun TvTopBar(vm: MainViewModel, homeFocus: FocusRequester) {
-    Row(
-        Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
+private fun TvRail(vm: MainViewModel, homeFocus: FocusRequester) {
+    BoxWithConstraints(
+        Modifier
+            .width(210.dp)
+            .fillMaxHeight()
+            .background(Color(0x40000000))
+            .padding(horizontal = 12.dp, vertical = 14.dp)
     ) {
-        Box(Modifier.weight(1f)) {
+        val coverSide = (maxHeight - 360.dp).coerceIn(64.dp, 170.dp)
+        Column(Modifier.fillMaxSize()) {
             Text(
-                "VAME", fontSize = 22.sp, fontWeight = FontWeight.Black, color = Pal.accent,
-                modifier = Modifier.padding(start = 8.dp)
+                "VAME", fontSize = 24.sp, fontWeight = FontWeight.Black, color = Pal.accent,
+                modifier = Modifier.padding(start = 12.dp, bottom = 12.dp)
             )
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            TvTab("Home", Icons.Filled.Home, vm.tab == 0, Modifier.focusRequester(homeFocus)) { vm.goHome() }
-            TvTab("Explore", Icons.Filled.Explore, vm.tab == 1) {
-                vm.goHome()
-                vm.tab = 1
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                TvRailItem("Home", Icons.Filled.Home, vm.tab == 0, Modifier.focusRequester(homeFocus)) {
+                    vm.goHome()
+                }
+                TvRailItem("Explore", Icons.Filled.Explore, vm.tab == 1) {
+                    vm.goHome()
+                    vm.tab = 1
+                }
+                TvRailItem("Your type", Icons.Filled.RadioButtonChecked, vm.tab == 2) {
+                    vm.goHome()
+                    vm.tab = 2
+                }
+                TvRailItem("Library", Icons.Filled.LibraryMusic, vm.tab == 3) {
+                    vm.goHome()
+                    vm.tab = 3
+                }
+                TvRailItem("Settings", Icons.Filled.Settings, false) { vm.showSettings = true }
             }
-            TvTab("Your type", Icons.Filled.RadioButtonChecked, vm.tab == 2) {
-                vm.goHome()
-                vm.tab = 2
-            }
-            TvTab("Library", Icons.Filled.LibraryMusic, vm.tab == 3) {
-                vm.goHome()
-                vm.tab = 3
-            }
-        }
-        Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
-            val nm = vm.userName.ifBlank { vm.ytName }
-            Row(
-                Modifier
-                    .tvClick(RoundedCornerShape(14.dp), 1.04f, Color(0x55000000)) { vm.showSettings = true }
-                    .padding(horizontal = 12.dp, vertical = 7.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                ProfileButton(vm, 30.dp, false)
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    if (nm.isBlank()) "Settings" else "Welcome " + nm,
-                    fontSize = 14.sp, color = Color.White, maxLines = 1
-                )
+            Spacer(Modifier.weight(1f))
+            val song = vm.current
+            if (song == null) {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(Color(0x22FFFFFF))
+                        .padding(14.dp)
+                ) {
+                    Icon(Icons.Filled.MusicNote, null, tint = Pal.accent, modifier = Modifier.size(26.dp))
+                    Text(
+                        "Nothing playing", fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                        color = Color.White, modifier = Modifier.padding(top = 6.dp)
+                    )
+                    Text("Pick a song", fontSize = 12.sp, color = Pal.textDim)
+                }
+            } else {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .tvClick(RoundedCornerShape(18.dp), 1.04f, Color(0x2EFFFFFF)) {
+                            vm.showPlayer = true
+                        }
+                        .padding(8.dp)
+                ) {
+                    Box(Modifier.size(coverSide)) {
+                        Cover(song.cover, Modifier.fillMaxSize(), RoundedCornerShape(12.dp))
+                        Box(
+                            Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(6.dp)
+                                .size(30.dp)
+                                .clip(CircleShape)
+                                .background(Pal.accent),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                if (vm.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                                null, tint = Pal.bgTop, modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                    Text(
+                        song.title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                    Text(
+                        song.artist, fontSize = 11.sp, color = Pal.textDim,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
         }
     }
@@ -299,48 +515,19 @@ private fun TvTopBar(vm: MainViewModel, homeFocus: FocusRequester) {
 @Composable
 fun TvShell(vm: MainViewModel) {
     val homeFocus = remember { FocusRequester() }
-    var anyFocus by remember { mutableStateOf(false) }
     // while the player or the lyrics cover the screen, the pages underneath are removed (the remote
     // must only be able to reach what is on top)
     val full = vm.showPlayer || vm.showLyrics
-    // keep trying to put the remote on Home until it works (it cannot while the screen is still
-    // in touch mode, the first remote key switches that off)
-    LaunchedEffect(Unit) {
-        var n = 0
-        while (n < 12) {
-            delay(500)
-            if (!anyFocus) {
-                try {
-                    homeFocus.requestFocus()
-                } catch (e: Exception) {
-                }
-            }
-            n++
-        }
-    }
-    Box(
-        Modifier
-            .fillMaxSize()
-            .onFocusChanged { anyFocus = it.hasFocus }
-            .onPreviewKeyEvent { e ->
-                val k = e.key
-                val pad = k == Key.DirectionUp || k == Key.DirectionDown ||
-                    k == Key.DirectionLeft || k == Key.DirectionRight || k == Key.DirectionCenter
-                if (pad && e.type == KeyEventType.KeyDown && !anyFocus && !full) {
-                    try {
-                        homeFocus.requestFocus()
-                    } catch (ex: Exception) {
-                    }
-                    true
-                } else {
-                    false
-                }
-            }
-    ) {
+    Box(Modifier.fillMaxSize().tvPageFocus(homeFocus, !full)) {
         if (!full) {
-            Column(Modifier.fillMaxSize().padding(horizontal = 26.dp)) {
-                TvTopBar(vm, homeFocus)
-                Box(Modifier.weight(1f).fillMaxWidth()) {
+            Row(Modifier.fillMaxSize()) {
+                TvRail(vm, homeFocus)
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .padding(start = 8.dp, end = 26.dp)
+                ) {
                     MainPages(vm, true, false) { }
                 }
             }
@@ -359,67 +546,6 @@ fun TvShell(vm: MainViewModel) {
             exit = fadeOut(tween(200))
         ) {
             TabletLyricsScreen(vm)
-        }
-    }
-}
-
-// The pill at the bottom, always there on a TV (also over Settings). OK on the song opens the player.
-@Composable
-fun TvPill(vm: MainViewModel, modifier: Modifier = Modifier) {
-    val song = vm.current
-    val shape = RoundedCornerShape(40.dp)
-    Row(
-        modifier
-            .padding(bottom = 16.dp)
-            .width(560.dp)
-            .clip(shape)
-            .glassFill()
-            .border(1.dp, Color(0x33FFFFFF), shape)
-            .padding(horizontal = 10.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (song == null) {
-            Box(
-                Modifier.size(48.dp).clip(CircleShape).background(Color(0x22FFFFFF)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Filled.MusicNote, null, tint = Pal.accent, modifier = Modifier.size(26.dp))
-            }
-            Spacer(Modifier.width(14.dp))
-            Text(
-                "Pick a song to start playing", fontSize = 16.sp, color = Pal.textDim,
-                modifier = Modifier.weight(1f)
-            )
-        } else {
-            Row(
-                Modifier
-                    .weight(1f)
-                    .tvClick(RoundedCornerShape(30.dp), 1.0f) { vm.showPlayer = true }
-                    .padding(4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Cover(song.cover, Modifier.size(48.dp), CircleShape)
-                Spacer(Modifier.width(14.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        song.title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White,
-                        maxLines = 1, overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        song.artist, fontSize = 12.sp, color = Pal.textDim,
-                        maxLines = 1, overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-            Spacer(Modifier.width(8.dp))
-            TvIconBtn(Icons.Filled.SkipPrevious, "Previous", size = 44.dp) { vm.prev() }
-            Spacer(Modifier.width(6.dp))
-            TvIconBtn(
-                if (vm.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                "Play or pause", size = 48.dp, filled = true
-            ) { vm.toggle() }
-            Spacer(Modifier.width(6.dp))
-            TvIconBtn(Icons.Filled.SkipNext, "Next", size = 44.dp) { vm.next() }
         }
     }
 }
@@ -559,7 +685,7 @@ fun TvHome(vm: MainViewModel) {
         }
         LazyColumn(
             state = listState,
-            contentPadding = PaddingValues(top = h * 0.36f, bottom = 120.dp)
+            contentPadding = PaddingValues(top = h * 0.36f, bottom = 48.dp)
         ) {
             if (quick.isNotEmpty()) {
                 item {
@@ -706,21 +832,132 @@ private fun TvSeek(vm: MainViewModel) {
     }
 }
 
+// left part of the player: the cover as a big "canvas" with a very slow zoom
+@Composable
+private fun TvCanvas(cover: String?) {
+    BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        val side = minOf(maxWidth, maxHeight)
+        val t = rememberInfiniteTransition(label = "tvCanvas")
+        val z by t.animateFloat(
+            1.02f, 1.10f,
+            infiniteRepeatable(tween(16000, easing = LinearEasing), RepeatMode.Reverse),
+            label = "tvCanvasZoom"
+        )
+        Box(
+            Modifier
+                .size(side)
+                .clip(RoundedCornerShape(28.dp))
+                .background(Pal.surface)
+        ) {
+            Cover(
+                cover,
+                Modifier.fillMaxSize().graphicsLayer {
+                    scaleX = z
+                    scaleY = z
+                },
+                RoundedCornerShape(0.dp), hiRes = true
+            )
+        }
+    }
+}
+
+// right part of the player: the queue. The X button (top right) closes it.
+@Composable
+private fun TvQueue(vm: MainViewModel, w: Dp, closeFocus: FocusRequester, onClose: () -> Unit) {
+    val shape = RoundedCornerShape(26.dp)
+    val state = rememberLazyListState(initialFirstVisibleItemIndex = (vm.index - 1).coerceAtLeast(0))
+    Column(
+        Modifier
+            .width(w)
+            .fillMaxHeight()
+            .clip(shape)
+            .background(Color(0x66000000))
+            .border(1.dp, Color(0x22FFFFFF), shape)
+            .padding(16.dp)
+    ) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("Up next", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(vm.queue.size.toString() + " songs", fontSize = 13.sp, color = Pal.textDim)
+            }
+            TvIconBtn(Icons.Filled.Shuffle, "Shuffle up next", size = 48.dp) { vm.shuffleUpNext() }
+            Spacer(Modifier.width(8.dp))
+            TvIconBtn(Icons.Filled.Close, "Close queue", Modifier.focusRequester(closeFocus), size = 48.dp) {
+                onClose()
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        if (vm.queue.isEmpty()) {
+            Text("The queue is empty.", fontSize = 16.sp, color = Pal.textDim)
+        } else {
+            LazyColumn(
+                state = state,
+                modifier = Modifier.fillMaxWidth().weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                contentPadding = PaddingValues(bottom = 16.dp)
+            ) {
+                itemsIndexed(vm.queue) { i, s ->
+                    val cur = i == vm.index
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .tvClick(
+                                RoundedCornerShape(14.dp), 1.02f,
+                                if (cur) Pal.accent.copy(alpha = 0.22f) else Color.Transparent
+                            ) { vm.playFromQueue(i) }
+                            .padding(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Cover(s.cover, Modifier.size(52.dp), RoundedCornerShape(8.dp))
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                s.title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold,
+                                color = if (cur) Pal.accent else Color.White,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                s.artist, fontSize = 12.sp, color = Pal.textDim,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        if (cur) {
+                            Icon(
+                                Icons.Filled.PlayArrow, null, tint = Pal.accent,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// The player on a TV: three parts. Left = canvas (cover), middle = controls, right = queue.
+// The queue button is always there. The X on the queue closes it and the player becomes two parts.
 @Composable
 fun TvPlayer(vm: MainViewModel) {
     val song = vm.current ?: return
-    BackHandler { vm.showPlayer = false }
+    var queueOpen by remember { mutableStateOf(false) }
+    BackHandler {
+        if (queueOpen) queueOpen = false else vm.showPlayer = false
+    }
     val tint = rememberCoverTint(song.cover)
     val playFocus = remember { FocusRequester() }
-    LaunchedEffect(Unit) {
-        var n = 0
-        while (n < 8) {
-            delay(400)
+    val queueBtnFocus = remember { FocusRequester() }
+    val closeFocus = remember { FocusRequester() }
+    // when the queue opens the remote goes to its X button, when it closes it goes back to the queue button
+    val skipFirst = remember { booleanArrayOf(true) }
+    LaunchedEffect(queueOpen) {
+        if (skipFirst[0]) {
+            skipFirst[0] = false
+        } else {
+            delay(320)
             try {
-                playFocus.requestFocus()
+                if (queueOpen) closeFocus.requestFocus() else queueBtnFocus.requestFocus()
             } catch (e: Exception) {
             }
-            n++
         }
     }
     // the TV must not go to sleep while the player is open
@@ -739,32 +976,37 @@ fun TvPlayer(vm: MainViewModel) {
                 )
             )
             .blockTaps()
+            .tvPageFocus(playFocus)
     ) {
-        BoxWithConstraints(Modifier.fillMaxSize().padding(horizontal = 64.dp, vertical = 40.dp)) {
-            val side = minOf(maxHeight, maxWidth * 0.4f)
+        BoxWithConstraints(Modifier.fillMaxSize().padding(horizontal = 48.dp, vertical = 36.dp)) {
+            val queueW = maxWidth * 0.32f
             Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
-                Cover(song.cover, Modifier.size(side), RoundedCornerShape(28.dp), hiRes = true)
-                Spacer(Modifier.width(56.dp))
-                Column(Modifier.weight(1f)) {
+                // 1. canvas
+                Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
+                    TvCanvas(song.cover)
+                }
+                Spacer(Modifier.width(40.dp))
+                // 2. controls
+                Column(
+                    Modifier.weight(1f).fillMaxHeight(),
+                    verticalArrangement = Arrangement.Center
+                ) {
                     Text(
-                        song.title, fontSize = 40.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                        song.title, fontSize = 36.sp, fontWeight = FontWeight.Bold, color = Color.White,
                         maxLines = 2, overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        song.artist, fontSize = 24.sp, color = Pal.textDim,
+                        song.artist, fontSize = 22.sp, color = Pal.textDim,
                         maxLines = 1, overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(top = 6.dp)
                     )
-                    Spacer(Modifier.height(32.dp))
+                    Spacer(Modifier.height(26.dp))
                     TvSeek(vm)
-                    Spacer(Modifier.height(28.dp))
+                    Spacer(Modifier.height(18.dp))
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(18.dp),
+                        horizontalArrangement = Arrangement.spacedBy(20.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        TvIconBtn(
-                            Icons.Filled.Shuffle, "Shuffle up next"
-                        ) { vm.shuffleUpNext() }
                         TvIconBtn(Icons.Filled.SkipPrevious, "Previous", size = 64.dp) { vm.prev() }
                         TvIconBtn(
                             if (vm.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
@@ -773,22 +1015,71 @@ fun TvPlayer(vm: MainViewModel) {
                             size = 84.dp, filled = true
                         ) { vm.toggle() }
                         TvIconBtn(Icons.Filled.SkipNext, "Next", size = 64.dp) { vm.next() }
+                    }
+                    Spacer(Modifier.height(18.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        val liked = vm.isLiked(song)
+                        TvIconBtn(Icons.Filled.Shuffle, "Shuffle up next", size = 52.dp) { vm.shuffleUpNext() }
                         TvIconBtn(
                             if (vm.repeat == 2) Icons.Filled.RepeatOne else Icons.Filled.Repeat,
-                            "Repeat",
+                            "Repeat", size = 52.dp,
                             tint = if (vm.repeat != 0) Pal.accent else Color.White
                         ) { vm.cycleRepeat() }
-                    }
-                    Spacer(Modifier.height(22.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                        val liked = vm.isLiked(song)
                         TvIconBtn(
                             if (liked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                            "Like",
+                            "Like", size = 52.dp,
                             tint = if (liked) Pal.accent else Color.White
                         ) { vm.toggleLike(song) }
-                        TvIconBtn(Icons.Filled.Subject, "Lyrics") { vm.showLyrics = true }
-                        TvIconBtn(Icons.Filled.Cast, "Play on another device") { vm.showOutputDialog = true }
+                        TvIconBtn(Icons.Filled.Subject, "Lyrics", size = 52.dp) { vm.showLyrics = true }
+                        TvIconBtn(Icons.Filled.Cast, "Play on another device", size = 52.dp) {
+                            vm.showOutputDialog = true
+                        }
+                    }
+                    Spacer(Modifier.height(18.dp))
+                    // the queue button: always here
+                    Row(
+                        Modifier
+                            .focusRequester(queueBtnFocus)
+                            .tvClick(
+                                RoundedCornerShape(50), 1.04f,
+                                if (queueOpen) Pal.accent else Color(0x33FFFFFF)
+                            ) { queueOpen = !queueOpen }
+                            .padding(horizontal = 28.dp, vertical = 13.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Filled.QueueMusic, null,
+                            tint = if (queueOpen) Pal.bgTop else Color.White,
+                            modifier = Modifier.size(26.dp)
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            if (queueOpen) "Hide queue" else "Queue",
+                            fontSize = 18.sp, fontWeight = FontWeight.Bold,
+                            color = if (queueOpen) Pal.bgTop else Color.White
+                        )
+                    }
+                    val upcoming = vm.queue.getOrNull(vm.index + 1)
+                    if (upcoming != null) {
+                        Text(
+                            "Next: " + upcoming.title, fontSize = 15.sp, color = Pal.textDim,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(top = 14.dp)
+                        )
+                    }
+                }
+                // 3. queue (only while it is open)
+                AnimatedVisibility(
+                    visible = queueOpen,
+                    enter = expandHorizontally(tween(260)) + fadeIn(tween(260)),
+                    exit = shrinkHorizontally(tween(220)) + fadeOut(tween(200))
+                ) {
+                    Row(Modifier.fillMaxHeight()) {
+                        Spacer(Modifier.width(32.dp))
+                        TvQueue(vm, queueW, closeFocus) { queueOpen = false }
                     }
                 }
             }

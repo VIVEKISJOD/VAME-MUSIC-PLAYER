@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -39,12 +40,50 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+
+// TV: shows the on-screen keyboard for the sign-in web page (the page itself does not ask for it
+// when it is opened with a remote).
+private fun showKeyboard(web: WebView) {
+    try {
+        web.isFocusable = true
+        web.isFocusableInTouchMode = true
+        web.requestFocus()
+        val imm = web.context.getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
+            as android.view.inputmethod.InputMethodManager
+        imm.showSoftInput(web, 0)
+        web.postDelayed({
+            try {
+                imm.showSoftInput(web, android.view.inputmethod.InputMethodManager.SHOW_FORCED)
+            } catch (e: Exception) {
+            }
+        }, 350)
+    } catch (e: Exception) {
+    }
+}
+
+// the page calls VameKb.show() whenever a text field gets the cursor
+private class KbBridge(private val web: WebView) {
+    @android.webkit.JavascriptInterface
+    fun show() {
+        web.post { showKeyboard(web) }
+    }
+}
+
+private const val KB_JS = "(function(){" +
+    "if(window.__vameKb){return;}window.__vameKb=true;" +
+    "document.addEventListener('focusin',function(e){var t=e.target;" +
+    "if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA')){VameKb.show();}},true);" +
+    "var el=document.querySelector('input[type=email],input[type=text],input[type=password],input[type=tel]');" +
+    "if(el){el.focus();}" +
+    "})();"
 
 // Full screen Google sign-in inside the app (a normal web page, like Metrolist / InnerTune).
 // When music.youtube.com opens and the login cookie exists, we keep it and close this screen.
@@ -54,6 +93,7 @@ fun LoginScreen(vm: MainViewModel) {
     BackHandler { vm.showLogin = false }
     var progress by remember { mutableIntStateOf(0) }
     val holder = remember { arrayOfNulls<WebView>(1) }
+    val firstFocus = remember { FocusRequester() }
     DisposableEffect(Unit) {
         onDispose {
             holder[0]?.stopLoading()
@@ -66,6 +106,7 @@ fun LoginScreen(vm: MainViewModel) {
             .fillMaxSize()
             .background(Color(0xFF101010))
             .blockTaps()
+            .tvPageFocus(firstFocus)
     ) {
         Column(
             Modifier
@@ -78,10 +119,8 @@ fun LoginScreen(vm: MainViewModel) {
                 Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = { vm.showLogin = false }) {
-                    Icon(Icons.Filled.Close, null, tint = Color.White)
-                }
-                Column(Modifier.weight(1f)) {
+                BackBtn(Modifier.focusRequester(firstFocus), Icons.Filled.Close) { vm.showLogin = false }
+                Column(Modifier.weight(1f).padding(start = 8.dp)) {
                     Text(
                         "Sign in with Google", fontSize = 18.sp,
                         fontWeight = FontWeight.SemiBold, color = Color.White
@@ -91,6 +130,21 @@ fun LoginScreen(vm: MainViewModel) {
                         fontSize = 12.sp, color = Pal.textDim,
                         maxLines = 1, overflow = TextOverflow.Ellipsis
                     )
+                }
+                if (UiOpts.tv) {
+                    // TV: a button that opens the on-screen keyboard (it also opens by itself on a text field)
+                    Row(
+                        Modifier
+                            .padClick(RoundedCornerShape(50), Color(0x33FFFFFF), 1.05f) {
+                                holder[0]?.let { showKeyboard(it) }
+                            }
+                            .padding(horizontal = 18.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Filled.Keyboard, null, tint = Color.White, modifier = Modifier.size(24.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Keyboard", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                    }
                 }
             }
             if (progress in 1..99) {
@@ -107,6 +161,9 @@ fun LoginScreen(vm: MainViewModel) {
                 modifier = Modifier.weight(1f).fillMaxWidth(),
                 factory = { c ->
                     val web = WebView(c)
+                    web.isFocusable = true
+                    web.isFocusableInTouchMode = true
+                    web.addJavascriptInterface(KbBridge(web), "VameKb")
                     web.settings.javaScriptEnabled = true
                     web.settings.domStorageEnabled = true
                     web.settings.userAgentString = Account.UA
@@ -117,6 +174,11 @@ fun LoginScreen(vm: MainViewModel) {
                     web.webViewClient = object : WebViewClient() {
                         override fun onPageFinished(view: WebView?, url: String?) {
                             super.onPageFinished(view, url)
+                            if (UiOpts.tv && view != null) {
+                                // TV: the cursor goes to the first text field and the keyboard opens by itself
+                                view.requestFocus()
+                                view.evaluateJavascript(KB_JS, null)
+                            }
                             if (finished || url == null) return
                             if (url.startsWith("https://music.youtube.com")) {
                                 val ck = CookieManager.getInstance()
@@ -150,7 +212,7 @@ private fun AccButton(text: String, onClick: () -> Unit) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(50))
             .glassFill()
-            .clickable { onClick() }
+            .padRing(RoundedCornerShape(50)) { onClick() }
             .padding(vertical = 13.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically

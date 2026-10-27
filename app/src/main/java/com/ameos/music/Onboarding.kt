@@ -17,6 +17,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -36,6 +38,8 @@ private val Genres = listOf(
 fun OnboardingScreen(vm: MainViewModel) {
     var sel by remember { mutableStateOf(vm.genres) }
     BackHandler { vm.finishOnboarding(sel) }
+    val tv = UiOpts.tv
+    val firstFocus = remember { FocusRequester() }
 
     Box(
         Modifier
@@ -46,18 +50,19 @@ fun OnboardingScreen(vm: MainViewModel) {
                 )
             )
             .blockTaps()
+            .tvPageFocus(firstFocus)
     ) {
         Column(
             Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
                 .navigationBarsPadding()
-                .padding(horizontal = 20.dp)
+                .padding(horizontal = if (tv) 64.dp else 20.dp)
         ) {
             Text(
                 "What type of songs do you like?",
-                fontSize = 32.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
-                modifier = Modifier.padding(top = 40.dp)
+                fontSize = if (tv) 36.sp else 32.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
+                modifier = Modifier.padding(top = if (tv) 24.dp else 40.dp)
             )
             Text(
                 "Pick a few. They shape your Home, Search and Your Type. You can change this later in Settings.",
@@ -68,17 +73,18 @@ fun OnboardingScreen(vm: MainViewModel) {
                 Modifier.weight(1f).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Genres.chunked(2).forEach { pair ->
+                Genres.chunked(if (tv) 4 else 2).forEachIndexed { r, pair ->
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        pair.forEach { g ->
+                        pair.forEachIndexed { c, g ->
                             val on = g in sel
                             Box(
                                 Modifier
                                     .weight(1f)
-                                    .clip(RoundedCornerShape(20.dp))
-                                    .background(if (on) Pal.accent else Pal.surface)
-                                    .clickable { sel = if (on) sel - g else sel + g }
-                                    .padding(vertical = 20.dp),
+                                    .then(if (r == 0 && c == 0) Modifier.focusRequester(firstFocus) else Modifier)
+                                    .padClick(RoundedCornerShape(20.dp), if (on) Pal.accent else Pal.surface) {
+                                        sel = if (on) sel - g else sel + g
+                                    }
+                                    .padding(vertical = if (tv) 26.dp else 20.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
@@ -95,9 +101,7 @@ fun OnboardingScreen(vm: MainViewModel) {
                 Modifier
                     .fillMaxWidth()
                     .padding(vertical = 16.dp)
-                    .clip(RoundedCornerShape(50))
-                    .background(Color(0xFFD9381E))
-                    .clickable { vm.finishOnboarding(sel) }
+                    .padClick(RoundedCornerShape(50), Color(0xFFD9381E), 1.02f) { vm.finishOnboarding(sel) }
                     .padding(vertical = 17.dp),
                 contentAlignment = Alignment.Center
             ) {

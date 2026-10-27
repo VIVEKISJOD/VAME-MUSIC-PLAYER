@@ -23,6 +23,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,6 +60,7 @@ fun SettingsScreen(vm: MainViewModel) {
     }
     val tabletNow = isTabletLandscape()
     val phoneNow = isPhoneLandscape()
+    val firstFocus = remember { androidx.compose.ui.focus.FocusRequester() }
     Box(
         Modifier
             .fillMaxSize()
@@ -69,6 +71,7 @@ fun SettingsScreen(vm: MainViewModel) {
                 )
             )
             .blockTaps()
+            .tvPageFocus(firstFocus)
     ) {
         Column(
             Modifier
@@ -84,9 +87,7 @@ fun SettingsScreen(vm: MainViewModel) {
                 Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = { vm.showSettings = false }) {
-                    Icon(Icons.Filled.ArrowBack, null, tint = Color.White)
-                }
+                BackBtn(Modifier.focusRequester(firstFocus)) { vm.showSettings = false }
                 Column {
                     Text(
                         "Settings", fontSize = 34.sp, fontWeight = FontWeight.SemiBold,
@@ -432,7 +433,7 @@ fun SettingsScreen(vm: MainViewModel) {
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(50))
                         .glassFill()
-                        .clickable { openUrl(ctx, "https://github.com/VIVEKISJOD/VAME-MUSIC-PLAYER") }
+                        .padRing(RoundedCornerShape(50)) { openUrl(ctx, "https://github.com/VIVEKISJOD/VAME-MUSIC-PLAYER") }
                         .padding(vertical = 13.dp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
@@ -486,7 +487,7 @@ private fun InstagramButton(ctx: Context) {
                     listOf(Color(0xFF833AB4), Color(0xFFFD1D1D), Color(0xFFFCB045))
                 )
             )
-            .clickable { openInstagram(ctx) }
+            .padRing(RoundedCornerShape(50)) { openInstagram(ctx) }
             .padding(vertical = 14.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
