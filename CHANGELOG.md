@@ -1,4 +1,9 @@
-# VAME Music - full changelog (up to zip step49, v0.27.0, 27 Oct 2026)
+# VAME Music - full changelog (up to zip step50, v0.27.1, 27 Oct 2026)
+
+## step50 (v0.27.1) - includes everything up to step49
+- Fixed: signing in on TV, the keyboard would not go away after typing the email. It no longer opens in a forced way, so the remote's Back key closes it.
+- New: three buttons on top of the TV sign-in page: Keyboard (open), Hide keyboard, and Next (presses the page's Next / Sign in button for you, then closes the keyboard). Use them for the email and again for the password.
+- Phone and tablet: no change.
 
 ## step49 (v0.27.0) - includes everything up to step48
 - New: TV left bar is back. VAME logo, Home / Explore / Your type / Library / Settings, and at the bottom the song that is playing now (cover, name, artist, play / pause badge). Press OK on it and the player opens. The pill at the bottom is gone on TV.

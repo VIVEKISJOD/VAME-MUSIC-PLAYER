@@ -58,16 +58,31 @@ private fun showKeyboard(web: WebView) {
         web.requestFocus()
         val imm = web.context.getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
             as android.view.inputmethod.InputMethodManager
-        imm.showSoftInput(web, 0)
-        web.postDelayed({
-            try {
-                imm.showSoftInput(web, android.view.inputmethod.InputMethodManager.SHOW_FORCED)
-            } catch (e: Exception) {
-            }
-        }, 350)
+        // NOT forced: a forced keyboard cannot be closed with the remote's Back key
+        imm.showSoftInput(web, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
     } catch (e: Exception) {
     }
 }
+
+private fun hideKeyboard(web: WebView) {
+    try {
+        val imm = web.context.getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
+            as android.view.inputmethod.InputMethodManager
+        imm.hideSoftInputFromWindow(web.windowToken, 0)
+    } catch (e: Exception) {
+    }
+}
+
+// presses the page's Next / Sign in button (or Enter on the field) and closes the keyboard
+private const val NEXT_JS = "(function(){" +
+    "var b=document.querySelector('#identifierNext button,#passwordNext button,#totpNext button')" +
+    "||document.querySelector('button[type=submit]');" +
+    "if(b){b.click();return;}" +
+    "var a=document.activeElement;if(a){" +
+    "a.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',keyCode:13,which:13,bubbles:true}));" +
+    "a.dispatchEvent(new KeyboardEvent('keyup',{key:'Enter',keyCode:13,which:13,bubbles:true}));" +
+    "var f=a.form;if(f&&f.requestSubmit){f.requestSubmit();}}" +
+    "})();"
 
 // the page calls VameKb.show() whenever a text field gets the cursor
 private class KbBridge(private val web: WebView) {
@@ -144,6 +159,31 @@ fun LoginScreen(vm: MainViewModel) {
                         Icon(Icons.Filled.Keyboard, null, tint = Color.White, modifier = Modifier.size(24.dp))
                         Spacer(Modifier.width(8.dp))
                         Text("Keyboard", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Row(
+                        Modifier
+                            .padClick(RoundedCornerShape(50), Color(0x33FFFFFF), 1.05f) {
+                                holder[0]?.let { hideKeyboard(it) }
+                            }
+                            .padding(horizontal = 18.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Hide keyboard", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Row(
+                        Modifier
+                            .padClick(RoundedCornerShape(50), Pal.accent, 1.05f) {
+                                holder[0]?.let {
+                                    it.evaluateJavascript(NEXT_JS, null)
+                                    hideKeyboard(it)
+                                }
+                            }
+                            .padding(horizontal = 22.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Next", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Pal.bgTop)
                     }
                 }
             }
