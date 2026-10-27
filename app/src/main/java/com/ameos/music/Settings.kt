@@ -349,8 +349,10 @@ fun SettingsScreen(vm: MainViewModel) {
                 KitChips(vm.lyricsSize, listOf("Small", "Medium", "Large")) { vm.updateLyricsSize(it) }
                 KitLabel("Lyrics source", "Auto tries LRCLIB, then NetEase. You can also change it from the lyrics screen.")
                 KitChips(vm.lyricsProvider, LyricsRepo.providerNames) { vm.chooseLyricsProvider(it) }
-                KitLabel("Translation language", "Used by the translate button on the lyrics screen.")
-                KitChips(vm.lyricsTransLang, LyricsRepo.langNames) { vm.chooseLyricsTransLang(it) }
+                KitLabel("Hindi songs translate to", "The translate button on the lyrics screen uses this when the song is in Hindi.")
+                KitChips(vm.lyricsTransHi, LyricsRepo.langNames) { vm.chooseTransHi(it) }
+                KitLabel("Other songs translate to", "Used for English and all other songs.")
+                KitChips(vm.lyricsTransEn, LyricsRepo.langNames) { vm.chooseTransEn(it) }
                 KitLabel("Lyrics alignment")
                 KitChips(if (vm.lyricsLeft) 1 else 0, listOf("Centered", "Left")) { vm.setLyricsLeftOn(it == 1) }
                 KitSwitch(

@@ -36,8 +36,9 @@ object LyricsRepo {
     )
 
     // translation languages (name, Google code)
-    val langNames = listOf("English", "Hindi", "Spanish", "French")
-    val langCodes = listOf("en", "hi", "es", "fr")
+    // index 0 = Off. Settings keep one choice for Hindi songs and one for all other songs.
+    val langNames = listOf("Off", "English", "Hindi", "Spanish", "French")
+    val langCodes = listOf("", "en", "hi", "es", "fr")
 
     suspend fun fetch(
         title: String,
@@ -192,6 +193,26 @@ object LyricsTranslate {
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(15, TimeUnit.SECONDS)
         .build()
+
+    // language code Google thinks the text is in ("hi", "en", ...), "" if unknown
+    suspend fun detect(sample: String): String = withContext(Dispatchers.IO) {
+        try {
+            val url = "https://translate.googleapis.com/translate_a/single".toHttpUrl().newBuilder()
+                .addQueryParameter("client", "gtx")
+                .addQueryParameter("sl", "auto")
+                .addQueryParameter("tl", "en")
+                .addQueryParameter("dt", "t")
+                .addQueryParameter("q", sample)
+                .build()
+            val req = Request.Builder().url(url).header("User-Agent", "Mozilla/5.0").build()
+            val body = client.newCall(req).execute().use { it.body?.string() ?: "" }
+            if (body.isBlank()) "" else JSONArray(body).optString(2, "")
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            ""
+        }
+    }
 
     private fun one(text: String, code: String): String {
         val url = "https://translate.googleapis.com/translate_a/single".toHttpUrl().newBuilder()

@@ -124,7 +124,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var lyricsProvider by mutableIntStateOf(Prefs.lyricsProvider(app))
     var lyricsTrans by mutableStateOf<List<String>>(emptyList())
     var lyricsTransOn by mutableStateOf(Prefs.lyricsTransOn(app))
-    var lyricsTransLang by mutableIntStateOf(Prefs.lyricsTransLang(app))
+    var lyricsTransHi by mutableIntStateOf(Prefs.lyricsTransHi(app))
+    var lyricsTransEn by mutableIntStateOf(Prefs.lyricsTransEn(app))
     var lyricsTransBusy by mutableStateOf(false)
     var lyricsTransError by mutableStateOf("")
     var lyricsPct by mutableIntStateOf(Prefs.lyricsPct(app))
@@ -927,10 +928,23 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         lyricsTransError = ""
         transJob = viewModelScope.launch {
             try {
-                val code = LyricsRepo.langCodes[lyricsTransLang.coerceIn(0, LyricsRepo.langCodes.size - 1)]
-                val out = LyricsTranslate.run(src, code)
-                lyricsTrans = out
-                if (out.none { it.isNotBlank() }) lyricsTransError = "Translation failed. Check the internet."
+                // which language is the song in? Devanagari letters = Hindi, else ask Google about a sample
+                val joined = src.filter { it.isNotBlank() }.take(8).joinToString("\n")
+                val letters = joined.count { it.isLetter() }.coerceAtLeast(1)
+                val deva = joined.count { it in '\u0900'..'\u097F' }
+                var songLang = if (deva * 100 / letters > 30) "hi" else LyricsTranslate.detect(joined)
+                if (songLang.isBlank()) songLang = "en"
+                val pick = if (songLang == "hi") lyricsTransHi else lyricsTransEn
+                val code = LyricsRepo.langCodes[pick.coerceIn(0, LyricsRepo.langCodes.size - 1)]
+                if (code.isBlank()) {
+                    lyricsTransError = "Translation is Off for these songs. Change it in Settings > Songs and lyrics."
+                } else if (code == songLang) {
+                    lyricsTransError = "The lyrics are already in " + LyricsRepo.langNames[pick] + "."
+                } else {
+                    val out = LyricsTranslate.run(src, code)
+                    lyricsTrans = out
+                    if (out.none { it.isNotBlank() }) lyricsTransError = "Translation failed. Check the internet."
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -946,9 +960,17 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (on && lyricsTrans.isEmpty() && !lyricsTransBusy) loadTranslation()
     }
 
-    fun chooseLyricsTransLang(i: Int) {
-        lyricsTransLang = i
-        Prefs.setLyricsTransLang(getApplication<Application>(), i)
+    // Settings: target language for Hindi songs / for every other song
+    fun chooseTransHi(i: Int) {
+        lyricsTransHi = i
+        Prefs.setLyricsTransHi(getApplication<Application>(), i)
+        lyricsTrans = emptyList()
+        if (lyricsTransOn) loadTranslation()
+    }
+
+    fun chooseTransEn(i: Int) {
+        lyricsTransEn = i
+        Prefs.setLyricsTransEn(getApplication<Application>(), i)
         lyricsTrans = emptyList()
         if (lyricsTransOn) loadTranslation()
     }

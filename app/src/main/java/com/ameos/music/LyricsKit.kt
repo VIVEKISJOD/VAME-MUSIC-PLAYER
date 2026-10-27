@@ -203,19 +203,6 @@ private fun ToolBtn(icon: ImageVector, lit: Boolean, onClick: () -> Unit) {
     }
 }
 
-@Composable
-private fun LChip(text: String, selected: Boolean, onClick: () -> Unit) {
-    androidx.compose.foundation.layout.Box(
-        Modifier
-            .clip(RoundedCornerShape(50))
-            .background(if (selected) Pal.accent.copy(alpha = 0.45f) else Color(0x22FFFFFF))
-            .clickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 9.dp)
-    ) {
-        Text(text, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
-    }
-}
-
 private val PanelBg = Color(0xE6141414)
 
 // Row of round tools: provider, translate, Hinglish, share, text size, fullscreen.
@@ -228,7 +215,7 @@ fun LyricsTools(
     modifier: Modifier = Modifier,
     showFull: Boolean = true
 ) {
-    var panel by remember { mutableIntStateOf(0) }   // 0 none, 1 size, 2 translate
+    var panel by remember { mutableIntStateOf(0) }   // 0 none, 1 size
     val ctx = LocalContext.current
     Column(modifier.fillMaxWidth()) {
         AnimatedVisibility(visible = panel == 1) {
@@ -272,37 +259,13 @@ fun LyricsTools(
                 }
             }
         }
-        AnimatedVisibility(visible = panel == 2) {
-            Column(
-                Modifier
-                    .padding(horizontal = 16.dp)
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(PanelBg)
-                    .padding(18.dp)
-            ) {
-                Text(
-                    "Translate lyrics to", fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFFD0D0D0)
-                )
-                Row(
-                    Modifier.padding(top = 10.dp).horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    LChip("Off", !vm.lyricsTransOn) { vm.toggleLyricsTrans(false) }
-                    LyricsRepo.langNames.forEachIndexed { i, n ->
-                        LChip(n, vm.lyricsTransOn && vm.lyricsTransLang == i) {
-                            vm.chooseLyricsTransLang(i)
-                            vm.toggleLyricsTrans(true)
-                        }
-                    }
-                }
-                if (vm.lyricsTransBusy) {
-                    Text("Translating...", fontSize = 13.sp, color = Color(0xFFD0D0D0), modifier = Modifier.padding(top = 10.dp))
-                } else if (vm.lyricsTransError.isNotBlank()) {
-                    Text(vm.lyricsTransError, fontSize = 13.sp, color = Color(0xFFFFB4A8), modifier = Modifier.padding(top = 10.dp))
-                }
-            }
+        if (vm.lyricsTransOn && (vm.lyricsTransBusy || vm.lyricsTransError.isNotBlank())) {
+            Text(
+                if (vm.lyricsTransBusy) "Translating..." else vm.lyricsTransError,
+                fontSize = 13.sp,
+                color = if (vm.lyricsTransBusy) Color(0xFFD0D0D0) else Color(0xFFFFB4A8),
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)
+            )
         }
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
@@ -310,9 +273,7 @@ fun LyricsTools(
             verticalAlignment = Alignment.CenterVertically
         ) {
             ToolBtn(Icons.Filled.LibraryMusic, false) { vm.showProviderSheet = true }
-            ToolBtn(Icons.Filled.Translate, vm.lyricsTransOn || panel == 2) {
-                panel = if (panel == 2) 0 else 2
-            }
+            ToolBtn(Icons.Filled.Translate, vm.lyricsTransOn) { vm.toggleLyricsTrans(!vm.lyricsTransOn) }
             ToolBtn(Icons.Filled.Public, vm.hinglish) { vm.setHinglishOn(!vm.hinglish) }
             ToolBtn(Icons.Filled.Share, false) {
                 if (vm.lyrics.isNotEmpty()) {

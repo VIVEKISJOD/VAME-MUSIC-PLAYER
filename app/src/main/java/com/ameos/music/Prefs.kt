@@ -191,8 +191,11 @@ object Prefs {
     fun setLyricsProvider(c: Context, v: Int) = sp(c).edit().putInt("lyricsProvider", v).apply()
     fun lyricsTransOn(c: Context): Boolean = sp(c).getBoolean("lyricsTransOn", false)
     fun setLyricsTransOn(c: Context, v: Boolean) = sp(c).edit().putBoolean("lyricsTransOn", v).apply()
-    fun lyricsTransLang(c: Context): Int = sp(c).getInt("lyricsTransLang", 0)
-    fun setLyricsTransLang(c: Context, v: Int) = sp(c).edit().putInt("lyricsTransLang", v).apply()
+    // translation target per song language (0 Off, 1 English, 2 Hindi, 3 Spanish, 4 French)
+    fun lyricsTransHi(c: Context): Int = sp(c).getInt("lyricsTransHi", 1)
+    fun setLyricsTransHi(c: Context, v: Int) = sp(c).edit().putInt("lyricsTransHi", v).apply()
+    fun lyricsTransEn(c: Context): Int = sp(c).getInt("lyricsTransEn", 2)
+    fun setLyricsTransEn(c: Context, v: Int) = sp(c).edit().putInt("lyricsTransEn", v).apply()
 
     fun keepScreenLyrics(c: Context): Boolean = sp(c).getBoolean("keepScreenLyrics", true)
     fun setKeepScreenLyrics(c: Context, v: Boolean) = sp(c).edit().putBoolean("keepScreenLyrics", v).apply()

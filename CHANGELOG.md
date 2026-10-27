@@ -4,7 +4,7 @@
 - New: Lyrics screen redesigned like your recording. Top: back, "LYRICS" with song and artist, sleep timer button, menu button. Under it a small label (SYNCED or PLAIN TEXT + the provider name). Tap the label to change provider.
 - New: Lyrics provider window (tool button 1 or the label): shows the current provider, "Try another source" (skips the current one and searches the others) and a list: Auto, LRCLIB, NetEase. Also in Settings > Songs and lyrics > Lyrics source.
 - New: NetEase as a second lyrics source (good for Hindi / Punjabi songs). Auto tries LRCLIB first, then NetEase.
-- New: Translate button. Shows a translated line under every lyric line (English, Hindi, Spanish or French, or Off). Uses Google Translate's public web address, so it needs internet and may stop working if Google changes it.
+- New: Translate button (one tap on / off, no language list on the lyrics page). It puts a translated line under every lyric line. The language is chosen in Settings > Songs and lyrics: "Hindi songs translate to" (default English) and "Other songs translate to" (default Hindi), each with Off / English / Hindi / Spanish / French. The song language is detected by itself (Devanagari letters, else Google detection). Uses Google Translate's public web address, so it needs internet and may stop working if Google changes it.
 - New: Globe button turns Hinglish (Hindi in English letters) on / off right from the lyrics screen.
 - New: Share button sends the song name and the lyrics as text to any app.
 - New: Text size button opens a slider (50 to 160 percent) with a live number and Reset. The Small / Medium / Large chips in Settings still work (80 / 100 / 120 percent).
