@@ -56,6 +56,11 @@ object Connect {
     var deviceName = ""
     var myId = ""
 
+    // TV sign-in from a phone: while the sign-in page is open on a TV it shows this 6-digit code.
+    // A phone that is already signed in sends its login to /signin together with the code.
+    var tvCode by mutableStateOf("")
+    @Volatile var codeFails = 0
+
     @Volatile var stateJson = "{\"has\":false}"
     @Volatile var vm: MainViewModel? = null
     @Volatile private var lastSend = 0L
@@ -127,6 +132,41 @@ object Connect {
             val path = session.uri
             if (path == "/state") {
                 return NanoHTTPD.newFixedLengthResponse(Response.Status.OK, "application/json", stateJson)
+            }
+            if (path == "/signin" && session.method == Method.POST) {
+                val files = HashMap<String, String>()
+                try {
+                    session.parseBody(files)
+                } catch (e: Exception) {
+                    return NanoHTTPD.newFixedLengthResponse(Response.Status.BAD_REQUEST, "text/plain", "bad")
+                }
+                var ok = false
+                try {
+                    val o = JSONObject(files["postData"] ?: "")
+                    val code = o.optString("code")
+                    val ck = o.optString("cookie")
+                    val now = tvCode
+                    if (now.isNotBlank() && code == now && ck.contains("SAPISID")) {
+                        ok = true
+                        main.post {
+                            tvCode = ""
+                            vm?.onLoginDone(ck)
+                        }
+                    } else {
+                        codeFails++
+                        if (codeFails >= 5) {
+                            // too many wrong tries: a new code
+                            codeFails = 0
+                            main.post { if (tvCode.isNotBlank()) tvCode = (100000..999999).random().toString() }
+                        }
+                    }
+                } catch (e: Exception) {
+                }
+                return if (ok) {
+                    NanoHTTPD.newFixedLengthResponse(Response.Status.OK, "text/plain", "ok")
+                } else {
+                    NanoHTTPD.newFixedLengthResponse(Response.Status.FORBIDDEN, "text/plain", "no")
+                }
             }
             if (!allow) {
                 return NanoHTTPD.newFixedLengthResponse(Response.Status.FORBIDDEN, "text/plain", "off")
@@ -284,6 +324,25 @@ object Connect {
                 http.newCall(req).execute().close()
             } catch (e: Exception) {
             }
+        }
+    }
+
+    // phone -> TV: send this phone's YouTube login. done(status): 200 = signed in, 403 = wrong code, -1 = TV not reached
+    fun sendSignIn(p: Peer, code: String, cookie: String, done: (Int) -> Unit) {
+        scope.launch {
+            var st = -1
+            try {
+                val o = JSONObject()
+                o.put("code", code)
+                o.put("cookie", cookie)
+                val req = Request.Builder()
+                    .url("http://" + p.host + ":" + p.port + "/signin")
+                    .post(o.toString().toRequestBody("application/json".toMediaType()))
+                    .build()
+                st = http.newCall(req).execute().use { it.code }
+            } catch (e: Exception) {
+            }
+            main.post { done(st) }
         }
     }
 

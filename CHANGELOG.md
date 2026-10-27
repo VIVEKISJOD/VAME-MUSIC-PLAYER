@@ -1,4 +1,11 @@
-# VAME Music - full changelog (up to zip step51, v0.27.2, 27 Oct 2026)
+# VAME Music - full changelog (up to zip step52, v0.28.0, 27 Oct 2026)
+
+## step52 (v0.28.0) - includes everything up to step51
+- New: sign in a TV from your phone, no typing on the TV. On the TV open Settings > Account > Sign in with Google: it now shows a 6-digit code at the top. On the phone (already signed in, same Wi-Fi) open Settings > Account > Sign in a TV, type the code and tap Send sign-in to <TV name>. The TV signs in by itself.
+- New: after 5 wrong codes the TV makes a new code. The code stops working as soon as the page is closed or the sign-in is done.
+- The normal web sign-in (with the Keyboard / Next buttons) is still there as a backup.
+- Needs: both devices on the same Wi-Fi, VAME open on both, the phone signed in first.
+- Phone and tablet: nothing else changes.
 
 ## step51 (v0.27.2) - includes everything up to step50
 - Fixed: on TV, moving the remote down in Settings could land on the name / title text box, which opened the TV keyboard and trapped the remote. Now those boxes are plain buttons on TV: press OK to type, Done (or Back) to finish. The keyboard never opens by itself in Settings.

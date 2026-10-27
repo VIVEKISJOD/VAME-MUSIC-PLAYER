@@ -110,7 +110,13 @@ fun LoginScreen(vm: MainViewModel) {
     val holder = remember { arrayOfNulls<WebView>(1) }
     val firstFocus = remember { FocusRequester() }
     DisposableEffect(Unit) {
+        // TV: a 6-digit code so a phone that is already signed in can send its login here
+        if (UiOpts.tv) {
+            Connect.codeFails = 0
+            Connect.tvCode = (100000..999999).random().toString()
+        }
         onDispose {
+            Connect.tvCode = ""
             holder[0]?.stopLoading()
             holder[0]?.destroy()
             holder[0] = null
@@ -187,6 +193,31 @@ fun LoginScreen(vm: MainViewModel) {
                     }
                 }
             }
+            if (UiOpts.tv && Connect.tvCode.isNotBlank()) {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(Color(0x22FFFFFF))
+                        .padding(14.dp)
+                ) {
+                    Text(
+                        "No typing: sign in from your phone", fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold, color = Color.White
+                    )
+                    Text(
+                        "On your phone (same Wi-Fi, already signed in): VAME > Settings > Account > " +
+                            "Sign in a TV. Enter this code and pick this TV.",
+                        fontSize = 12.sp, color = Pal.textDim, modifier = Modifier.padding(top = 2.dp)
+                    )
+                    Text(
+                        Connect.tvCode.chunked(3).joinToString(" "), fontSize = 34.sp,
+                        fontWeight = FontWeight.Black, color = Pal.accent,
+                        modifier = Modifier.padding(top = 6.dp)
+                    )
+                }
+            }
             if (progress in 1..99) {
                 Box(
                     Modifier
@@ -245,6 +276,67 @@ fun LoginScreen(vm: MainViewModel) {
     }
 }
 
+// Settings > Account (signed in): send this login to a TV that shows its sign-in code
+@Composable
+private fun SendToTv() {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    var code by remember { androidx.compose.runtime.mutableStateOf("") }
+    var msg by remember { androidx.compose.runtime.mutableStateOf("") }
+    Text(
+        "Sign in a TV", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White,
+        modifier = Modifier.padding(top = 6.dp)
+    )
+    Text(
+        "On the TV open VAME > Settings > Account > Sign in with Google. It shows a 6-digit code. " +
+            "Type the code here, then pick the TV. Phone and TV must be on the same Wi-Fi.",
+        fontSize = 12.sp, color = Pal.muted, modifier = Modifier.padding(bottom = 8.dp)
+    )
+    androidx.compose.material3.TextField(
+        value = code,
+        onValueChange = { v -> code = v.filter { it.isDigit() }.take(6) },
+        singleLine = true,
+        placeholder = { Text("6-digit code") },
+        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+        ),
+        shape = RoundedCornerShape(20.dp),
+        colors = androidx.compose.material3.TextFieldDefaults.colors(
+            focusedContainerColor = Color(0x33FFFFFF),
+            unfocusedContainerColor = Color(0x33FFFFFF),
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent
+        ),
+        modifier = Modifier.fillMaxWidth()
+    )
+    Spacer(Modifier.height(8.dp))
+    val tvs = Connect.peers.toList()
+    if (tvs.isEmpty()) {
+        Text(
+            "No other VAME device found yet. Open VAME on the TV (same Wi-Fi) and wait a few seconds.",
+            fontSize = 12.sp, color = Pal.muted, modifier = Modifier.padding(bottom = 8.dp)
+        )
+    }
+    for (p in tvs) {
+        AccButton("Send sign-in to " + p.name) {
+            if (code.length != 6) {
+                msg = "Type the 6-digit code from the TV first."
+            } else {
+                msg = "Sending..."
+                Connect.sendSignIn(p, code, Account.cookie(ctx)) { st ->
+                    msg = when (st) {
+                        200 -> "Done. The TV is signed in."
+                        403 -> "Wrong code. Look at the TV and try again."
+                        else -> "Could not reach the TV. Same Wi-Fi? Is the sign-in page open on the TV?"
+                    }
+                }
+            }
+        }
+    }
+    if (msg.isNotBlank()) {
+        Text(msg, fontSize = 13.sp, color = Pal.accent, modifier = Modifier.padding(bottom = 8.dp))
+    }
+}
+
 @Composable
 private fun AccButton(text: String, onClick: () -> Unit) {
     Row(
@@ -297,6 +389,7 @@ fun AccountSection(vm: MainViewModel, label: Boolean = true) {
         AccButton("Save new playlists to YouTube Music: " + (if (vm.ytSync) "ON" else "OFF")) { vm.toggleYtSync() }
         AccButton("Upload my VAME playlists to YouTube Music") { vm.ytPushAll() }
         AccButton("Sign out") { vm.signOutYt() }
+        SendToTv()
     }
     Text(
         "Unofficial: VAME talks to YouTube Music the same way the website does, so it " +
