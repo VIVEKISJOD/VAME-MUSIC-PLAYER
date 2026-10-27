@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.FullscreenExit
+import androidx.compose.material.icons.filled.UnfoldLess
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Timer
@@ -29,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,6 +43,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -65,6 +69,16 @@ private fun KeepScreenOn(vm: MainViewModel) {
     }
 }
 
+// Any touch (also scrolling) restarts the 5 second timer. It only watches, it never takes the touch.
+private fun Modifier.watchTouch(onTouch: () -> Unit): Modifier = this.pointerInput(Unit) {
+    awaitPointerEventScope {
+        while (true) {
+            awaitPointerEvent(PointerEventPass.Initial)
+            onTouch()
+        }
+    }
+}
+
 // Tablet lyrics mode: the whole screen. Cover (canvas) + song name on the left,
 // lyrics on the right, and only a back button at the bottom right.
 @Composable
@@ -80,11 +94,21 @@ fun TabletLyricsScreen(vm: MainViewModel) {
             delay(100)
         }
     }
+    // the controls slide away after 5 seconds without a touch; the button at the top right brings them back
+    var toolsOn by remember { mutableStateOf(true) }
+    var touch by remember { mutableIntStateOf(0) }
+    LaunchedEffect(toolsOn, touch, vm.showProviderSheet, vm.showSleepDialog) {
+        if (toolsOn && !vm.showProviderSheet && !vm.showSleepDialog) {
+            delay(5000)
+            toolsOn = false
+        }
+    }
     Box(
         Modifier
             .fillMaxSize()
             .background(lerp(tint, Color.Black, if (Pal.amoled) 0.92f else 0.5f))
             .blockTaps()
+            .watchTouch { touch++ }
     ) {
         Row(
             Modifier
@@ -129,7 +153,9 @@ fun TabletLyricsScreen(vm: MainViewModel) {
                         LyricsList(vm, pos)
                     }
                     if (tools) {
-                        LyricsTools(vm, false, { }, Modifier.padding(end = 90.dp), showFull = false)
+                        AnimatedVisibility(visible = toolsOn) {
+                            LyricsTools(vm, false, { }, Modifier.padding(end = 90.dp), showFull = false)
+                        }
                     }
                 }
             }
@@ -147,6 +173,13 @@ fun TabletLyricsScreen(vm: MainViewModel) {
         ) {
             Icon(Icons.Filled.ArrowBack, null, tint = Color.White)
         }
+        if (!toolsOn) {
+            Box(Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(12.dp)) {
+                LyricsCircle(46.dp, { toolsOn = true }) {
+                    Icon(Icons.Filled.UnfoldLess, null, tint = Color.White, modifier = Modifier.size(22.dp))
+                }
+            }
+        }
     }
 }
 
@@ -158,6 +191,15 @@ fun LyricsScreen(vm: MainViewModel) {
     BackHandler(enabled = full) { full = false }
     KeepScreenOn(vm)
     val tint = rememberCoverTint(song.cover)
+    // 5 seconds without a touch: top bar and bottom controls slide away (full = true).
+    // The button at the top right brings them back.
+    var touch by remember { mutableIntStateOf(0) }
+    LaunchedEffect(full, touch, vm.showProviderSheet, vm.showSleepDialog) {
+        if (!full && !vm.showProviderSheet && !vm.showSleepDialog) {
+            delay(5000)
+            full = true
+        }
+    }
 
     var pos by remember { mutableLongStateOf(0L) }
     LaunchedEffect(song.url) {
@@ -168,8 +210,9 @@ fun LyricsScreen(vm: MainViewModel) {
     }
     val label = when {
         vm.lyricsLoading -> "SEARCHING LYRICS..."
+        vm.lyrics.isEmpty() && vm.lyricsSearching -> "STILL LOOKING IN OTHER SOURCES..."
         vm.lyrics.isEmpty() -> "NO LYRICS FOUND"
-        else -> (if (vm.lyricsSynced) "SYNCED" else "PLAIN TEXT") +
+        else -> (if (vm.lyricsSynced) "SYNCED" else if (vm.lyricsSearching) "PLAIN TEXT \u2022 LOOKING FOR SYNCED..." else "PLAIN TEXT") +
             (if (vm.lyricsSource.isNotBlank()) " \u2022 " + vm.lyricsSource else "")
     }
 
@@ -178,6 +221,7 @@ fun LyricsScreen(vm: MainViewModel) {
             .fillMaxSize()
             .background(lerp(tint, Color.Black, if (Pal.amoled) 0.92f else 0.5f))
             .blockTaps()
+            .watchTouch { touch++ }
     ) {
         Column(
             Modifier
@@ -257,7 +301,7 @@ fun LyricsScreen(vm: MainViewModel) {
         if (full) {
             Box(Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(12.dp)) {
                 LyricsCircle(46.dp, { full = false }) {
-                    Icon(Icons.Filled.FullscreenExit, null, tint = Color.White, modifier = Modifier.size(22.dp))
+                    Icon(Icons.Filled.UnfoldLess, null, tint = Color.White, modifier = Modifier.size(22.dp))
                 }
             }
         }
@@ -274,7 +318,9 @@ private fun LyricsList(vm: MainViewModel, pos: Long) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                if (vm.lyricsLoading) "Loading lyrics..." else "No lyrics found for this song",
+                if (vm.lyricsLoading) "Loading lyrics..."
+                else if (vm.lyricsSearching) "Still looking in other sources...\nThey will show up by themselves."
+                else "No lyrics found for this song",
                 color = Color(0xFFBBBBBB), fontSize = 18.sp, textAlign = TextAlign.Center
             )
             if (!vm.lyricsLoading) {

@@ -28,11 +28,13 @@ object LyricsRepo {
     private val wordStamp = Regex("<\\d+:\\d+(?:[.:]\\d+)?>")
 
     // provider choice in Settings / the lyrics screen: 0 = Auto, 1 = LRCLIB, 2 = NetEase
-    val providerNames = listOf("Auto", "LRCLIB", "NetEase")
+    val providerNames = listOf("Auto", "LRCLIB", "NetEase", "Kugou", "Lyrics.ovh")
     val providerNotes = listOf(
-        "Tries LRCLIB first, then NetEase. Synced lyrics win over plain text.",
+        "Tries LRCLIB, NetEase, Kugou and Lyrics.ovh one by one, and keeps looking in the background while the song plays. Synced lyrics win over plain text.",
         "Open lyrics database. Line-synced lyrics for most songs.",
-        "NetEase Cloud Music. Good for Hindi, Punjabi and Asian songs."
+        "NetEase Cloud Music. Good for Hindi, Punjabi and Asian songs.",
+        "Kugou Music. Another big source for Asian and Hindi songs, line-synced.",
+        "Plain text lyrics only (no timing). Last chance for rare songs."
     )
 
     // translation languages (name, Google code)
@@ -40,24 +42,48 @@ object LyricsRepo {
     val langNames = listOf("Off", "English", "Hindi", "Spanish", "French")
     val langCodes = listOf("", "en", "hi", "es", "fr")
 
+    // attempt 0 = the normal clean search. Higher attempts change the search words
+    // (shorter title, no artist, the whole artist text) so a song that was missed can still be found.
+    private fun variant(title: String, artist: String, attempt: Int): Pair<String, String> {
+        val t0 = cleanTitle(title)
+        val a0 = cleanArtist(artist)
+        val shortT = t0.split(" - ", " | ", " ft.", " feat.", " Feat.", " ft ", " feat ")
+            .first().trim().ifBlank { t0 }
+        return when (attempt) {
+            0 -> t0 to a0
+            1 -> shortT to a0
+            2 -> shortT to ""
+            3 -> shortT to artist.replace(" - Topic", "").replace("VEVO", "").trim()
+            4 -> t0.replace(Regex("[^\\p{L}\\p{N} ]"), " ").replace(Regex("\\s+"), " ").trim() to a0
+            else -> title.trim() to ""
+        }
+    }
+
     suspend fun fetch(
         title: String,
         artist: String,
         durationSec: Long,
         provider: Int = 0,
-        exclude: Set<String> = emptySet()
+        exclude: Set<String> = emptySet(),
+        attempt: Int = 0
     ): LyricsResult = withContext(Dispatchers.IO) {
-        val t = cleanTitle(title)
-        val a = cleanArtist(artist)
+        val (t, a) = variant(title, artist, attempt)
         val order = when (provider) {
             1 -> listOf("LRCLIB")
             2 -> listOf("NetEase")
-            else -> listOf("LRCLIB", "NetEase")
+            3 -> listOf("Kugou")
+            4 -> listOf("Lyrics.ovh")
+            else -> listOf("LRCLIB", "NetEase", "Kugou", "Lyrics.ovh")
         }.filter { it !in exclude }
         var plain: LyricsResult? = null
         for (name in order) {
             val r: LyricsResult? = try {
-                if (name == "NetEase") netease(t, a, durationSec) else lrclib(t, a, durationSec)
+                when (name) {
+                    "NetEase" -> netease(t, a, durationSec)
+                    "Kugou" -> kugou(t, a, durationSec)
+                    "Lyrics.ovh" -> ovh(t, a)
+                    else -> lrclib(t, a, durationSec)
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -73,9 +99,38 @@ object LyricsRepo {
     // ---------------- LRCLIB ----------------
 
     private fun lrclib(t: String, a: String, durationSec: Long): LyricsResult {
-        var list = search(listOf("track_name" to t, "artist_name" to a))
-        if (list.isEmpty()) list = search(listOf("q" to "$a $t"))
+        if (a.isNotBlank() && durationSec > 0L) {
+            val exact = try {
+                lrclibGet(t, a, durationSec)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                null
+            }
+            if (exact != null) return exact
+        }
+        var list = if (a.isBlank()) emptyList() else search(listOf("track_name" to t, "artist_name" to a))
+        if (list.isEmpty()) list = search(listOf("q" to "$a $t".trim()))
         return pick(list, durationSec)
+    }
+
+    // LRCLIB exact match (title + artist + length). Null when it is not found.
+    private fun lrclibGet(t: String, a: String, durationSec: Long): LyricsResult? {
+        val b = "https://lrclib.net/api/get".toHttpUrl().newBuilder()
+            .addQueryParameter("track_name", t)
+            .addQueryParameter("artist_name", a)
+            .addQueryParameter("duration", durationSec.toString())
+            .build()
+        val req = Request.Builder().url(b).header("User-Agent", "VAME Music (personal project)").build()
+        val body = client.newCall(req).execute().use { if (it.isSuccessful) it.body?.string() ?: "" else "" }
+        if (body.isBlank()) return null
+        val o = JSONObject(body)
+        val synced = str(o, "syncedLyrics")
+        if (synced.isNotBlank()) {
+            val lines = parseLrc(synced)
+            if (lines.isNotEmpty()) return LyricsResult(lines, true)
+        }
+        return null
     }
 
     private fun search(params: List<Pair<String, String>>): List<JSONObject> {
@@ -124,7 +179,7 @@ object LyricsRepo {
 
     private fun netease(t: String, a: String, durationSec: Long): LyricsResult {
         val b = "https://music.163.com/api/search/get/web".toHttpUrl().newBuilder()
-            .addQueryParameter("s", "$t $a")
+            .addQueryParameter("s", "$t $a".trim())
             .addQueryParameter("type", "1")
             .addQueryParameter("offset", "0")
             .addQueryParameter("limit", "6")
@@ -156,6 +211,90 @@ object LyricsRepo {
             }
         }
         return plain ?: LyricsResult(emptyList(), false)
+    }
+
+    // ---------------- Kugou (unofficial public endpoints) ----------------
+
+    private fun plainGet(url: String): String {
+        val req = Request.Builder()
+            .url(url)
+            .header("User-Agent", "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/124.0 Mobile Safari/537.36")
+            .build()
+        return client.newCall(req).execute().use { if (it.isSuccessful) it.body?.string() ?: "" else "" }
+    }
+
+    private fun kugou(t: String, a: String, durationSec: Long): LyricsResult {
+        val empty = LyricsResult(emptyList(), false)
+        val kw = "$t $a".trim()
+        val sb = "https://mobilecdn.kugou.com/api/v3/search/song".toHttpUrl().newBuilder()
+            .addQueryParameter("format", "json")
+            .addQueryParameter("keyword", kw)
+            .addQueryParameter("page", "1")
+            .addQueryParameter("pagesize", "5")
+            .build()
+        val sBody = plainGet(sb.toString())
+        if (sBody.isBlank()) return empty
+        val info = JSONObject(sBody).optJSONObject("data")?.optJSONArray("info") ?: return empty
+        val cands = ArrayList<JSONObject>()
+        for (i in 0 until info.length()) cands.add(info.getJSONObject(i))
+        val sorted = cands.sortedBy {
+            val d = it.optLong("duration", 0L).toDouble()
+            if (d <= 0.0 || durationSec <= 0L) 999.0 else abs(d - durationSec)
+        }
+        for (c in sorted.take(3)) {
+            val hash = c.optString("hash", "")
+            if (hash.isBlank()) continue
+            val lb = "https://lyrics.kugou.com/search".toHttpUrl().newBuilder()
+                .addQueryParameter("ver", "1")
+                .addQueryParameter("man", "yes")
+                .addQueryParameter("client", "pc")
+                .addQueryParameter("keyword", kw)
+                .addQueryParameter("duration", (c.optLong("duration", 0L) * 1000L).toString())
+                .addQueryParameter("hash", hash)
+                .build()
+            val lBody = plainGet(lb.toString())
+            if (lBody.isBlank()) continue
+            val arr = JSONObject(lBody).optJSONArray("candidates") ?: continue
+            if (arr.length() == 0) continue
+            val first = arr.getJSONObject(0)
+            val id = first.optString("id", "")
+            val key = first.optString("accesskey", "")
+            if (id.isBlank() || key.isBlank()) continue
+            val db = "https://lyrics.kugou.com/download".toHttpUrl().newBuilder()
+                .addQueryParameter("ver", "1")
+                .addQueryParameter("client", "pc")
+                .addQueryParameter("id", id)
+                .addQueryParameter("accesskey", key)
+                .addQueryParameter("fmt", "lrc")
+                .addQueryParameter("charset", "utf8")
+                .build()
+            val dBody = plainGet(db.toString())
+            if (dBody.isBlank()) continue
+            val content = JSONObject(dBody).optString("content", "")
+            if (content.isBlank()) continue
+            val text = String(android.util.Base64.decode(content, android.util.Base64.DEFAULT), Charsets.UTF_8)
+                .removePrefix("\uFEFF")
+            val lines = parseLrc(text).filter { it.text.isNotBlank() }
+            if (lines.isNotEmpty()) return LyricsResult(lines, true)
+        }
+        return empty
+    }
+
+    // ---------------- Lyrics.ovh (plain text only) ----------------
+
+    private fun ovh(t: String, a: String): LyricsResult {
+        val empty = LyricsResult(emptyList(), false)
+        if (a.isBlank() || t.isBlank()) return empty
+        val url = "https://api.lyrics.ovh/v1".toHttpUrl().newBuilder()
+            .addPathSegment(a)
+            .addPathSegment(t)
+            .build()
+        val body = plainGet(url.toString())
+        if (body.isBlank()) return empty
+        val text = JSONObject(body).optString("lyrics", "").replace("\r", "").trim()
+        if (text.isBlank()) return empty
+        val lines = text.lines().map { LyricLine(0L, it.trim()) }
+        return LyricsResult(lines, false)
     }
 
     // ---------------- helpers ----------------

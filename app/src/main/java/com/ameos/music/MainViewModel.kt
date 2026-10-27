@@ -132,6 +132,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var showProviderSheet by mutableStateOf(false)
     var lyricsTrying by mutableStateOf(false)
     var lyricsTryFail by mutableStateOf(false)
+    // step55: true while the app keeps looking for lyrics in the background (other sources / other search words)
+    var lyricsSearching by mutableStateOf(false)
     private var transJob: Job? = null
 
     // settings
@@ -871,15 +873,39 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         lyricsLoading = true
         lyricsTrying = false
         lyricsTryFail = false
+        lyricsSearching = false
         lyricsJob = viewModelScope.launch {
+            var done = false
             try {
                 val r = LyricsRepo.fetch(song.title, song.artist, song.durationSec, lyricsProvider)
                 applyLyrics(r)
+                done = r.lines.isNotEmpty() && (r.synced || lyricsProvider != 0)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
             }
             lyricsLoading = false
+            // not found (or only plain text): keep trying in the background while the song plays,
+            // each round with other search words and all sources
+            var n = 1
+            while (!done && n <= 6 && current?.url == song.url) {
+                lyricsSearching = true
+                delay(if (n == 1) 3000L else 12000L)
+                if (current?.url != song.url) break
+                try {
+                    val r = LyricsRepo.fetch(song.title, song.artist, song.durationSec, lyricsProvider, emptySet(), n)
+                    val better = r.lines.isNotEmpty() && (rawLyrics.isEmpty() || (r.synced && !lyricsSynced))
+                    if (better) {
+                        applyLyrics(r)
+                        done = r.synced || lyricsProvider != 0
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                }
+                n++
+            }
+            lyricsSearching = false
         }
     }
 
@@ -908,6 +934,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         lyricsJob?.cancel()
         lyricsTrying = true
         lyricsTryFail = false
+        lyricsSearching = false
         lyricsJob = viewModelScope.launch {
             try {
                 val r = LyricsRepo.fetch(s.title, s.artist, s.durationSec, 0, skip)

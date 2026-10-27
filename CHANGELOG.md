@@ -1,4 +1,11 @@
-# VAME Music - full changelog (up to zip step54, v0.30.0, 28 Oct 2026)
+# VAME Music - full changelog (up to zip step55, v0.31.0, 28 Oct 2026)
+
+## step55 (v0.31.0) - includes everything up to step54
+- New: lyrics page controls hide by themselves after 5 seconds without a touch (top bar, tool buttons, wave bar, previous / play / next). The button at the top right brings them back. Same on the tablet lyrics page.
+- New: lyrics search keeps going in the background. If a song has no lyrics (or only plain text), the app tries again while the song plays: up to 6 more rounds, each with other search words, over all sources. When lyrics are found they appear by themselves; synced lyrics replace plain text.
+- New: two more lyrics sources, Kugou and Lyrics.ovh (plain text), and LRCLIB exact match. Auto tries LRCLIB, NetEase, Kugou, Lyrics.ovh. You can also pick each one in Lyrics provider.
+- New: logo animation when the app opens (about 1.3 seconds: logo pops in with a glow and the name, then fades).
+- Changed: the lyrics label shows "STILL LOOKING IN OTHER SOURCES..." while it searches.
 
 ## step54 (v0.30.0) - includes everything up to step53
 - Fixed: on an artist page, tapping an album, single / EP or public playlist did nothing. Two causes: the album opened underneath the artist page, and YouTube pages needed a sign-in. Now they open on top and work without signing in. Back returns to the artist page.

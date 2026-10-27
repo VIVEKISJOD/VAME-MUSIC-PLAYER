@@ -88,7 +88,10 @@ class MainActivity : ComponentActivity() {
         vm.widgetStart()
         setContent {
             AmeosTheme {
-                AmeosRoot(vm)
+                androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
+                    AmeosRoot(vm)
+                    LogoSplash()
+                }
             }
         }
         // TV: give the screen to the remote at once (otherwise the first key press only wakes it up)
