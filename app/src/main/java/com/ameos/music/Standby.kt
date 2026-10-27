@@ -146,7 +146,8 @@ fun StandbyPlayer(vm: MainViewModel) {
     var dragging by remember { mutableStateOf(false) }
     var dragFrac by remember { mutableFloatStateOf(0f) }
     var quality by remember { mutableStateOf("") }
-    var clock by remember { mutableStateOf("") }
+    var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    var clockFull by remember { mutableStateOf(false) }
     val tint = rememberCoverTint(song.cover)
     // on a tablet this standby is an overlay: closing it keeps the side player as it was
     val closeStb: () -> Unit = { if (vm.tabStandby) vm.tabStandby = false else vm.showPlayer = false }
@@ -175,9 +176,8 @@ fun StandbyPlayer(vm: MainViewModel) {
     }
     LaunchedEffect(Unit) {
         while (true) {
-            val fmt = SimpleDateFormat(if (UiOpts.standby12h) "h:mm a" else "HH:mm", Locale.getDefault())
-            clock = fmt.format(Date())
-            delay(10000)
+            nowMs = System.currentTimeMillis()
+            delay(1000)
         }
     }
 
@@ -422,17 +422,15 @@ fun StandbyPlayer(vm: MainViewModel) {
             }
         }
 
-        // small clock, top right (the status bar is hidden in standby)
-        if (clock.isNotEmpty()) {
-            Text(
-                clock, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = StbDim,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .statusBarsPadding()
-                    .displayCutoutPadding()
-                    .padding(top = 8.dp, end = 26.dp)
-            )
-        }
+        // clock card, top right (the status bar is hidden in standby); tap = full screen clock
+        StbClockPill(
+            nowMs, tint,
+            Modifier
+                .align(Alignment.TopEnd)
+                .statusBarsPadding()
+                .displayCutoutPadding()
+                .padding(top = 6.dp, end = 20.dp)
+        ) { clockFull = true }
 
         // handle on top: tap or drag down to close
         Box(
@@ -466,6 +464,14 @@ fun StandbyPlayer(vm: MainViewModel) {
                     .clip(CircleShape)
                     .background(Color(0x99FFFFFF))
             )
+        }
+
+        AnimatedVisibility(
+            visible = clockFull,
+            enter = fadeIn(tween(300)),
+            exit = fadeOut(tween(250))
+        ) {
+            StbClockFull(nowMs, tint, vm) { clockFull = false }
         }
 
         AnimatedVisibility(

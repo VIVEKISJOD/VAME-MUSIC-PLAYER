@@ -59,6 +59,11 @@ fun PlaylistScreen(vm: MainViewModel) {
     val pl = vm.playlists.firstOrNull { it.id == vm.openPlaylistId } ?: return
     BackHandler(enabled = vm.playlistOpen) { vm.closePlaylist() }
     val mins = (pl.songs.sumOf { it.durationSec } / 60).toInt()
+    var menuOpen by remember { mutableStateOf(false) }
+    var sortMode by remember { mutableStateOf(0) }
+    var findOn by remember { mutableStateOf(false) }
+    var findQ by remember { mutableStateOf("") }
+    val shown = sortFind(pl.songs, sortMode, if (findOn) findQ else "")
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
 
     Box(
@@ -80,6 +85,9 @@ fun PlaylistScreen(vm: MainViewModel) {
                     Icon(Icons.Filled.ArrowBack, null, tint = Color.White)
                 }
                 Spacer(Modifier.weight(1f))
+                IconButton(onClick = { menuOpen = true }) {
+                    Icon(Icons.Filled.MoreVert, null, tint = Color.White)
+                }
                 IconButton(onClick = {
                     vm.editPlaylistId = pl.id
                     vm.pendingSong = null
@@ -143,6 +151,7 @@ fun PlaylistScreen(vm: MainViewModel) {
                 }
             }
             Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0x22FFFFFF)))
+            if (findOn) FindBar(findQ, { findQ = it }) { findOn = false; findQ = "" }
 
             if (pl.songs.isEmpty()) {
                 Box(Modifier.weight(1f).fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
@@ -157,7 +166,7 @@ fun PlaylistScreen(vm: MainViewModel) {
                     state = listState,
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 150.dp)
                 ) {
-                    itemsIndexed(pl.songs) { _, s -> PlaylistSongRow(vm, pl, s) }
+                    itemsIndexed(shown) { _, s -> PlaylistSongRow(vm, pl, s) }
                 }
             }
         }
@@ -169,6 +178,15 @@ fun PlaylistScreen(vm: MainViewModel) {
                 .navigationBarsPadding()
                 .padding(horizontal = 16.dp, vertical = 10.dp)
         )
+        if (menuOpen) {
+            PlaylistMenuSheet(
+                vm, pl.name, pl.songs.size.toString() + " songs", pl.shownCover(), pl.songs,
+                Dial("playlist", pl.id, pl.name, pl.songs.size.toString() + " songs", pl.shownCover()),
+                sortMode, { sortMode = it }, { findOn = true },
+                { menuOpen = false; vm.closePlaylist(); vm.deletePlaylist(pl.id) },
+                { menuOpen = false }
+            )
+        }
     }
 }
 

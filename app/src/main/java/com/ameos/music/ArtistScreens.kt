@@ -22,6 +22,24 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.filled.GraphicEq
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.unit.Dp
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,10 +73,10 @@ fun artistKey(s: String): String = artistName(s).lowercase().filter { it.isLette
 private fun ArtistRoundBtn(icon: ImageVector, onClick: () -> Unit) {
     Box(
         Modifier
-            .size(60.dp)
+            .size(58.dp)
             .clip(CircleShape)
-            .background(Color(0x22FFFFFF))
-            .border(1.dp, Color(0x55FFFFFF), CircleShape)
+            .background(Color(0x26FFFFFF))
+            .border(1.dp, Color(0x40FFFFFF), CircleShape)
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
@@ -66,27 +84,103 @@ private fun ArtistRoundBtn(icon: ImageVector, onClick: () -> Unit) {
     }
 }
 
+private val ShowAllColor = Color(0xFFE6F27C)
+
+@Composable
+private fun ArtistTopRow(s: Song, vm: MainViewModel, list: List<Song>) {
+    val playing = vm.current?.url == s.url
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable { vm.play(s, list) }
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Cover(s.cover, Modifier.size(52.dp), RoundedCornerShape(8.dp))
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                s.title, fontSize = 16.sp, fontWeight = FontWeight.Medium,
+                color = if (playing) ShowAllColor else Color.White,
+                maxLines = 1, overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                s.artist, fontSize = 14.sp, color = Color(0xCCFFFFFF),
+                maxLines = 1, overflow = TextOverflow.Ellipsis
+            )
+        }
+        Box(
+            Modifier.size(40.dp).clip(CircleShape).clickable { vm.songMenu = s },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(Icons.Filled.MoreVert, null, tint = Color(0xCCFFFFFF), modifier = Modifier.size(22.dp))
+        }
+    }
+}
+
+@Composable
+private fun ArtistCard(card: YtCard, w: Dp, onClick: () -> Unit) {
+    Column(
+        Modifier
+            .width(w)
+            .clip(RoundedCornerShape(18.dp))
+            .clickable { onClick() }
+    ) {
+        Cover(card.cover, Modifier.size(w), RoundedCornerShape(18.dp))
+        Text(
+            card.title, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White,
+            maxLines = 1, overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+        if (card.sub.isNotBlank()) {
+            Text(
+                card.sub, fontSize = 13.sp, color = Color(0xCCFFFFFF),
+                maxLines = 1, overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ArtistScreen(vm: MainViewModel) {
     BackHandler(enabled = vm.artistOpen) { vm.closeArtist() }
     val ctx = LocalContext.current
     val name = vm.openArtistName
-    val songs = vm.artistSongs
+    val songs = vm.artistAllSongs
+    val page = vm.artistPage
     val cover = songs.firstOrNull()?.cover
     val fav = vm.isArtistLiked(name)
     val album = if (vm.artistAlbumCardOn) vm.artistAlbum else null
     val latest = vm.artistLatestRelease
-    // the picture: newest official upload (or the song cover when it is not found / switched off)
-    val heroPic = (if (vm.artistLatestPic) latest?.picture else null) ?: cover
+    // the picture: the artist's own YouTube Music photo, else newest official upload, else a song cover
+    val heroPic = page?.pic ?: (if (vm.artistLatestPic) latest?.picture else null) ?: cover
     val shown = when (vm.artistTop) {
         0 -> songs.take(10)
         1 -> songs.take(25)
         else -> songs
     }
     val tint = rememberCoverTint(heroPic)
-    val bg = lerp(tint, Color.Black, 0.62f)
+    val bg = lerp(tint, Color.Black, 0.55f)
     val light = lerp(tint, Color.White, 0.78f)
     val dark = lerp(tint, Color.Black, 0.75f)
+    val ls = rememberLazyListState()
+    val showTitle = ls.firstVisibleItemIndex >= 1
+    val barBg by animateColorAsState(if (showTitle) bg.copy(alpha = 0.94f) else Color.Transparent, label = "artistBar")
+    val titleA by animateFloatAsState(if (showTitle) 1f else 0f, label = "artistTitle")
+    var openShelves by remember { mutableStateOf(setOf<String>()) }
+    var moreAbout by remember { mutableStateOf(false) }
+    LaunchedEffect(name) {
+        ls.scrollToItem(0)
+        openShelves = emptySet()
+        moreAbout = false
+    }
+    val screenW = LocalConfiguration.current.screenWidthDp
+    val pageW = (screenW - 48).coerceAtMost(560).dp
+    val cardW = if (screenW >= 600) 180.dp else 150.dp
+    val dial = Dial("artist", name, name, "Artist", heroPic ?: cover)
+    val pinned = vm.isDialed("artist", name)
 
     Box(
         Modifier
@@ -96,18 +190,19 @@ fun ArtistScreen(vm: MainViewModel) {
     ) {
         LazyColumn(
             Modifier.fillMaxSize(),
+            state = ls,
             contentPadding = PaddingValues(bottom = 170.dp)
         ) {
             // big picture that fades into the page, with the name on top of the fade
             item {
-                Box(Modifier.fillMaxWidth().height(480.dp)) {
+                Box(Modifier.fillMaxWidth().height(430.dp)) {
                     Cover(heroPic, Modifier.fillMaxSize(), RectangleShape, hiRes = true)
                     Box(
                         Modifier
                             .fillMaxSize()
                             .background(
                                 Brush.verticalGradient(
-                                    0.5f to Color.Transparent,
+                                    0.45f to Color.Transparent,
                                     1f to bg
                                 )
                             )
@@ -115,36 +210,17 @@ fun ArtistScreen(vm: MainViewModel) {
                     Column(
                         Modifier
                             .align(Alignment.BottomCenter)
-                            .padding(horizontal = 20.dp, vertical = 4.dp),
+                            .padding(horizontal = 20.dp, vertical = 2.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            name, fontSize = 44.sp, fontWeight = FontWeight.ExtraBold,
+                            name, fontSize = 46.sp, fontWeight = FontWeight.ExtraBold,
                             color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center
                         )
-                        if (latest != null) {
-                            Row(
-                                Modifier
-                                    .padding(top = 8.dp)
-                                    .clip(RoundedCornerShape(50))
-                                    .background(Color(0x55000000))
-                                    .clickable { vm.play(latest.song, listOf(latest.song)) }
-                                    .padding(start = 10.dp, end = 14.dp, top = 6.dp, bottom = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    Icons.Filled.PlayArrow, null, tint = Color.White,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Text(
-                                    "Latest: " + latest.label, fontSize = 13.sp,
-                                    fontWeight = FontWeight.SemiBold, color = Color.White,
-                                    maxLines = 1, overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.widthIn(max = 240.dp)
-                                )
-                            }
+                        val sub = page?.monthly ?: ""
+                        if (sub.isNotBlank()) {
+                            Text(sub, fontSize = 14.sp, color = Color(0xCCFFFFFF), modifier = Modifier.padding(top = 2.dp))
                         }
                     }
                 }
@@ -152,15 +228,15 @@ fun ArtistScreen(vm: MainViewModel) {
             // shuffle, big play, favourite star
             item {
                 Row(
-                    Modifier.fillMaxWidth().padding(top = 14.dp),
+                    Modifier.fillMaxWidth().padding(top = 10.dp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     ArtistRoundBtn(Icons.Filled.Shuffle) { vm.playArtist(true) }
-                    Spacer(Modifier.width(26.dp))
+                    Spacer(Modifier.width(22.dp))
                     Box(
                         Modifier
-                            .size(88.dp)
+                            .size(84.dp)
                             .clip(CircleShape)
                             .background(light)
                             .clickable { vm.playArtist(false) },
@@ -168,48 +244,48 @@ fun ArtistScreen(vm: MainViewModel) {
                     ) {
                         Icon(
                             Icons.Filled.PlayArrow, null, tint = dark,
-                            modifier = Modifier.size(48.dp)
+                            modifier = Modifier.size(46.dp)
                         )
                     }
-                    Spacer(Modifier.width(26.dp))
+                    Spacer(Modifier.width(22.dp))
                     ArtistRoundBtn(if (fav) Icons.Filled.Star else Icons.Outlined.StarBorder) {
                         vm.toggleArtistLike(name, cover)
                     }
                 }
             }
-            // the artist's top album
+            // the artist's top album (glass card)
             if (album != null) {
                 item {
-                    val cardShape = RoundedCornerShape(32.dp)
+                    val cardShape = RoundedCornerShape(28.dp)
                     val saved = vm.isAlbumSaved(album)
                     Row(
                         Modifier
                             .fillMaxWidth()
-                            .padding(start = 16.dp, end = 16.dp, top = 28.dp)
+                            .padding(start = 16.dp, end = 16.dp, top = 26.dp)
                             .clip(cardShape)
                             .background(Color(0x26FFFFFF))
                             .border(1.dp, Color(0x33FFFFFF), cardShape)
                             .clickable { vm.openAlbum(album) }
-                            .padding(16.dp),
+                            .padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Cover(album.cover, Modifier.size(104.dp), RoundedCornerShape(18.dp))
+                        Cover(album.cover, Modifier.size(92.dp), RoundedCornerShape(16.dp))
                         Spacer(Modifier.width(16.dp))
                         Column(Modifier.weight(1f)) {
-                            Text("Popular album", fontSize = 14.sp, color = Color(0xCCFFFFFF))
+                            Text("Popular album", fontSize = 13.sp, color = Color(0xCCFFFFFF))
                             Text(
                                 album.title, fontSize = 20.sp, fontWeight = FontWeight.Bold,
                                 color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis
                             )
                             Text(
-                                artistName(album.artist), fontSize = 15.sp, color = Color(0xCCFFFFFF),
+                                artistName(album.artist), fontSize = 14.sp, color = Color(0xCCFFFFFF),
                                 maxLines = 1, overflow = TextOverflow.Ellipsis
                             )
                         }
                         Spacer(Modifier.width(8.dp))
                         Box(
                             Modifier
-                                .size(46.dp)
+                                .size(44.dp)
                                 .clip(CircleShape)
                                 .border(1.dp, Color(0x66FFFFFF), CircleShape)
                                 .clickable { vm.toggleSaveAlbum(album) },
@@ -223,10 +299,11 @@ fun ArtistScreen(vm: MainViewModel) {
                     }
                 }
             }
+            // top songs: pages of 4 rows, swipe sideways for the next page
             item {
                 Text(
-                    "Top songs", fontSize = 30.sp, fontWeight = FontWeight.Bold, color = Color.White,
-                    modifier = Modifier.padding(start = 16.dp, top = 30.dp, bottom = 10.dp)
+                    "Top songs", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                    modifier = Modifier.padding(start = 16.dp, top = 28.dp, bottom = 8.dp)
                 )
             }
             if (vm.artistLoading && songs.isEmpty()) {
@@ -238,14 +315,121 @@ fun ArtistScreen(vm: MainViewModel) {
                     }
                 }
             }
-            items(shown) { s ->
-                Box(Modifier.padding(horizontal = 16.dp)) { SongRow(s, vm, songs) }
+            if (shown.isNotEmpty()) {
+                item {
+                    val pages = shown.chunked(4)
+                    val rowState = rememberLazyListState()
+                    LazyRow(
+                        state = rowState,
+                        flingBehavior = rememberSnapFlingBehavior(rowState),
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(pages) { pg ->
+                            Column(Modifier.width(pageW)) {
+                                for (s in pg) ArtistTopRow(s, vm, songs)
+                            }
+                        }
+                    }
+                }
+            }
+            // YouTube Music shelves: Albums, Singles & EPs, Featured on, Playlists, Fans might also like
+            if (page != null) {
+                for (shelf in page.shelves) {
+                    item(key = "shelf_" + shelf.title) {
+                        val open = openShelves.contains(shelf.title)
+                        Column(Modifier.fillMaxWidth().animateContentSize()) {
+                            Row(
+                                Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 28.dp, bottom = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    shelf.title, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                                    maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                if (shelf.cards.size > 3) {
+                                    Text(
+                                        if (open) "Show less" else "Show all", fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium, color = ShowAllColor,
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(50))
+                                            .clickable {
+                                                openShelves = if (open) openShelves - shelf.title else openShelves + shelf.title
+                                            }
+                                            .padding(horizontal = 8.dp, vertical = 6.dp)
+                                    )
+                                }
+                            }
+                            if (open) {
+                                Column(
+                                    Modifier.padding(horizontal = 16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                                ) {
+                                    for (row in shelf.cards.chunked(2)) {
+                                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                                            for (c in row) {
+                                                BoxWithConstraints(Modifier.weight(1f)) {
+                                                    ArtistCard(c, maxWidth) { vm.openYtCard(c, shelf.cards) }
+                                                }
+                                            }
+                                            if (row.size < 2) Spacer(Modifier.weight(1f))
+                                        }
+                                    }
+                                }
+                            } else {
+                                LazyRow(
+                                    contentPadding = PaddingValues(horizontal = 16.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                                ) {
+                                    items(shelf.cards) { c ->
+                                        ArtistCard(c, cardW) { vm.openYtCard(c, shelf.cards) }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                // about the artist
+                if (page.about.isNotBlank() || page.subscribers.isNotBlank() || page.monthly.isNotBlank()) {
+                    item {
+                        Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 30.dp)) {
+                            Text(
+                                "About the artist", fontSize = 20.sp, fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            if (page.about.isNotBlank()) {
+                                Text(
+                                    page.about, fontSize = 15.sp, color = Color(0xE6FFFFFF),
+                                    maxLines = if (moreAbout) 60 else 3, overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.padding(top = 10.dp).animateContentSize()
+                                )
+                                Text(
+                                    if (moreAbout) "Less" else "More", fontSize = 15.sp,
+                                    fontWeight = FontWeight.SemiBold, color = Color.White,
+                                    modifier = Modifier
+                                        .clickable { moreAbout = !moreAbout }
+                                        .padding(top = 6.dp, bottom = 6.dp)
+                                )
+                            }
+                            Spacer(Modifier.height(10.dp))
+                            if (page.subscribers.isNotBlank()) {
+                                AboutChip(Icons.Filled.Person, page.subscribers)
+                            }
+                            if (page.monthly.isNotBlank()) {
+                                Spacer(Modifier.height(8.dp))
+                                AboutChip(Icons.Filled.GraphicEq, page.monthly)
+                            }
+                        }
+                    }
+                }
             }
         }
-        // back button and share, floating over the picture
+        // top bar: back, name (appears when you scroll), pin + share
         Row(
             Modifier
                 .fillMaxWidth()
+                .background(barBg)
                 .statusBarsPadding()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -262,30 +446,46 @@ fun ArtistScreen(vm: MainViewModel) {
             ) {
                 Icon(Icons.Filled.ArrowBack, null, tint = Color.White)
             }
-            Box(
+            Text(
+                name, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                maxLines = 1, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f).padding(horizontal = 14.dp).alpha(titleA)
+            )
+            Row(
                 Modifier
-                    .size(46.dp)
-                    .clip(CircleShape)
+                    .clip(RoundedCornerShape(50))
                     .background(Color(0x66000000))
-                    .border(1.dp, Color(0x33FFFFFF), CircleShape)
-                    .clickable {
-                        try {
-                            val send = Intent(Intent.ACTION_SEND)
-                                .setType("text/plain")
-                                .putExtra(
-                                    Intent.EXTRA_TEXT,
-                                    if (latest != null) "Listening to " + name + " - " + latest.label + " on VAME Music"
-                                    else "Listening to " + name + " on VAME Music"
-                                )
-                            ctx.startActivity(
-                                Intent.createChooser(send, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            )
-                        } catch (e: Exception) {
-                        }
-                    },
-                contentAlignment = Alignment.Center
+                    .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(50)),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Filled.Share, null, tint = Color.White)
+                Box(
+                    Modifier
+                        .size(46.dp)
+                        .clip(CircleShape)
+                        .clickable { pinToggle(vm, ctx, dial) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Filled.PushPin, null, tint = if (pinned) ShowAllColor else Color.White)
+                }
+                Box(
+                    Modifier
+                        .size(46.dp)
+                        .clip(CircleShape)
+                        .clickable {
+                            try {
+                                val send = Intent(Intent.ACTION_SEND)
+                                    .setType("text/plain")
+                                    .putExtra(Intent.EXTRA_TEXT, "Listening to " + name + " on VAME Music")
+                                ctx.startActivity(
+                                    Intent.createChooser(send, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                )
+                            } catch (e: Exception) {
+                            }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Filled.Share, null, tint = Color.White)
+                }
             }
         }
         MiniPlayer(
@@ -295,6 +495,22 @@ fun ArtistScreen(vm: MainViewModel) {
                 .navigationBarsPadding()
                 .padding(horizontal = 16.dp, vertical = 10.dp)
         )
+    }
+}
+
+@Composable
+private fun AboutChip(icon: ImageVector, text: String) {
+    Row(
+        Modifier
+            .clip(RoundedCornerShape(50))
+            .background(Color(0x26FFFFFF))
+            .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(50))
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, null, tint = Color.White, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(8.dp))
+        Text(text, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.White)
     }
 }
 

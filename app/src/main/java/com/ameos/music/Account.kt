@@ -211,6 +211,21 @@ object Account {
         return if (signedIn(c)) post(c, "browse", b) else postAnon("browse", b)
     }
 
+    // YouTube Music search / browse without a login (artist pages)
+    internal fun searchAnon(query: String): JSONObject {
+        val b = JSONObject()
+        b.put("context", context())
+        b.put("query", query)
+        return postAnon("search", b)
+    }
+
+    internal fun browseAnon(browseId: String): JSONObject {
+        val b = JSONObject()
+        b.put("context", context())
+        b.put("browseId", browseId)
+        return postAnon("browse", b)
+    }
+
     // ---------- reading the answer (YouTube changes this format, so we search for keys) ----------
 
     // first value of a key anywhere inside the node (document order)

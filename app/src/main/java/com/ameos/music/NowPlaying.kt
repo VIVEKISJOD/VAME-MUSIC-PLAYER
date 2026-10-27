@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.Bluetooth
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Headphones
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -661,6 +662,22 @@ internal fun QueuePanel(vm: MainViewModel, heightFrac: Float = 0.62f, onClose: (
             IconButton(onClick = onClose) {
                 Icon(Icons.Filled.KeyboardArrowDown, null, tint = Color.White)
             }
+        }
+        Row(
+            Modifier
+                .padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
+                .clip(RoundedCornerShape(50))
+                .glassFill()
+                .clickable {
+                    vm.dismissQueue()
+                    onClose()
+                }
+                .padding(start = 10.dp, end = 14.dp, top = 8.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Filled.Close, null, tint = Color.White, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(6.dp))
+            Text("Dismiss queue", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Color.White)
         }
         LazyColumn(contentPadding = PaddingValues(horizontal = 16.dp)) {
             itemsIndexed(vm.queue, key = { i, _ -> keys[i] }) { i, s ->

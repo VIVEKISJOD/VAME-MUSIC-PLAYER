@@ -43,7 +43,7 @@ object YtHome {
         YtPage(shelvesFrom(root), Account.continuationOf(root))
     }
 
-    private fun shelvesFrom(root: JSONObject): List<YtShelf> {
+    internal fun shelvesFrom(root: JSONObject, minCards: Int = 3): List<YtShelf> {
         val shelves = ArrayList<JSONObject>()
         Account.collect(root, "musicCarouselShelfRenderer", shelves)
         val out = ArrayList<YtShelf>()
@@ -61,7 +61,7 @@ object YtHome {
                 if (card != null) cards.add(card)
                 if (cards.size >= 20) break
             }
-            if (title.isNotBlank() && cards.size >= 3) out.add(YtShelf(title, sub, cards))
+            if (title.isNotBlank() && cards.size >= minCards) out.add(YtShelf(title, sub, cards))
         }
         return out
     }

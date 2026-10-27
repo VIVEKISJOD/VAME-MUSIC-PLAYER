@@ -134,6 +134,9 @@ fun HomeScreen(vm: MainViewModel) {
                 }
             }
         }
+        if (vm.homeFilter == 0 && vm.dials.isNotEmpty()) {
+            item { SpeedDialShelf(vm) }
+        }
         if (vm.homeFilter == 0) {
             // Recents: cards, and the grid button opens all of them as a grid
             if (UiOpts.homeLastAlbums && vm.played.isNotEmpty()) {

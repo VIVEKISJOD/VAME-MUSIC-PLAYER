@@ -1,4 +1,13 @@
-# VAME Music - full changelog (up to zip step52, v0.28.0, 27 Oct 2026)
+# VAME Music - full changelog (up to zip step53, v0.29.0, 27 Oct 2026)
+
+## step53 (v0.29.0) - includes everything up to step52
+- New: artist pages look like the YouTube Music style you showed. Big photo with the name, shuffle / play / star under it, a glass album card, and "Top songs" in swipeable pages of 4. Under that: Albums, Singles & EPs, Featured on, Playlists by the artist, and Fans might also like (each with Show all / Show less), then About the artist (More, subscribers, monthly listeners). The name shows in the top bar when you scroll. All of it comes from YouTube Music; if it is not found the old page still shows.
+- New: Dismiss queue button in the queue (Up next). It stops the music, clears the queue and closes the player.
+- New: standby clock. A clock card at the top right (big time, blinking colon, date). Tap it for a full screen clock with a huge time, the date and the playing song with a play / pause button. Tap again to go back.
+- New: speed dial on Home (like YouTube Music). Pinned playlists, albums and artists show as a grid of tiles at the top of Home. Tap to open, hold a tile to remove it.
+- New: the "..." menu on playlist and album pages: Play next, Share, Shuffle play, Sort (manual / title / artist / newest), Find in playlist, Start mix, Add to queue, Save to playlist (pick one or make a new one), Delete playlist (your own playlists), Pin to speed dial, Help and feedback.
+- New: pin button on the artist page (top right, next to share).
+- Not done: Show all on the artist page opens inside the page as a grid (no separate page); TV queue has no Dismiss button yet.
 
 ## step52 (v0.28.0) - includes everything up to step51
 - New: sign in a TV from your phone, no typing on the TV. On the TV open Settings > Account > Sign in with Google: it now shows a 6-digit code at the top. On the phone (already signed in, same Wi-Fi) open Settings > Account > Sign in a TV, type the code and tap Send sign-in to <TV name>. The TV signs in by itself.

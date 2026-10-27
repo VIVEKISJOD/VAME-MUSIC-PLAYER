@@ -1293,6 +1293,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         artistOpen = true
         artistAlbum = null
         artistLatestRelease = null
+        artistPage = null
         artistJob?.cancel()
         // songs we already know by this artist show first
         val known = ArrayList<Song>()
@@ -1320,6 +1321,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         val k = artistKey(it.artist)
                         k.isNotEmpty() && (k.contains(key) || key.contains(k))
                     } ?: al.firstOrNull()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                }
+            }
+            // the full YouTube Music artist page (albums, singles, about...)
+            launch {
+                try {
+                    val id = YtArtist.find(clean)
+                    if (id != null) artistPage = YtArtist.load(id, clean)
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
@@ -1359,7 +1370,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun playArtist(shuffle: Boolean) {
-        val list = artistSongs
+        val list = artistAllSongs
         if (list.isEmpty()) return
         val q = if (shuffle) list.shuffled() else list
         play(q.first(), q)
@@ -1764,6 +1775,104 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var lyricsLeft by mutableStateOf(Prefs.lyricsLeft(app))
     var panelWide by mutableStateOf(Prefs.panelWide(app))
     var artistAlbum by mutableStateOf<Album?>(null)
+    var artistPage by mutableStateOf<ArtistPage?>(null)
+    val artistAllSongs: List<Song>
+        get() = ((artistPage?.songs ?: emptyList<Song>()) + artistSongs).distinctBy { it.url }
+
+    // speed dial (pinned playlists, albums, artists, songs)
+    val dials = mutableStateListOf<Dial>().apply { addAll(SpeedDial.load(app)) }
+
+    fun isDialed(kind: String, id: String): Boolean = dials.any { it.kind == kind && it.id == id }
+
+    // true = pinned now, false = unpinned now
+    fun toggleDial(d: Dial): Boolean {
+        val i = dials.indexOfFirst { it.kind == d.kind && it.id == d.id }
+        if (i >= 0) dials.removeAt(i) else dials.add(0, d)
+        SpeedDial.save(getApplication<Application>(), dials.toList())
+        return i < 0
+    }
+
+    fun openDial(d: Dial) {
+        when (d.kind) {
+            "playlist" -> openPlaylist(d.id)
+            "album" -> {
+                if (d.id.startsWith("yt:")) openYtPlaylist(YtPlaylist(d.id.removePrefix("yt:"), d.title, d.sub, d.cover))
+                else openAlbum(Album(d.title, d.sub, d.id, d.cover))
+            }
+            "artist" -> openArtist(d.id)
+            "song" -> play(Song(d.title, d.sub, d.id, d.cover, 0L))
+        }
+    }
+
+    // ---------- queue / playlist menu helpers ----------
+
+    // removes the whole queue and stops the music (like "Dismiss queue" in YouTube Music)
+    fun dismissQueue() {
+        if (Connect.target != null) connectTo(null)
+        startJob?.cancel()
+        player.stop()
+        player.clearMediaItems()
+        queue = emptyList()
+        index = 0
+        current = null
+        isPlaying = false
+        showPlayer = false
+        showLyrics = false
+        tabStandby = false
+    }
+
+    fun playAllNext(songs: List<Song>) {
+        if (songs.isEmpty()) return
+        if (queue.isEmpty() || current == null) {
+            play(songs.first(), songs)
+            return
+        }
+        val urls = songs.map { it.url }.toSet()
+        val list = queue.toMutableList()
+        var idx = index
+        for (i in list.size - 1 downTo 0) {
+            if (i != idx && list[i].url in urls) {
+                list.removeAt(i)
+                if (i < idx) idx--
+            }
+        }
+        val curUrl = list.getOrNull(idx)?.url
+        list.addAll((idx + 1).coerceAtMost(list.size), songs.filter { it.url != curUrl })
+        queue = list
+        index = idx
+        prefetchNext()
+    }
+
+    fun addAllToQueue(songs: List<Song>) {
+        if (songs.isEmpty()) return
+        if (queue.isEmpty() || current == null) {
+            play(songs.first(), songs)
+            return
+        }
+        val have = queue.map { it.url }.toSet()
+        queue = queue + songs.filter { it.url !in have }
+    }
+
+    fun startMix(songs: List<Song>) {
+        val seed = songs.randomOrNull() ?: return
+        play(seed, listOf(seed))
+        startRadio()
+    }
+
+    // adds every song to one of your playlists; returns how many were new
+    fun addAllToPlaylist(id: String, songs: List<Song>): Int {
+        var n = 0
+        for (s in songs) if (addToPlaylist(id, s)) n++
+        return n
+    }
+
+    // new playlist made from these songs
+    fun newPlaylistFrom(name: String, songs: List<Song>) {
+        val id = System.currentTimeMillis().toString()
+        playlists.add(Playlist(id, name.trim().ifBlank { "My playlist" }.take(40), null, songs.distinctBy { it.url }))
+        savePlaylists()
+        ytPush(id)
+    }
     var artistLatestRelease by mutableStateOf<LatestRelease?>(null)
     var artistLatestPic by mutableStateOf(Prefs.artistLatest(app))
     var artistAlbumCardOn by mutableStateOf(Prefs.artistAlbumCard(app))

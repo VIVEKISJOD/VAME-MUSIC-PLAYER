@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.LibraryAdd
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.CircularProgressIndicator
@@ -153,6 +154,11 @@ fun AlbumScreen(vm: MainViewModel) {
     val songs = vm.albumSongs
     val tint = rememberCoverTint(album.cover)
     val wide = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= 600
+    var menuOpen by remember { mutableStateOf(false) }
+    var sortMode by remember { mutableStateOf(0) }
+    var findOn by remember { mutableStateOf(false) }
+    var findQ by remember { mutableStateOf("") }
+    val shown = sortFind(songs, sortMode, if (findOn) findQ else "")
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
 
     Box(
@@ -196,7 +202,13 @@ fun AlbumScreen(vm: MainViewModel) {
                         Icon(Icons.Filled.Download, null, tint = Color.White)
                     }
                 }
+                if (songs.isNotEmpty()) {
+                    IconButton(onClick = { menuOpen = true }) {
+                        Icon(Icons.Filled.MoreVert, null, tint = Color.White)
+                    }
+                }
             }
+            if (findOn) FindBar(findQ, { findQ = it }) { findOn = false; findQ = "" }
             LazyColumn(
                 Modifier.weight(1f),
                 state = listState,
@@ -235,11 +247,19 @@ fun AlbumScreen(vm: MainViewModel) {
                         }
                     }
                 }
-                itemsIndexed(songs) { i, s -> TrackRow(i + 1, s, vm, songs, album.cover) }
+                itemsIndexed(shown) { i, s -> TrackRow(i + 1, s, vm, shown, album.cover) }
             }
         }
         ScrollTopButton(listState, Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 190.dp))
         DetailBottomBar(vm, Modifier.align(Alignment.BottomCenter))
+        if (menuOpen) {
+            PlaylistMenuSheet(
+                vm, album.title, songs.size.toString() + " songs", album.cover, songs,
+                Dial("album", album.url, album.title, album.artist, album.cover),
+                sortMode, { sortMode = it }, { findOn = true }, null,
+                { menuOpen = false }
+            )
+        }
     }
 }
 
