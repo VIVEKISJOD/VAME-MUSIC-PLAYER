@@ -238,7 +238,11 @@ fun AmeosRoot(vm: MainViewModel) {
                 .then(if (blurAmount > 0.dp) Modifier.blur(blurAmount) else Modifier)
         ) {
             if (UiOpts.tv) {
-                TvShell(vm)
+                // the TV pages are removed while a full page (Settings, first-launch genres, Recap,
+                // Sign in, Spotify) is on top, so the remote only reaches what you see
+                if (!(vm.showOnboarding || vm.showSettings || vm.recapOpen || vm.showLogin || SpotifyHub.open)) {
+                    TvShell(vm)
+                }
             } else if (tablet) {
                 Row(Modifier.fillMaxSize()) {
                     SideRail(vm)
@@ -297,7 +301,7 @@ fun AmeosRoot(vm: MainViewModel) {
             // the music stays on top of Settings (pill or box), so it can be stopped from there
             if (UiOpts.tv) {
                 // TV: the pill is always at the bottom (hidden only behind the full screen player / lyrics)
-                if (!vm.showPlayer && !vm.showLyrics) {
+                if (!vm.showPlayer && !vm.showLyrics && !vm.showOnboarding && !vm.recapOpen && !vm.showLogin && !SpotifyHub.open) {
                     TvPill(vm, Modifier.align(Alignment.BottomCenter))
                 }
             } else if (tablet) {
@@ -392,7 +396,7 @@ fun MainPages(vm: MainViewModel, tablet: Boolean, dockFolded: Boolean, onExpand:
                     alpha = 1f - 0.4f * depth
                 }
         ) {
-            AnimatedContent(
+            if (!(UiOpts.tv && covered)) AnimatedContent(
                 targetState = vm.tab,
                 transitionSpec = {
                     val dir = if (targetState > initialState) 1 else -1

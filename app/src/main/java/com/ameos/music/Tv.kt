@@ -20,6 +20,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.Shape
@@ -152,6 +155,16 @@ private class TvFocusNode(private val src: InteractionSource) : Modifier.Node(),
     }
 }
 
+// A full screen page that must catch touches (so nothing underneath is tapped) but must NOT be a
+// remote focus stop. (The old way, an empty clickable, made the remote land on the whole page and
+// nothing moved.)
+fun Modifier.blockTaps(): Modifier = this.pointerInput(Unit) { detectTapGestures { } }
+
+// the Home list remembers where it was while an album / the player / Settings is open on top
+object TvKeep {
+    val home = androidx.compose.foundation.lazy.LazyListState()
+}
+
 // ---------- small pieces ----------
 
 // A focusable / clickable surface for the remote: grows a little and gets a white ring + soft fill
@@ -207,32 +220,77 @@ private fun TvIconBtn(
 }
 
 @Composable
-private fun TvRailBtn(
+private fun TvTab(
     name: String,
     icon: ImageVector,
     on: Boolean,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    Column(
+    Row(
         modifier
-            .fillMaxWidth()
-            .padding(vertical = 3.dp)
             .tvClick(
-                RoundedCornerShape(18.dp), 1.05f,
-                if (on) Pal.accent.copy(alpha = 0.30f) else Color.Transparent
+                RoundedCornerShape(24.dp), 1.05f,
+                if (on) Color(0x33FFFFFF) else Color.Transparent
             ) { onClick() }
-            .padding(vertical = 9.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(horizontal = 16.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, name, tint = if (on) Color.White else Pal.muted, modifier = Modifier.size(26.dp))
+        Icon(icon, null, tint = if (on) Color.White else Pal.textDim, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.width(8.dp))
         Text(
-            name, fontSize = 11.sp,
-            color = if (on) Color.White else Pal.muted,
+            name, fontSize = 15.sp,
+            color = if (on) Color.White else Pal.textDim,
             fontWeight = if (on) FontWeight.Bold else FontWeight.Normal,
-            maxLines = 1,
-            modifier = Modifier.padding(top = 3.dp)
+            maxLines = 1
         )
+    }
+}
+
+// top bar like the Spotify TV app: logo, tabs in the middle, "Welcome name" (opens Settings) on the right
+@Composable
+private fun TvTopBar(vm: MainViewModel, homeFocus: FocusRequester) {
+    Row(
+        Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(Modifier.weight(1f)) {
+            Text(
+                "VAME", fontSize = 22.sp, fontWeight = FontWeight.Black, color = Pal.accent,
+                modifier = Modifier.padding(start = 8.dp)
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            TvTab("Home", Icons.Filled.Home, vm.tab == 0, Modifier.focusRequester(homeFocus)) { vm.goHome() }
+            TvTab("Explore", Icons.Filled.Explore, vm.tab == 1) {
+                vm.goHome()
+                vm.tab = 1
+            }
+            TvTab("Your type", Icons.Filled.RadioButtonChecked, vm.tab == 2) {
+                vm.goHome()
+                vm.tab = 2
+            }
+            TvTab("Library", Icons.Filled.LibraryMusic, vm.tab == 3) {
+                vm.goHome()
+                vm.tab = 3
+            }
+        }
+        Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
+            val nm = vm.userName.ifBlank { vm.ytName }
+            Row(
+                Modifier
+                    .tvClick(RoundedCornerShape(14.dp), 1.04f, Color(0x55000000)) { vm.showSettings = true }
+                    .padding(horizontal = 12.dp, vertical = 7.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                ProfileButton(vm, 30.dp, false)
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    if (nm.isBlank()) "Settings" else "Welcome " + nm,
+                    fontSize = 14.sp, color = Color.White, maxLines = 1
+                )
+            }
+        }
     }
 }
 
@@ -242,6 +300,9 @@ private fun TvRailBtn(
 fun TvShell(vm: MainViewModel) {
     val homeFocus = remember { FocusRequester() }
     var anyFocus by remember { mutableStateOf(false) }
+    // while the player or the lyrics cover the screen, the pages underneath are removed (the remote
+    // must only be able to reach what is on top)
+    val full = vm.showPlayer || vm.showLyrics
     // keep trying to put the remote on Home until it works (it cannot while the screen is still
     // in touch mode, the first remote key switches that off)
     LaunchedEffect(Unit) {
@@ -265,7 +326,7 @@ fun TvShell(vm: MainViewModel) {
                 val k = e.key
                 val pad = k == Key.DirectionUp || k == Key.DirectionDown ||
                     k == Key.DirectionLeft || k == Key.DirectionRight || k == Key.DirectionCenter
-                if (pad && e.type == KeyEventType.KeyDown && !anyFocus) {
+                if (pad && e.type == KeyEventType.KeyDown && !anyFocus && !full) {
                     try {
                         homeFocus.requestFocus()
                     } catch (ex: Exception) {
@@ -276,28 +337,12 @@ fun TvShell(vm: MainViewModel) {
                 }
             }
     ) {
-        Row(Modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 6.dp)) {
-            // slim left menu
-            Column(
-                Modifier
-                    .width(76.dp)
-                    .fillMaxHeight()
-                    .padding(vertical = 18.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text("VAME", fontSize = 15.sp, fontWeight = FontWeight.Black, color = Pal.accent)
-                Spacer(Modifier.weight(1f))
-                TvRailBtn("Home", Icons.Filled.Home, vm.tab == 0, Modifier.focusRequester(homeFocus)) {
-                    vm.goHome()
+        if (!full) {
+            Column(Modifier.fillMaxSize().padding(horizontal = 26.dp)) {
+                TvTopBar(vm, homeFocus)
+                Box(Modifier.weight(1f).fillMaxWidth()) {
+                    MainPages(vm, true, false) { }
                 }
-                TvRailBtn("Explore", Icons.Filled.Explore, vm.tab == 1) { vm.tab = 1 }
-                TvRailBtn("Your type", Icons.Filled.RadioButtonChecked, vm.tab == 2) { vm.tab = 2 }
-                TvRailBtn("Library", Icons.Filled.LibraryMusic, vm.tab == 3) { vm.tab = 3 }
-                Spacer(Modifier.weight(1f))
-                TvRailBtn("Settings", Icons.Filled.Settings, false) { vm.showSettings = true }
-            }
-            Box(Modifier.weight(1f).fillMaxHeight().padding(start = 8.dp, end = 14.dp)) {
-                MainPages(vm, true, false) { }
             }
         }
         // full screen player and lyrics (lyrics use the tablet lyrics screen: cover left, lyrics right)
@@ -379,26 +424,47 @@ fun TvPill(vm: MainViewModel, modifier: Modifier = Modifier) {
     }
 }
 
-// ---------- TV Home: smaller cards, rows like the Spotify TV app ----------
+// ---------- TV Home, like the Spotify TV app ----------
+// big picture of the card the remote is on (with its name), a grid of wide tiles, then rows of cards
 
 @Composable
-private fun TvCard(item: ShelfItem, w: Dp) {
-    Column(
-        Modifier
-            .width(w)
-            .tvClick(RoundedCornerShape(16.dp), 1.07f) { item.onClick() }
-            .padding(8.dp),
-        horizontalAlignment = if (item.round) Alignment.CenterHorizontally else Alignment.Start
+private fun TvTile(item: ShelfItem, modifier: Modifier, onFocus: (ShelfItem) -> Unit) {
+    Row(
+        modifier
+            .height(58.dp)
+            .onFocusChanged { if (it.hasFocus) onFocus(item) }
+            .tvClick(RoundedCornerShape(8.dp), 1.03f, Color(0x2EFFFFFF)) { item.onClick() },
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Cover(
-            item.cover, Modifier.size(w - 16.dp),
-            if (item.round) CircleShape else RoundedCornerShape(12.dp), hiRes = true
-        )
+        Cover(item.cover, Modifier.size(58.dp), RoundedCornerShape(0.dp))
         Text(
             item.title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
             color = if (item.active) Pal.accent else Color.White,
+            maxLines = 2, overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f).padding(horizontal = 12.dp)
+        )
+    }
+}
+
+@Composable
+private fun TvCard(item: ShelfItem, w: Dp, onFocus: (ShelfItem) -> Unit) {
+    Column(
+        Modifier
+            .width(w)
+            .onFocusChanged { if (it.hasFocus) onFocus(item) }
+            .tvClick(RoundedCornerShape(14.dp), 1.07f) { item.onClick() }
+            .padding(7.dp),
+        horizontalAlignment = if (item.round) Alignment.CenterHorizontally else Alignment.Start
+    ) {
+        Cover(
+            item.cover, Modifier.size(w - 14.dp),
+            if (item.round) CircleShape else RoundedCornerShape(10.dp), hiRes = true
+        )
+        Text(
+            item.title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+            color = if (item.active) Pal.accent else Color.White,
             maxLines = 1, overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 8.dp)
+            modifier = Modifier.padding(top = 7.dp)
         )
         if (item.sub.isNotBlank()) {
             Text(
@@ -410,25 +476,25 @@ private fun TvCard(item: ShelfItem, w: Dp) {
 }
 
 @Composable
-private fun TvShelf(title: String, sub: String, cards: List<ShelfItem>) {
+private fun TvShelf(title: String, sub: String, cards: List<ShelfItem>, onFocus: (ShelfItem) -> Unit) {
     if (cards.isEmpty()) return
     Column(Modifier.fillMaxWidth()) {
         Text(
             title, fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
             maxLines = 1, overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(start = 8.dp, top = 14.dp)
+            modifier = Modifier.padding(start = 6.dp, top = 12.dp)
         )
         if (sub.isNotBlank()) {
             Text(
                 sub.uppercase(), fontSize = 10.sp, color = Pal.textDim,
-                modifier = Modifier.padding(start = 8.dp)
+                modifier = Modifier.padding(start = 6.dp)
             )
         }
         LazyRow(
-            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            contentPadding = PaddingValues(horizontal = 2.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            items(cards) { c -> TvCard(c, 164.dp) }
+            items(cards) { c -> TvCard(c, 150.dp, onFocus) }
         }
     }
 }
@@ -436,71 +502,130 @@ private fun TvShelf(title: String, sub: String, cards: List<ShelfItem>) {
 @Composable
 fun TvHome(vm: MainViewModel) {
     val yt = if (UiOpts.homeYt) vm.ytHome else emptyList()
-    LazyColumn(contentPadding = PaddingValues(top = 14.dp, bottom = 120.dp)) {
-        item {
-            val hour = remember { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) }
-            val hi = if (hour < 5) "Late night" else if (hour < 12) "Good morning"
-            else if (hour < 17) "Good afternoon" else if (hour < 22) "Good evening" else "Late night"
-            val nm = vm.userName.ifBlank { vm.ytName }
-            Text(
-                if (nm.isBlank()) hi else hi + ", " + nm,
-                fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color.White,
-                modifier = Modifier.padding(start = 8.dp)
+    val listState = TvKeep.home
+    var hero by remember { mutableStateOf<ShelfItem?>(null) }
+    val quick = (vm.played.toList() + vm.liked.toList() + vm.recommended).distinctBy { it.url }.take(8)
+    val fallback = if (quick.isNotEmpty()) songItem(vm, quick[0], quick) else null
+    val shown = hero ?: fallback
+    val setHero: (ShelfItem) -> Unit = { hero = it }
+
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val h = maxHeight
+        val atTop = listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset < 120
+        val a by animateFloatAsState(if (atTop) 1f else 0f, tween(250), label = "heroA")
+        // the big picture on the right, faded into the page on the left and at the bottom
+        Box(Modifier.fillMaxSize().graphicsLayer { alpha = 0.3f + 0.7f * a }) {
+            if (shown != null) {
+                Crossfade(shown.cover, label = "heroImg") { c ->
+                    Box(Modifier.fillMaxSize()) {
+                        Cover(
+                            c,
+                            Modifier.align(Alignment.TopEnd).fillMaxHeight(0.8f).aspectRatio(1f),
+                            RoundedCornerShape(0.dp), hiRes = true
+                        )
+                    }
+                }
+            }
+            Box(
+                Modifier.fillMaxSize().background(
+                    Brush.horizontalGradient(
+                        0f to Pal.bgMid, 0.4f to Pal.bgMid.copy(alpha = 0.92f), 0.8f to Color.Transparent
+                    )
+                )
+            )
+            Box(
+                Modifier.fillMaxSize().background(
+                    Brush.verticalGradient(0.4f to Color.Transparent, 0.75f to Pal.bgMid)
+                )
             )
         }
-        if (UiOpts.homeLastAlbums && vm.played.isNotEmpty()) {
-            item {
-                val rec = vm.played.toList().take(14)
-                TvShelf("Recents", "", rec.map { s -> songItem(vm, s, rec) })
-            }
-        }
-        for (sh in yt.take(2)) {
-            item { TvShelf(sh.title, sh.sub, ytItems(vm, sh)) }
-        }
-        item {
-            val shelf = if (vm.liked.isNotEmpty()) vm.liked.toList().take(20) else vm.recommended.take(12)
-            TvShelf(
-                if (vm.liked.isNotEmpty()) "Liked songs" else "Songs for you", "",
-                shelf.map { s -> songItem(vm, s, shelf) }
-            )
-        }
-        if (vm.recommendedAlbums.isNotEmpty()) {
-            item {
-                TvShelf(
-                    "Albums for you", "",
-                    vm.recommendedAlbums.map { a ->
-                        ShelfItem(a.cover, a.title, "Album \u2022 " + a.artist) { vm.openAlbum(a) }
-                    }
-                )
-            }
-        }
-        val picks = vm.recommended.drop(4).take(12)
-        if (UiOpts.homeQuick && picks.isNotEmpty()) {
-            item { TvShelf("Quick picks", "", picks.map { s -> songItem(vm, s, picks) }) }
-        }
-        for (sh in (if (UiOpts.homeShelves) vm.genreShelves else emptyList())) {
-            item { TvShelf(sh.name, "", sh.songs.map { s -> songItem(vm, s, sh.songs) }) }
-        }
-        for (sh in yt.drop(2)) {
-            item { TvShelf(sh.title, sh.sub, ytItems(vm, sh)) }
-        }
-        if (UiOpts.homeArtists && vm.likedArtists.isNotEmpty()) {
-            item {
-                TvShelf(
-                    "Your artists", "",
-                    vm.likedArtists.toList().map { a ->
-                        ShelfItem(a.cover, a.name, "Artist", true) { vm.openArtist(a.name) }
-                    }
-                )
-            }
-        }
-        if (vm.recommended.isEmpty() && yt.isEmpty()) {
-            item {
+        if (shown != null) {
+            Column(
+                Modifier
+                    .padding(start = 8.dp, top = h * 0.12f)
+                    .fillMaxWidth(0.55f)
+                    .graphicsLayer { alpha = a }
+            ) {
                 Text(
-                    if (vm.ytHomeLoading) "Loading your music..." else "Nothing to show yet. Check the internet.",
-                    fontSize = 16.sp, color = Pal.textDim,
-                    modifier = Modifier.padding(start = 8.dp, top = 24.dp)
+                    shown.title, fontSize = 40.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                    maxLines = 2, overflow = TextOverflow.Ellipsis
                 )
+                Text(
+                    shown.sub, fontSize = 16.sp, color = Pal.textDim,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 6.dp)
+                )
+            }
+        }
+        LazyColumn(
+            state = listState,
+            contentPadding = PaddingValues(top = h * 0.36f, bottom = 120.dp)
+        ) {
+            if (quick.isNotEmpty()) {
+                item {
+                    Column(Modifier.fillMaxWidth().padding(horizontal = 2.dp)) {
+                        for (row in quick.chunked(4)) {
+                            Row(
+                                Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                for (s in row) TvTile(songItem(vm, s, quick), Modifier.weight(1f), setHero)
+                                for (k in row.size until 4) Spacer(Modifier.weight(1f))
+                            }
+                        }
+                    }
+                }
+            }
+            for (sh in yt.take(2)) {
+                item { TvShelf(sh.title, sh.sub, ytItems(vm, sh), setHero) }
+            }
+            item {
+                val shelf = if (vm.liked.isNotEmpty()) vm.liked.toList().take(20) else vm.recommended.take(12)
+                TvShelf(
+                    if (vm.liked.isNotEmpty()) "Liked songs" else "Made for you", "",
+                    shelf.map { s -> songItem(vm, s, shelf) }, setHero
+                )
+            }
+            if (vm.recommendedAlbums.isNotEmpty()) {
+                item {
+                    TvShelf(
+                        "Albums for you", "",
+                        vm.recommendedAlbums.map { al ->
+                            ShelfItem(al.cover, al.title, "Album \u2022 " + al.artist) { vm.openAlbum(al) }
+                        },
+                        setHero
+                    )
+                }
+            }
+            val picks = vm.recommended.drop(4).take(12)
+            if (UiOpts.homeQuick && picks.isNotEmpty()) {
+                item { TvShelf("Quick picks", "", picks.map { s -> songItem(vm, s, picks) }, setHero) }
+            }
+            for (sh in (if (UiOpts.homeShelves) vm.genreShelves else emptyList())) {
+                item { TvShelf(sh.name, "", sh.songs.map { s -> songItem(vm, s, sh.songs) }, setHero) }
+            }
+            for (sh in yt.drop(2)) {
+                item { TvShelf(sh.title, sh.sub, ytItems(vm, sh), setHero) }
+            }
+            if (UiOpts.homeArtists && vm.likedArtists.isNotEmpty()) {
+                item {
+                    TvShelf(
+                        "Your artists", "",
+                        vm.likedArtists.toList().map { ar ->
+                            ShelfItem(ar.cover, ar.name, "Artist", true) { vm.openArtist(ar.name) }
+                        },
+                        setHero
+                    )
+                }
+            }
+            if (quick.isEmpty() && yt.isEmpty()) {
+                item {
+                    Text(
+                        if (vm.ytHomeLoading) "Loading your music..." else "Nothing to show yet. Check the internet.",
+                        fontSize = 16.sp, color = Pal.textDim,
+                        modifier = Modifier.padding(start = 8.dp, top = 24.dp)
+                    )
+                }
             }
         }
     }
@@ -588,10 +713,14 @@ fun TvPlayer(vm: MainViewModel) {
     val tint = rememberCoverTint(song.cover)
     val playFocus = remember { FocusRequester() }
     LaunchedEffect(Unit) {
-        delay(350)
-        try {
-            playFocus.requestFocus()
-        } catch (e: Exception) {
+        var n = 0
+        while (n < 8) {
+            delay(400)
+            try {
+                playFocus.requestFocus()
+            } catch (e: Exception) {
+            }
+            n++
         }
     }
     // the TV must not go to sleep while the player is open
@@ -609,7 +738,7 @@ fun TvPlayer(vm: MainViewModel) {
                     listOf(lerp(tint, Color.Black, if (Pal.amoled) 0.9f else 0.45f), Color.Black)
                 )
             )
-            .blockTouches(true)
+            .blockTaps()
     ) {
         BoxWithConstraints(Modifier.fillMaxSize().padding(horizontal = 64.dp, vertical = 40.dp)) {
             val side = minOf(maxHeight, maxWidth * 0.4f)

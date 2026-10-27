@@ -145,10 +145,7 @@ fun QuickSheet(vm: MainViewModel) {
                         .offset { IntOffset(0, dragY.value.roundToInt()) }
                         .clip(RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
                         .glassPanel(RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) { }
+                        .blockTaps()
                 ) {
                     Box(
                         Modifier

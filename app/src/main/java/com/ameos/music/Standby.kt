@@ -206,10 +206,7 @@ fun StandbyPlayer(vm: MainViewModel) {
                     )
                 )
             )
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
-            ) { }
+            .blockTaps()
     ) {
         Cover(
             song.cover,

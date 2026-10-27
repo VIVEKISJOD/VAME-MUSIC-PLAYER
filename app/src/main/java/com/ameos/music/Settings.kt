@@ -68,10 +68,7 @@ fun SettingsScreen(vm: MainViewModel) {
                     endY = 1500f
                 )
             )
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
-            ) { }
+            .blockTaps()
     ) {
         Column(
             Modifier

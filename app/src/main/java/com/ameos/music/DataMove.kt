@@ -405,7 +405,7 @@ fun SwitchAppScreen(vm: MainViewModel) {
         Modifier
             .fillMaxSize()
             .background(Brush.verticalGradient(listOf(Pal.bgTop, Pal.bgMid, Pal.bgBot), endY = 1500f))
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { }
+            .blockTaps()
     ) {
         Column(
             Modifier

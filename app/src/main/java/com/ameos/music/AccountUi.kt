@@ -65,10 +65,7 @@ fun LoginScreen(vm: MainViewModel) {
         Modifier
             .fillMaxSize()
             .background(Color(0xFF101010))
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
-            ) { }
+            .blockTaps()
     ) {
         Column(
             Modifier

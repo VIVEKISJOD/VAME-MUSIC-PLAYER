@@ -84,10 +84,7 @@ fun TabletLyricsScreen(vm: MainViewModel) {
         Modifier
             .fillMaxSize()
             .background(lerp(tint, Color.Black, if (Pal.amoled) 0.92f else 0.5f))
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
-            ) { }
+            .blockTaps()
     ) {
         Row(
             Modifier
@@ -180,10 +177,7 @@ fun LyricsScreen(vm: MainViewModel) {
         Modifier
             .fillMaxSize()
             .background(lerp(tint, Color.Black, if (Pal.amoled) 0.92f else 0.5f))
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
-            ) { }
+            .blockTaps()
     ) {
         Column(
             Modifier

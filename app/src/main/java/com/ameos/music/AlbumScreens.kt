@@ -163,10 +163,7 @@ fun AlbumScreen(vm: MainViewModel) {
                     listOf(lerp(tint, Color.Black, 0.35f), Pal.bgMid, Pal.bgBot)
                 )
             )
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
-            ) { }
+            .blockTaps()
     ) {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             Row(
@@ -263,10 +260,7 @@ fun DownloadsScreen(vm: MainViewModel) {
                     listOf(Pal.bgTop, Pal.bgMid, Pal.bgBot)
                 )
             )
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
-            ) { }
+            .blockTaps()
     ) {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             Row(

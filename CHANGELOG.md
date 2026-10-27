@@ -1,4 +1,19 @@
-# VAME Music - full changelog (up to zip step46, v0.25.0, 27 Oct 2026)
+# VAME Music - full changelog (up to zip step48, v0.26.1, 27 Oct 2026)
+
+## step48 (v0.26.1) - includes everything up to step47
+- Fixed: the TV remote did not move anything on the "What type of songs do you like?" page and other full pages. Cause: every full page had an invisible "catch all touches" layer that the remote landed on, and the TV Home underneath also stayed selectable. Now the remote only reaches what is on top: first-launch genres, Settings, Recap, Sign in, album / artist / playlist / liked pages, the player and the lyrics.
+- Fixed: on TV the pages underneath are removed while one of those is open (Home keeps its scroll place and comes back when you press Back).
+- Fixed: the tabs on top close an open album / artist page before they switch.
+- Fixed: the pill is hidden behind the first-launch genres page, Recap and Sign in so the remote cannot land on it there.
+- The TV player now keeps trying to select Play for a few seconds after it opens.
+- Phone and tablet: no visible change (the touch blocking works the same).
+
+## step47 (v0.26.0) - includes everything up to step46
+- Changed: the TV look now follows the Spotify TV app. The left menu is gone. On top: VAME on the left, the tabs Home / Explore / Your type / Library in the middle, "Welcome name" (opens Settings) on the right.
+- New: TV Home has a big picture at the top right with the name of whatever the remote is on, fading into the page. It changes as you move over songs and albums.
+- New: under it a grid of 8 wide tiles (small cover + name, 4 per row) from your recents, likes and picks, then rows of cards (YouTube Music shelves, Liked songs / Made for you, Albums, Quick picks, genres, Your artists).
+- Changed: the picture and big name fade away when you move down to the lower rows.
+- The pill at the bottom stays as it was.
 
 ## step46 (v0.25.0) - includes everything up to step45
 - Fixed: the TV remote (D-pad) now works. VAME takes the remote at start and, if nothing is selected yet, the first arrow / OK press selects Home. Every TV button now has its own white ring and grows a little while the remote is on it.

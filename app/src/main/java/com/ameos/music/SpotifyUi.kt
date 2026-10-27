@@ -114,7 +114,7 @@ fun SpotifyScreen(vm: MainViewModel) {
         Modifier
             .fillMaxSize()
             .background(Brush.verticalGradient(listOf(Pal.bgTop, Pal.bgMid, Pal.bgBot), endY = 1500f))
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { }
+            .blockTaps()
     ) {
         Column(
             Modifier
@@ -277,7 +277,7 @@ private fun SpotifyLoginWeb(app: Context) {
         Modifier
             .fillMaxSize()
             .background(Color(0xFF101010))
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { }
+            .blockTaps()
     ) {
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()) {
             Row(
@@ -363,7 +363,7 @@ private fun SpotifyWebPlayer(vm: MainViewModel, url: String) {
         Modifier
             .fillMaxSize()
             .background(Color(0xFF101010))
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { }
+            .blockTaps()
     ) {
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
             Row(

@@ -322,10 +322,7 @@ fun NowPlayingScreen(vm: MainViewModel) {
                     listOf(Pal.bgBot, lerp(tint, Color.Black, if (Pal.amoled) 0.9f else 0.55f), lerp(tint, Color.Black, if (Pal.amoled) 1f else 0.8f))
                 )
             )
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
-            ) { }
+            .blockTaps()
     ) {
         val colW = minOf(maxWidth, 520.dp)
         val artH = minOf(colW, maxHeight * 0.56f)
