@@ -70,7 +70,7 @@ object UiOpts {
     // not saved: true while the player was opened by turning the phone sideways
     var standbyByRotate by mutableStateOf(false)
 
-    // on a TV everything is a little bigger (10-foot viewing)
+    // on a TV everything is a little smaller, so more fits on the screen
     val sizeScale: Float
         get() {
             val base = when (uiSize) {
@@ -78,7 +78,7 @@ object UiOpts {
                 2 -> 1.1f
                 else -> 1f
             }
-            return if (tv) base * 1.15f else base
+            return if (tv) base * 0.9f else base
         }
 
     val pillDp: Int

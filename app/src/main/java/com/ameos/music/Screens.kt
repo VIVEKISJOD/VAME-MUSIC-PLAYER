@@ -73,12 +73,12 @@ fun ProfileButton(vm: MainViewModel, size: androidx.compose.ui.unit.Dp, tappable
     }
 }
 
-private fun songItem(vm: MainViewModel, s: Song, list: List<Song>): ShelfItem =
+internal fun songItem(vm: MainViewModel, s: Song, list: List<Song>): ShelfItem =
     ShelfItem(s.cover, s.title, "Song \u2022 " + artistName(s.artist), false, vm.current?.url == s.url) {
         vm.play(s, list)
     }
 
-private fun ytItems(vm: MainViewModel, sh: YtShelf): List<ShelfItem> = sh.cards.map { c ->
+internal fun ytItems(vm: MainViewModel, sh: YtShelf): List<ShelfItem> = sh.cards.map { c ->
     ShelfItem(
         c.cover, c.title, c.sub, c.kind == "artist",
         c.kind == "song" && vm.current?.url == c.id

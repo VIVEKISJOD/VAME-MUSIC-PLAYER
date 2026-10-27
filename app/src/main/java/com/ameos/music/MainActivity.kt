@@ -90,6 +90,16 @@ class MainActivity : ComponentActivity() {
                 AmeosRoot(vm)
             }
         }
+        // TV: give the screen to the remote at once (otherwise the first key press only wakes it up)
+        if (UiOpts.tv) {
+            window.decorView.post {
+                try {
+                    val root = findViewById<android.view.ViewGroup>(android.R.id.content)
+                    root?.getChildAt(0)?.requestFocus()
+                } catch (e: Exception) {
+                }
+            }
+        }
         handleIntent(intent)
     }
 
@@ -286,7 +296,10 @@ fun AmeosRoot(vm: MainViewModel) {
             }
             // the music stays on top of Settings (pill or box), so it can be stopped from there
             if (UiOpts.tv) {
-                // TV: the now playing bar is part of TvShell
+                // TV: the pill is always at the bottom (hidden only behind the full screen player / lyrics)
+                if (!vm.showPlayer && !vm.showLyrics) {
+                    TvPill(vm, Modifier.align(Alignment.BottomCenter))
+                }
             } else if (tablet) {
                 if (!vm.tabStandby) TabletMini(vm)
             } else {
@@ -391,7 +404,7 @@ fun MainPages(vm: MainViewModel, tablet: Boolean, dockFolded: Boolean, onExpand:
                 label = "tabs"
             ) { t ->
                 when (t) {
-                    0 -> HomeScreen(vm)
+                    0 -> if (UiOpts.tv) TvHome(vm) else HomeScreen(vm)
                     1 -> ExploreScreen(vm)
                     2 -> YourTypeScreen(vm)
                     else -> LibraryScreen(vm)

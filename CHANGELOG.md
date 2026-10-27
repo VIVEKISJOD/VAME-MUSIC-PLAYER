@@ -1,4 +1,12 @@
-# VAME Music - full changelog (up to zip step45, v0.24.0, 27 Oct 2026)
+# VAME Music - full changelog (up to zip step46, v0.25.0, 27 Oct 2026)
+
+## step46 (v0.25.0) - includes everything up to step45
+- Fixed: the TV remote (D-pad) now works. VAME takes the remote at start and, if nothing is selected yet, the first arrow / OK press selects Home. Every TV button now has its own white ring and grows a little while the remote is on it.
+- Changed: the left menu on TV is slim (icons with small names) and no longer takes a big part of the screen.
+- Changed: everything on TV is a bit smaller, so more fits on the screen.
+- New: TV Home like the Spotify TV app: a greeting, then rows of small cover cards (Recents, YouTube Music shelves, Liked songs, Albums, Quick picks, genres, Your artists). The card the remote is on grows and gets a white ring.
+- New: on TV the pill is always at the bottom, centred, also over Settings (previous, play / pause, next; OK on the song opens the full player). With no song it says "Pick a song to start playing". It hides only behind the full screen player and the lyrics.
+- Phone and tablet look is unchanged.
 
 ## step45 (v0.24.0) - includes everything up to step44
 - New: VAME now runs on Android TV. It is the SAME app and the SAME file as the phone / tablet one: one repo, one zip, one build, one APK in Releases (VAME-0.24.0.apk). Install it on a TV and it shows in the TV app row with a VAME banner; on your phone and tablet nothing changes.
