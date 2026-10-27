@@ -1,4 +1,16 @@
-# VAME Music - full changelog (up to zip step44, v0.23.0, 26 Oct 2026)
+# VAME Music - full changelog (up to zip step45, v0.24.0, 27 Oct 2026)
+
+## step45 (v0.24.0) - includes everything up to step44
+- New: VAME now runs on Android TV. It is the SAME app and the SAME file as the phone / tablet one: one repo, one zip, one build, one APK in Releases (VAME-0.24.0.apk). Install it on a TV and it shows in the TV app row with a VAME banner; on your phone and tablet nothing changes.
+- New: TV mode switches on by itself on an Android TV. Settings > Interface > TV mode: Auto / On / Off. Choose On on your tablet to see the TV look (you can tap everything there too).
+- New: TV layout. Menu on the left (Home, Explore, Your type, Library, Settings) with names, big text, the same Home shelves, Explore, Library, album, artist and playlist pages.
+- New: white focus ring on whatever the remote is pointing at, on every button, card and setting.
+- New: TV player. Press OK on the bar at the bottom: big cover, title, shuffle, previous, play / pause, next, repeat, like, lyrics, play on another device. Left / Right on the progress bar jumps 10 seconds. The TV stays awake while it is open. Back closes it.
+- New: now playing bar at the bottom of every TV page (previous, play / pause, next).
+- New: remote media keys work: play / pause, next, previous, fast forward and rewind (10 seconds).
+- New: Settings switches can be turned on / off with the remote (OK on the whole row).
+- New: your TV also shows up as a device in "Play on another device" on your phone (Connect), so you can send a song from the phone to the TV.
+- Note: not tested on a real TV yet. Sign in with Google and the Spotify page need a keyboard / browser and are not made for the TV remote.
 
 ## step44 (v0.23.0) - includes everything up to step43
 - New: Lyrics screen redesigned like your recording. Top: back, "LYRICS" with song and artist, sleep timer button, menu button. Under it a small label (SYNCED or PLAIN TEXT + the provider name). Tap the label to change provider.

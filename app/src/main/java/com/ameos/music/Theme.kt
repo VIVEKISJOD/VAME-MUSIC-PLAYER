@@ -4,6 +4,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
@@ -57,8 +58,14 @@ fun AmeosTheme(content: @Composable () -> Unit) {
     CompositionLocalProvider(LocalDensity provides scaled) {
         MaterialTheme(
             colorScheme = colors,
-            typography = Typography(),
-            content = content
-        )
+            typography = Typography()
+        ) {
+            // on a TV every button that the remote lands on gets a white focus ring
+            CompositionLocalProvider(
+                LocalIndication provides (if (UiOpts.tv) TvFocusIndication else LocalIndication.current)
+            ) {
+                content()
+            }
+        }
     }
 }

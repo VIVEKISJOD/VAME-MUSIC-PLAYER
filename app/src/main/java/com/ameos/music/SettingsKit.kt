@@ -96,7 +96,13 @@ fun KitLabel(title: String, sub: String? = null) {
 @Composable
 fun KitSwitch(title: String, sub: String, checked: Boolean, onChange: (Boolean) -> Unit) {
     Row(
-        Modifier.fillMaxWidth().padding(vertical = 6.dp),
+        Modifier
+            .fillMaxWidth()
+            .then(
+                if (UiOpts.tv) Modifier.clip(RoundedCornerShape(14.dp)).clickable { onChange(!checked) }
+                else Modifier
+            )
+            .padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(Modifier.weight(1f).padding(end = 12.dp)) {
@@ -105,7 +111,7 @@ fun KitSwitch(title: String, sub: String, checked: Boolean, onChange: (Boolean) 
         }
         Switch(
             checked = checked,
-            onCheckedChange = onChange,
+            onCheckedChange = if (UiOpts.tv) null else onChange,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = Color.White,
                 checkedTrackColor = Color(0xFF2FBF71),

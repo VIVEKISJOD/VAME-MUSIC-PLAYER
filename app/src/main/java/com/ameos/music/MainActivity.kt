@@ -74,6 +74,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         Pal.load(applicationContext)
         UiOpts.load(applicationContext)
+        UiOpts.applyTv(applicationContext)
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(AndroidColor.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.dark(AndroidColor.TRANSPARENT)
@@ -90,6 +91,43 @@ class MainActivity : ComponentActivity() {
             }
         }
         handleIntent(intent)
+    }
+
+    // TV remote: the media keys work while the app is open (play / pause, next, previous, wind)
+    override fun onKeyDown(keyCode: Int, event: android.view.KeyEvent?): Boolean {
+        if (UiOpts.tv) {
+            when (keyCode) {
+                android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> {
+                    vm.toggle()
+                    return true
+                }
+                android.view.KeyEvent.KEYCODE_MEDIA_PLAY -> {
+                    if (!vm.isPlaying) vm.toggle()
+                    return true
+                }
+                android.view.KeyEvent.KEYCODE_MEDIA_PAUSE -> {
+                    if (vm.isPlaying) vm.toggle()
+                    return true
+                }
+                android.view.KeyEvent.KEYCODE_MEDIA_NEXT -> {
+                    vm.next()
+                    return true
+                }
+                android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
+                    vm.prev()
+                    return true
+                }
+                android.view.KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> {
+                    vm.seekTo(vm.posMs() + 10000L)
+                    return true
+                }
+                android.view.KeyEvent.KEYCODE_MEDIA_REWIND -> {
+                    vm.seekTo((vm.posMs() - 10000L).coerceAtLeast(0L))
+                    return true
+                }
+            }
+        }
+        return super.onKeyDown(keyCode, event)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -123,7 +161,7 @@ fun AmeosRoot(vm: MainViewModel) {
         if (!vm.showPlayer) UiOpts.standbyByRotate = false
     }
     LaunchedEffect(phoneLand) {
-        if (phoneLand) {
+        if (phoneLand && !UiOpts.tv) {
             val busy = vm.showSettings || vm.showOnboarding || vm.showLogin || vm.recapOpen ||
                 SpotifyHub.open
             if (UiOpts.standby && vm.current != null && vm.isPlaying && !vm.showPlayer &&
@@ -189,7 +227,9 @@ fun AmeosRoot(vm: MainViewModel) {
                 .fillMaxSize()
                 .then(if (blurAmount > 0.dp) Modifier.blur(blurAmount) else Modifier)
         ) {
-            if (tablet) {
+            if (UiOpts.tv) {
+                TvShell(vm)
+            } else if (tablet) {
                 Row(Modifier.fillMaxSize()) {
                     SideRail(vm)
                     Box(Modifier.weight(1f).fillMaxHeight().nestedScroll(dockScroll)) {
@@ -245,7 +285,9 @@ fun AmeosRoot(vm: MainViewModel) {
                 SettingsScreen(vm)
             }
             // the music stays on top of Settings (pill or box), so it can be stopped from there
-            if (tablet) {
+            if (UiOpts.tv) {
+                // TV: the now playing bar is part of TvShell
+            } else if (tablet) {
                 if (!vm.tabStandby) TabletMini(vm)
             } else {
                 AnimatedVisibility(
@@ -318,7 +360,7 @@ fun AmeosRoot(vm: MainViewModel) {
 // Pages (tabs + detail pages) and the bottom dock. Phone: mini player + tab bar that folds.
 // Tablet: the tab bar lives in the side rail, so only a floating glass mini player is here.
 @Composable
-private fun MainPages(vm: MainViewModel, tablet: Boolean, dockFolded: Boolean, onExpand: () -> Unit) {
+fun MainPages(vm: MainViewModel, tablet: Boolean, dockFolded: Boolean, onExpand: () -> Unit) {
     // depth: the page underneath shrinks and dims a little while a detail page is open,
     // and eases back when it closes (so opening and Back both feel animated)
     val covered = vm.playlistOpen || vm.likedOpen || vm.albumOpen || vm.downloadsOpen || vm.artistOpen

@@ -120,6 +120,16 @@ fun SettingsScreen(vm: MainViewModel) {
                     UiOpts.save(ctx)
                 }
                 KitDivider()
+                KitLabel(
+                    "TV mode",
+                    "Big layout for a TV remote. Auto turns it on by itself on Android TV. Do not choose Off on a TV."
+                )
+                KitChips(UiOpts.tvMode, listOf("Auto", "On", "Off")) {
+                    UiOpts.tvMode = it
+                    UiOpts.applyTv(ctx)
+                    UiOpts.save(ctx)
+                }
+                KitDivider()
                 KitLabel("Glass strength", "How see-through the cards and buttons are (colour glass modes).")
                 KitChips(UiOpts.glass, listOf("Soft", "Normal", "Strong")) {
                     UiOpts.glass = it

@@ -1,6 +1,8 @@
 package com.ameos.music
 
+import android.app.UiModeManager
 import android.content.Context
+import android.content.res.Configuration
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -45,14 +47,38 @@ object UiOpts {
     var haptics by mutableStateOf(true)
     var pageTint by mutableStateOf(true)
 
+    // step45: TV mode. tvMode 0 = Auto (on by itself on Android TV), 1 = On, 2 = Off. tv = the result.
+    var tvMode by mutableIntStateOf(0)
+    var tv by mutableStateOf(false)
+
+    fun isTvDevice(c: Context): Boolean {
+        val um = c.getSystemService(Context.UI_MODE_SERVICE) as? UiModeManager
+        if (um != null && um.currentModeType == Configuration.UI_MODE_TYPE_TELEVISION) return true
+        val pm = c.packageManager
+        return pm.hasSystemFeature("android.software.leanback") ||
+            pm.hasSystemFeature("android.hardware.type.television")
+    }
+
+    fun applyTv(c: Context) {
+        tv = when (tvMode) {
+            1 -> true
+            2 -> false
+            else -> isTvDevice(c)
+        }
+    }
+
     // not saved: true while the player was opened by turning the phone sideways
     var standbyByRotate by mutableStateOf(false)
 
+    // on a TV everything is a little bigger (10-foot viewing)
     val sizeScale: Float
-        get() = when (uiSize) {
-            0 -> 0.92f
-            2 -> 1.1f
-            else -> 1f
+        get() {
+            val base = when (uiSize) {
+                0 -> 0.92f
+                2 -> 1.1f
+                else -> 1f
+            }
+            return if (tv) base * 1.15f else base
         }
 
     val pillDp: Int
@@ -86,6 +112,7 @@ object UiOpts {
         homeYt = p.getBoolean("homeYt", true)
         haptics = p.getBoolean("haptics", true)
         pageTint = p.getBoolean("pageTint", true)
+        tvMode = p.getInt("tvMode", 0).coerceIn(0, 2)
     }
 
     fun save(c: Context) {
@@ -110,6 +137,7 @@ object UiOpts {
             .putBoolean("homeYt", homeYt)
             .putBoolean("haptics", haptics)
             .putBoolean("pageTint", pageTint)
+            .putInt("tvMode", tvMode)
             .apply()
     }
 }
