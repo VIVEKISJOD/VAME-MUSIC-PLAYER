@@ -277,6 +277,8 @@ fun StandbyPlayer(vm: MainViewModel) {
                         IconButton(onClick = { vm.showMenu = true }) {
                             Icon(Icons.Filled.MoreVert, null, tint = Color.White, modifier = Modifier.size(26.dp))
                         }
+                        // clock card sits in the row, so it never covers the buttons
+                        StbClockPill(nowMs, tint, Modifier.padding(start = 6.dp)) { clockFull = true }
                     }
 
                     // the lyric line being sung (tap = full lyrics)
@@ -421,16 +423,6 @@ fun StandbyPlayer(vm: MainViewModel) {
                 }
             }
         }
-
-        // clock card, top right (the status bar is hidden in standby); tap = full screen clock
-        StbClockPill(
-            nowMs, tint,
-            Modifier
-                .align(Alignment.TopEnd)
-                .statusBarsPadding()
-                .displayCutoutPadding()
-                .padding(top = 6.dp, end = 20.dp)
-        ) { clockFull = true }
 
         // handle on top: tap or drag down to close
         Box(

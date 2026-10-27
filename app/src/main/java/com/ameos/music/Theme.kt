@@ -47,8 +47,8 @@ fun AmeosTheme(content: @Composable () -> Unit) {
         onSurface = Color(0xFFF3DEDF),
         surfaceVariant = Pal.surface2,
         onSurfaceVariant = Pal.textDim,
-        surfaceContainer = Pal.surface,
-        surfaceContainerHigh = Pal.surface2,
+        surfaceContainer = Pal.surface.copy(alpha = if (Pal.mode == 1) 1f else 0.88f),
+        surfaceContainerHigh = Pal.surface2.copy(alpha = if (Pal.mode == 1) 1f else 0.9f),
         outline = Pal.muted,
         error = Color(0xFFFFB4AB)
     )

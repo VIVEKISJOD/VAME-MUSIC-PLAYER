@@ -46,7 +46,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private class StbTm(val hour: String, val minute: String, val ampm: String, val date: String, val sec: Int)
+private class StbTm(val hour: String, val minute: String, val ampm: String, val date: String, val dateShort: String, val sec: Int)
 
 private fun stbTm(ms: Long): StbTm {
     val d = Date(ms)
@@ -54,10 +54,11 @@ private fun stbTm(ms: Long): StbTm {
     val hm = SimpleDateFormat(if (h12) "h:mm" else "HH:mm", Locale.getDefault()).format(d)
     val ap = if (h12) SimpleDateFormat("a", Locale.getDefault()).format(d).uppercase() else ""
     val date = SimpleDateFormat("EEEE, d MMMM", Locale.getDefault()).format(d)
+    val dateShort = SimpleDateFormat("EEE, d MMM", Locale.getDefault()).format(d)
     val k = hm.indexOf(':')
     val hh = if (k > 0) hm.substring(0, k) else hm
     val mm = if (k > 0) hm.substring(k + 1) else ""
-    return StbTm(hh, mm, ap, date, ((ms / 1000) % 60).toInt())
+    return StbTm(hh, mm, ap, date, dateShort, ((ms / 1000) % 60).toInt())
 }
 
 // small clock card, top right of the standby player; tap = full screen clock
@@ -69,16 +70,17 @@ fun StbClockPill(nowMs: Long, tint: Color, modifier: Modifier, onClick: () -> Un
     Column(
         modifier
             .clip(shape)
-            .background(lerp(tint, Color.Black, 0.6f).copy(alpha = 0.55f))
+            .background(lerp(tint, Color.Black, 0.6f).copy(alpha = 0.45f))
+            .glassFill()
             .border(1.dp, Color(0x33FFFFFF), shape)
             .clickable { onClick() }
-            .padding(horizontal = 14.dp, vertical = 6.dp),
+            .padding(horizontal = 12.dp, vertical = 5.dp),
         horizontalAlignment = Alignment.End
     ) {
         Row(verticalAlignment = Alignment.Bottom) {
-            Text(t.hour, fontSize = 26.sp, fontWeight = FontWeight.Light, color = Color.White)
-            Text(":", fontSize = 26.sp, fontWeight = FontWeight.Light, color = Color.White, modifier = Modifier.alpha(colon))
-            Text(t.minute, fontSize = 26.sp, fontWeight = FontWeight.Light, color = Color.White)
+            Text(t.hour, fontSize = 22.sp, fontWeight = FontWeight.Light, color = Color.White)
+            Text(":", fontSize = 22.sp, fontWeight = FontWeight.Light, color = Color.White, modifier = Modifier.alpha(colon))
+            Text(t.minute, fontSize = 22.sp, fontWeight = FontWeight.Light, color = Color.White)
             if (t.ampm.isNotEmpty()) {
                 Text(
                     t.ampm, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xCCFFFFFF),
@@ -86,7 +88,7 @@ fun StbClockPill(nowMs: Long, tint: Color, modifier: Modifier, onClick: () -> Un
                 )
             }
         }
-        Text(t.date, fontSize = 11.sp, color = Color(0xAAFFFFFF), maxLines = 1)
+        Text(t.dateShort, fontSize = 10.sp, color = Color(0xAAFFFFFF), maxLines = 1)
     }
 }
 

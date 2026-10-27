@@ -250,6 +250,14 @@ fun QuickSheet(vm: MainViewModel) {
                             close()
                             vm.addToQueue(song)
                         }
+                        SheetRow(
+                            Icons.Filled.PushPin,
+                            if (vm.isDialed("song", song.url)) "Remove from speed dial" else "Pin to speed dial",
+                            "Quick tile on Home"
+                        ) {
+                            close()
+                            pinToggle(vm, ctx, Dial("song", song.url, song.title, song.artist, song.cover))
+                        }
                         SheetRow(Icons.Filled.GraphicEq, "Audio Effects") {
                             try {
                                 val fx = Intent(AudioEffect.ACTION_DISPLAY_AUDIO_EFFECT_CONTROL_PANEL)

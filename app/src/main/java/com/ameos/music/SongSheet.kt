@@ -191,6 +191,15 @@ fun SongSheet(vm: MainViewModel) {
                             vm.showLyrics = false
                             vm.openArtist(song.artist)
                         }
+                        val songDial = Dial("song", song.url, song.title, song.artist, song.cover)
+                        SongSheetRow(
+                            Icons.Filled.PushPin,
+                            if (vm.isDialed("song", song.url)) "Remove from speed dial" else "Pin to speed dial",
+                            "Quick tile on Home"
+                        ) {
+                            close()
+                            pinToggle(vm, ctx, songDial)
+                        }
                         Spacer(Modifier.navigationBarsPadding().height(24.dp))
                     }
                 }

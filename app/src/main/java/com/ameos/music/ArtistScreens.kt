@@ -92,9 +92,11 @@ private fun ArtistTopRow(s: Song, vm: MainViewModel, list: List<Song>) {
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(16.dp))
+            .glassFill()
+            .border(1.dp, Stroke, RoundedCornerShape(16.dp))
             .clickable { vm.play(s, list) }
-            .padding(vertical = 6.dp),
+            .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Cover(s.cover, Modifier.size(52.dp), RoundedCornerShape(8.dp))
@@ -263,7 +265,7 @@ fun ArtistScreen(vm: MainViewModel) {
                             .fillMaxWidth()
                             .padding(start = 16.dp, end = 16.dp, top = 26.dp)
                             .clip(cardShape)
-                            .background(Color(0x26FFFFFF))
+                            .glassFill()
                             .border(1.dp, Color(0x33FFFFFF), cardShape)
                             .clickable { vm.openAlbum(album) }
                             .padding(14.dp),
@@ -327,7 +329,10 @@ fun ArtistScreen(vm: MainViewModel) {
                     ) {
                         items(pages) { pg ->
                             Column(Modifier.width(pageW)) {
-                                for (s in pg) ArtistTopRow(s, vm, songs)
+                                for (s in pg) {
+                                    ArtistTopRow(s, vm, songs)
+                                    Spacer(Modifier.height(6.dp))
+                                }
                             }
                         }
                     }
@@ -503,7 +508,7 @@ private fun AboutChip(icon: ImageVector, text: String) {
     Row(
         Modifier
             .clip(RoundedCornerShape(50))
-            .background(Color(0x26FFFFFF))
+            .glassFill()
             .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(50))
             .padding(horizontal = 14.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically

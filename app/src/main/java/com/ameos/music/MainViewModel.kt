@@ -686,6 +686,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun openPlaylist(id: String) {
+        artistOnTop = false
         openPlaylistId = id
         playlistOpen = true
     }
@@ -1294,6 +1295,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         artistAlbum = null
         artistLatestRelease = null
         artistPage = null
+        artistOnTop = true
         artistJob?.cancel()
         // songs we already know by this artist show first
         val known = ArrayList<Song>()
@@ -1391,6 +1393,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     // ---------- albums ----------
 
     fun openAlbum(a: Album) {
+        artistOnTop = false
         albumInfo = a
         albumOpen = true
         albumSongs = emptyList()
@@ -1776,6 +1779,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var panelWide by mutableStateOf(Prefs.panelWide(app))
     var artistAlbum by mutableStateOf<Album?>(null)
     var artistPage by mutableStateOf<ArtistPage?>(null)
+    // true = the artist page is the top page; false = an album / playlist opened from it is on top
+    var artistOnTop by mutableStateOf(true)
     val artistAllSongs: List<Song>
         get() = ((artistPage?.songs ?: emptyList<Song>()) + artistSongs).distinctBy { it.url }
 
@@ -2090,6 +2095,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     // opens a YouTube library playlist on the album page (songs stay on YouTube, nothing is copied)
     fun openYtPlaylist(p: YtPlaylist) {
+        artistOnTop = false
         albumInfo = Album(p.title, "YouTube Music", "yt:" + p.id, p.cover)
         albumOpen = true
         albumSongs = emptyList()

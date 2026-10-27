@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -100,7 +101,8 @@ fun SpeedDialShelf(vm: MainViewModel) {
                             .weight(1f)
                             .aspectRatio(1f)
                             .clip(shape)
-                            .background(Color(0x22FFFFFF))
+                            .glassFill()
+                            .border(1.dp, Stroke, shape)
                             .combinedClickable(
                                 onClick = {
                                     tick()

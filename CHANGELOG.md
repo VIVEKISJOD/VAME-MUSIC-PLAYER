@@ -1,4 +1,13 @@
-# VAME Music - full changelog (up to zip step53, v0.29.0, 27 Oct 2026)
+# VAME Music - full changelog (up to zip step54, v0.30.0, 28 Oct 2026)
+
+## step54 (v0.30.0) - includes everything up to step53
+- Fixed: on an artist page, tapping an album, single / EP or public playlist did nothing. Two causes: the album opened underneath the artist page, and YouTube pages needed a sign-in. Now they open on top and work without signing in. Back returns to the artist page.
+- Fixed: standby clock covered the star and the three dots. The clock card now sits in the same row after the buttons (smaller, with a short date), so both buttons work.
+- New: speed dial takes songs too. Pin a song from the song menu (hold a song, or the three dots) and it shows as a tile on Home; tap = play.
+- New: "Pin to speed dial" in the three dots menu on the player page (and in the standby player menu).
+- New: glass with blur. The playlist / album menu is a glass sheet and the page behind it blurs. Artist page rows, chips and the album card, speed dial tiles, the find box and the standby clock are glass too.
+- New: menus and dialogs across the app are a little see-through (glass look).
+- Not done: real blur behind system dialogs (Android does not allow it from the app); tell me which screens still look flat and I will glass them next.
 
 ## step53 (v0.29.0) - includes everything up to step52
 - New: artist pages look like the YouTube Music style you showed. Big photo with the name, shuffle / play / star under it, a glass album card, and "Top songs" in swipeable pages of 4. Under that: Albums, Singles & EPs, Featured on, Playlists by the artist, and Fans might also like (each with Show all / Show less), then About the artist (More, subscribers, monthly listeners). The name shows in the top bar when you scroll. All of it comes from YouTube Music; if it is not found the old page still shows.

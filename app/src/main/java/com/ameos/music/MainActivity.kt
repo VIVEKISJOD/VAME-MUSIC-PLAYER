@@ -51,6 +51,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -430,6 +431,7 @@ fun MainPages(vm: MainViewModel, tablet: Boolean, dockFolded: Boolean, onExpand:
         }
         AnimatedVisibility(
             visible = vm.playlistOpen,
+            modifier = Modifier.zIndex(if (vm.artistOnTop) 0f else 1f),
             enter = detailIn(),
             exit = detailOut()
         ) {
@@ -437,6 +439,7 @@ fun MainPages(vm: MainViewModel, tablet: Boolean, dockFolded: Boolean, onExpand:
         }
         AnimatedVisibility(
             visible = vm.likedOpen,
+            modifier = Modifier.zIndex(if (vm.artistOnTop) 0f else 1f),
             enter = detailIn(),
             exit = detailOut()
         ) {
@@ -444,6 +447,7 @@ fun MainPages(vm: MainViewModel, tablet: Boolean, dockFolded: Boolean, onExpand:
         }
         AnimatedVisibility(
             visible = vm.albumOpen,
+            modifier = Modifier.zIndex(if (vm.artistOnTop) 0f else 1f),
             enter = detailIn(),
             exit = detailOut()
         ) {
@@ -458,6 +462,7 @@ fun MainPages(vm: MainViewModel, tablet: Boolean, dockFolded: Boolean, onExpand:
         }
         AnimatedVisibility(
             visible = vm.artistOpen,
+            modifier = Modifier.zIndex(if (vm.artistOnTop) 1f else 0f),
             enter = detailIn(),
             exit = detailOut()
         ) {

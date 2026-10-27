@@ -172,14 +172,14 @@ object Account {
         val b = JSONObject()
         b.put("context", context())
         b.put("browseId", browseId)
-        return post(c, "browse", b)
+        return if (signedIn(c)) post(c, "browse", b) else postAnon("browse", b)
     }
 
     private fun browseMore(c: Context, token: String): JSONObject {
         val b = JSONObject()
         b.put("context", context())
         b.put("continuation", token)
-        return post(c, "browse", b)
+        return if (signedIn(c)) post(c, "browse", b) else postAnon("browse", b)
     }
 
     // same as post(), but without a login (YouTube Music Home works for everyone)

@@ -5,6 +5,7 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -85,7 +86,8 @@ fun FindBar(q: String, onChange: (String) -> Unit, onClose: () -> Unit) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 6.dp)
             .clip(RoundedCornerShape(50))
-            .background(Color(0x26FFFFFF))
+            .glassFill()
+            .border(1.dp, Stroke, RoundedCornerShape(50))
             .padding(start = 16.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -134,7 +136,8 @@ private fun BigAction(icon: ImageVector, label: String, modifier: Modifier, onCl
                 .fillMaxWidth()
                 .height(64.dp)
                 .clip(RoundedCornerShape(14.dp))
-                .background(Color(0xFF333333))
+                .glassFill()
+                .border(1.dp, Stroke, RoundedCornerShape(14.dp))
                 .clickable { onClick() },
             contentAlignment = Alignment.Center
         ) {
@@ -174,7 +177,7 @@ fun PlaylistMenuSheet(
     Box(
         Modifier
             .fillMaxSize()
-            .background(Color(0x99000000))
+            .background(Color(0x66000000))
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onDismiss() }
     ) {
         Column(
@@ -182,8 +185,7 @@ fun PlaylistMenuSheet(
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .heightIn(max = maxH)
-                .clip(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp))
-                .background(Color(0xFF1E1E1E))
+                .glassPanel(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp))
                 .blockTaps()
                 .navigationBarsPadding()
         ) {
@@ -302,6 +304,7 @@ fun PlaylistMenuSheet(
     if (confirm && onDelete != null) {
         AlertDialog(
             onDismissRequest = { confirm = false },
+            containerColor = Color(0xE61E1E1E),
             title = { Text("Delete playlist?") },
             text = { Text("\"" + title + "\" will be removed.") },
             confirmButton = {

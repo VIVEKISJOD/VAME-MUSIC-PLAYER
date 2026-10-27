@@ -38,6 +38,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -171,7 +172,8 @@ fun AlbumScreen(vm: MainViewModel) {
             )
             .blockTaps()
     ) {
-        Column(Modifier.fillMaxSize().statusBarsPadding()) {
+        val pageBlur by androidx.compose.animation.core.animateDpAsState(if (menuOpen) 14.dp else 0.dp, label = "albBlur")
+        Column(Modifier.fillMaxSize().statusBarsPadding().then(if (pageBlur > 0.dp) Modifier.blur(pageBlur) else Modifier)) {
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
