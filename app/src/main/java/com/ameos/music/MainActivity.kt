@@ -159,7 +159,7 @@ fun AmeosRoot(vm: MainViewModel) {
     }
     // glass: while a sheet or dialog is open, the page behind it is blurred (Android 12+)
     val overlayOpen = vm.showMenu || vm.songMenu != null || vm.showSleepDialog ||
-        vm.showOutputDialog || vm.addTarget != null || vm.showPlaylistDialog || vm.showImportDialog
+        vm.showOutputDialog || vm.showProviderSheet || vm.addTarget != null || vm.showPlaylistDialog || vm.showImportDialog
     val blurAmount by animateDpAsState(if (overlayOpen) 16.dp else 0.dp, tween(260), label = "pageBlur")
 
     Box(
@@ -304,6 +304,9 @@ fun AmeosRoot(vm: MainViewModel) {
         }
         if (vm.showOutputDialog) {
             OutputDialog(vm)
+        }
+        if (vm.showProviderSheet) {
+            LyricsProviderDialog(vm)
         }
         if (vm.showImportDialog) {
             ImportDialog(vm)

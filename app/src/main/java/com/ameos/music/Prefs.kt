@@ -184,6 +184,16 @@ object Prefs {
     fun lyricsSize(c: Context): Int = sp(c).getInt("lyricsSize", 1)
     fun setLyricsSize(c: Context, v: Int) = sp(c).edit().putInt("lyricsSize", v).apply()
 
+    // step44: lyrics text size in percent (50..160), lyrics provider, translation
+    fun lyricsPct(c: Context): Int = sp(c).getInt("lyricsPct", when (lyricsSize(c)) { 0 -> 80; 2 -> 120; else -> 100 })
+    fun setLyricsPct(c: Context, v: Int) = sp(c).edit().putInt("lyricsPct", v).apply()
+    fun lyricsProvider(c: Context): Int = sp(c).getInt("lyricsProvider", 0)
+    fun setLyricsProvider(c: Context, v: Int) = sp(c).edit().putInt("lyricsProvider", v).apply()
+    fun lyricsTransOn(c: Context): Boolean = sp(c).getBoolean("lyricsTransOn", false)
+    fun setLyricsTransOn(c: Context, v: Boolean) = sp(c).edit().putBoolean("lyricsTransOn", v).apply()
+    fun lyricsTransLang(c: Context): Int = sp(c).getInt("lyricsTransLang", 0)
+    fun setLyricsTransLang(c: Context, v: Int) = sp(c).edit().putInt("lyricsTransLang", v).apply()
+
     fun keepScreenLyrics(c: Context): Boolean = sp(c).getBoolean("keepScreenLyrics", true)
     fun setKeepScreenLyrics(c: Context, v: Boolean) = sp(c).edit().putBoolean("keepScreenLyrics", v).apply()
 

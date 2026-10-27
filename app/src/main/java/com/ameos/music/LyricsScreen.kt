@@ -1,6 +1,7 @@
 package com.ameos.music
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -15,7 +16,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Equalizer
+import androidx.compose.material.icons.filled.FullscreenExit
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.CircularProgressIndicator
@@ -26,16 +30,20 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -117,8 +125,16 @@ fun TabletLyricsScreen(vm: MainViewModel) {
                     )
                 }
             }
-            Box(Modifier.weight(0.58f).fillMaxHeight()) {
-                LyricsList(vm, pos)
+            BoxWithConstraints(Modifier.weight(0.58f).fillMaxHeight()) {
+                val tools = maxHeight >= 480.dp
+                Column(Modifier.fillMaxSize()) {
+                    Box(Modifier.weight(1f).fillMaxWidth()) {
+                        LyricsList(vm, pos)
+                    }
+                    if (tools) {
+                        LyricsTools(vm, false, { }, Modifier.padding(end = 90.dp), showFull = false)
+                    }
+                }
             }
         }
         Box(
@@ -141,6 +157,8 @@ fun TabletLyricsScreen(vm: MainViewModel) {
 fun LyricsScreen(vm: MainViewModel) {
     val song = vm.current ?: return
     BackHandler { vm.showLyrics = false }
+    var full by remember { mutableStateOf(false) }
+    BackHandler(enabled = full) { full = false }
     KeepScreenOn(vm)
     val tint = rememberCoverTint(song.cover)
 
@@ -150,6 +168,12 @@ fun LyricsScreen(vm: MainViewModel) {
             pos = vm.posMs()
             delay(100)
         }
+    }
+    val label = when {
+        vm.lyricsLoading -> "SEARCHING LYRICS..."
+        vm.lyrics.isEmpty() -> "NO LYRICS FOUND"
+        else -> (if (vm.lyricsSynced) "SYNCED" else "PLAIN TEXT") +
+            (if (vm.lyricsSource.isNotBlank()) " \u2022 " + vm.lyricsSource else "")
     }
 
     Box(
@@ -167,75 +191,80 @@ fun LyricsScreen(vm: MainViewModel) {
                 .statusBarsPadding()
                 .navigationBarsPadding()
         ) {
-            // top pill: cover, title, artist
-            Row(
-                Modifier
-                    .padding(top = 12.dp)
-                    .align(Alignment.CenterHorizontally)
-                    .clip(RoundedCornerShape(50))
-                    .background(Color(0x44FFFFFF))
-                    .clickable { vm.showLyrics = false }
-                    .padding(start = 8.dp, end = 18.dp, top = 8.dp, bottom = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Cover(song.cover, Modifier.size(46.dp), CircleShape)
-                Spacer(Modifier.width(12.dp))
-                Column(Modifier.widthIn(max = 200.dp)) {
+            AnimatedVisibility(visible = !full) {
+                Column(Modifier.fillMaxWidth()) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        LyricsCircle(46.dp, { vm.showLyrics = false }) {
+                            Icon(Icons.Filled.ArrowBack, null, tint = Color.White)
+                        }
+                        Column(
+                            Modifier.weight(1f).padding(horizontal = 8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text("LYRICS", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text(
+                                song.title + " \u2022 " + artistName(song.artist), fontSize = 13.sp,
+                                color = Color(0xFFD0D0D0), maxLines = 1, overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        LyricsCircle(46.dp, { vm.showSleepDialog = true }, vm.sleepLeftSec > 0 || vm.sleepAfterSong) {
+                            Icon(Icons.Filled.Timer, null, tint = Color.White, modifier = Modifier.size(22.dp))
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        PlayerMenuButton(vm, 46.dp)
+                    }
                     Text(
-                        song.title, fontSize = 17.sp, fontWeight = FontWeight.Bold,
-                        color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        song.artist, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFFD0D0D0), maxLines = 1, overflow = TextOverflow.Ellipsis
+                        label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFD0D0D0),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { vm.showProviderSheet = true }
+                            .padding(vertical = 4.dp)
                     )
                 }
-                Spacer(Modifier.width(14.dp))
-                Icon(Icons.Filled.Equalizer, null, tint = Color(0xFFD0D0D0), modifier = Modifier.size(22.dp))
             }
 
-            // lyrics
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 LyricsList(vm, pos)
             }
 
-            // bottom controls
-            Row(
-                Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 16.dp, top = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    Modifier
-                        .size(56.dp)
-                        .clip(CircleShape)
-                        .background(Color(0x44FFFFFF))
-                        .clickable { vm.showLyrics = false },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Filled.ArrowBack, null, tint = Color.White)
-                }
-                Spacer(Modifier.weight(1f))
-                Box(
-                    Modifier
-                        .size(76.dp)
-                        .clip(RoundedCornerShape(26.dp))
-                        .background(Color(0xFFC9C9C9))
-                        .clickable { vm.toggle() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (vm.loading) {
-                        CircularProgressIndicator(
-                            Modifier.size(30.dp), color = Pal.surface, strokeWidth = 3.dp
-                        )
-                    } else {
-                        Icon(
-                            if (vm.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                            null, tint = Pal.surface, modifier = Modifier.size(38.dp)
-                        )
+            AnimatedVisibility(visible = !full) {
+                Column(Modifier.fillMaxWidth()) {
+                    LyricsTools(vm, full, { full = !full })
+                    WaveScrubber(vm, Modifier.padding(horizontal = 22.dp))
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 28.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        LyricsCircle(58.dp, { vm.prev() }) {
+                            Icon(Icons.Filled.SkipPrevious, null, tint = Color.White, modifier = Modifier.size(28.dp))
+                        }
+                        LyricsCircle(78.dp, { vm.toggle() }) {
+                            if (vm.loading) {
+                                CircularProgressIndicator(Modifier.size(30.dp), color = Color.White, strokeWidth = 3.dp)
+                            } else {
+                                Icon(
+                                    if (vm.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                                    null, tint = Color.White, modifier = Modifier.size(38.dp)
+                                )
+                            }
+                        }
+                        LyricsCircle(58.dp, { vm.next() }) {
+                            Icon(Icons.Filled.SkipNext, null, tint = Color.White, modifier = Modifier.size(28.dp))
+                        }
                     }
                 }
-                Spacer(Modifier.weight(1f))
-                PlayerMenuButton(vm, 56.dp)
+            }
+        }
+        if (full) {
+            Box(Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(12.dp)) {
+                LyricsCircle(46.dp, { full = false }) {
+                    Icon(Icons.Filled.FullscreenExit, null, tint = Color.White, modifier = Modifier.size(22.dp))
+                }
             }
         }
     }
@@ -245,20 +274,33 @@ fun LyricsScreen(vm: MainViewModel) {
 private fun LyricsList(vm: MainViewModel, pos: Long) {
     val lines = vm.lyrics
     if (vm.lyricsLoading || lines.isEmpty()) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(
+            Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Text(
                 if (vm.lyricsLoading) "Loading lyrics..." else "No lyrics found for this song",
                 color = Color(0xFFBBBBBB), fontSize = 18.sp, textAlign = TextAlign.Center
             )
+            if (!vm.lyricsLoading) {
+                Text(
+                    "Try another source", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                    modifier = Modifier
+                        .padding(top = 16.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(Color(0x33FFFFFF))
+                        .clickable { vm.showProviderSheet = true }
+                        .padding(horizontal = 20.dp, vertical = 10.dp)
+                )
+            }
         }
         return
     }
     val synced = vm.lyricsSynced
-    val fs = when (vm.lyricsSize) {
-        0 -> 26
-        2 -> 40
-        else -> 34
-    }
+    val fs = (34 * vm.lyricsPct.coerceIn(50, 160) / 100).coerceAtLeast(14)
+    val trSize = (fs * 55 / 100).coerceAtLeast(12)
+    val trOn = vm.lyricsTransOn && vm.lyricsTrans.size == lines.size
     val al = if (vm.lyricsLeft) TextAlign.Start else TextAlign.Center
     val active = if (synced) lines.indexOfLast { it.timeMs <= pos } else -1
     val state = rememberLazyListState()
@@ -293,39 +335,58 @@ private fun LyricsList(vm: MainViewModel, pos: Long) {
             val blurR by animateDpAsState(blurTarget, tween(450), label = "blur")
             val a by animateFloatAsState(alphaTarget, tween(450), label = "alpha")
             val text = if (line.text.isBlank()) "..." else line.text
+            val tr = if (trOn) vm.lyricsTrans[i] else ""
             val base = Modifier
                 .fillMaxWidth()
                 .clickable(enabled = synced) { vm.seekTo(line.timeMs) }
                 .padding(horizontal = 28.dp, vertical = 14.dp)
             val mod = if (blurR > 0.dp) base.blur(blurR) else base
 
-            if (synced && i == active) {
-                val nextT = lines.getOrNull(i + 1)?.timeMs ?: (line.timeMs + 4000)
-                val span = (nextT - line.timeMs).coerceAtLeast(1L)
-                val frac = ((pos - line.timeMs).toFloat() / span.toFloat()).coerceIn(0f, 1f)
-                val words = text.split(" ")
-                val p = frac * 1.15f * words.size
-                val styled = buildAnnotatedString {
-                    words.forEachIndexed { wi, w ->
-                        val t = (p - wi).coerceIn(0f, 1f)
-                        withStyle(SpanStyle(color = Color.White.copy(alpha = 0.40f + 0.60f * t))) {
-                            append(w)
+            Column(mod) {
+                if (synced && i == active) {
+                    val nextT = lines.getOrNull(i + 1)?.timeMs ?: (line.timeMs + 4000)
+                    val span = (nextT - line.timeMs).coerceAtLeast(1L)
+                    // words are spread over the time the line is really sung (not the gap after it)
+                    val sung = minOf(span, text.length * 110L + 800L).coerceAtLeast(1L)
+                    val frac = ((pos - line.timeMs).toFloat() / sung.toFloat()).coerceIn(0f, 1f)
+                    val words = text.split(" ")
+                    val total = words.fold(0) { acc, w -> acc + w.length + 1 }.coerceAtLeast(1)
+                    val p = frac * 1.08f * total
+                    var startC = 0
+                    val styled = buildAnnotatedString {
+                        words.forEachIndexed { wi, w ->
+                            val t = ((p - startC) / (w.length + 1).toFloat()).coerceIn(0f, 1f)
+                            startC += w.length + 1
+                            withStyle(SpanStyle(color = Color.White.copy(alpha = 0.40f + 0.60f * t))) {
+                                append(w)
+                            }
+                            if (wi < words.size - 1) append(" ")
                         }
-                        if (wi < words.size - 1) append(" ")
                     }
+                    Text(
+                        styled, fontSize = fs.sp, lineHeight = (fs + 8).sp,
+                        fontWeight = FontWeight.Bold, textAlign = al,
+                        style = TextStyle(
+                            shadow = Shadow(Color.White.copy(alpha = 0.55f), Offset.Zero, 24f)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                } else {
+                    Text(
+                        text, fontSize = fs.sp, lineHeight = (fs + 8).sp,
+                        fontWeight = FontWeight.Bold, textAlign = al,
+                        color = Color.White.copy(alpha = a),
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
-                Text(
-                    styled, fontSize = fs.sp, lineHeight = (fs + 8).sp,
-                    fontWeight = FontWeight.Bold, textAlign = al,
-                    modifier = mod
-                )
-            } else {
-                Text(
-                    text, fontSize = fs.sp, lineHeight = (fs + 8).sp,
-                    fontWeight = FontWeight.Bold, textAlign = al,
-                    color = Color.White.copy(alpha = a),
-                    modifier = mod
-                )
+                if (tr.isNotBlank()) {
+                    Text(
+                        tr, fontSize = trSize.sp, lineHeight = (trSize + 6).sp,
+                        fontWeight = FontWeight.Medium, textAlign = al,
+                        color = Color.White.copy(alpha = a * 0.7f),
+                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+                    )
+                }
             }
         }
     }

@@ -347,6 +347,10 @@ fun SettingsScreen(vm: MainViewModel) {
                 KitDivider()
                 KitLabel("Lyrics size")
                 KitChips(vm.lyricsSize, listOf("Small", "Medium", "Large")) { vm.updateLyricsSize(it) }
+                KitLabel("Lyrics source", "Auto tries LRCLIB, then NetEase. You can also change it from the lyrics screen.")
+                KitChips(vm.lyricsProvider, LyricsRepo.providerNames) { vm.chooseLyricsProvider(it) }
+                KitLabel("Translation language", "Used by the translate button on the lyrics screen.")
+                KitChips(vm.lyricsTransLang, LyricsRepo.langNames) { vm.chooseLyricsTransLang(it) }
                 KitLabel("Lyrics alignment")
                 KitChips(if (vm.lyricsLeft) 1 else 0, listOf("Centered", "Left")) { vm.setLyricsLeftOn(it == 1) }
                 KitSwitch(
@@ -430,7 +434,7 @@ fun SettingsScreen(vm: MainViewModel) {
                 Text(
                     "Open source under GPLv3. Interface inspired by AmeOS 16 by the AmeOS team " +
                         "(CC BY 4.0). Built with NewPipeExtractor (GPLv3), AndroidX Media3, Compose, " +
-                        "Coil, OkHttp and Kotlin (Apache 2.0). Lyrics from LRCLIB. " +
+                        "Coil, OkHttp and Kotlin (Apache 2.0). Lyrics from LRCLIB and NetEase, translation by Google Translate. " +
                         "VAME is not affiliated with YouTube, Spotify or Apple.",
                     fontSize = 12.sp, color = Pal.textDim
                 )

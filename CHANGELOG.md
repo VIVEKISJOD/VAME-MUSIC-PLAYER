@@ -1,4 +1,19 @@
-# VAME Music - full changelog (up to zip step43, v0.22.0, 24 Oct 2026)
+# VAME Music - full changelog (up to zip step44, v0.23.0, 26 Oct 2026)
+
+## step44 (v0.23.0) - includes everything up to step43
+- New: Lyrics screen redesigned like your recording. Top: back, "LYRICS" with song and artist, sleep timer button, menu button. Under it a small label (SYNCED or PLAIN TEXT + the provider name). Tap the label to change provider.
+- New: Lyrics provider window (tool button 1 or the label): shows the current provider, "Try another source" (skips the current one and searches the others) and a list: Auto, LRCLIB, NetEase. Also in Settings > Songs and lyrics > Lyrics source.
+- New: NetEase as a second lyrics source (good for Hindi / Punjabi songs). Auto tries LRCLIB first, then NetEase.
+- New: Translate button. Shows a translated line under every lyric line (English, Hindi, Spanish or French, or Off). Uses Google Translate's public web address, so it needs internet and may stop working if Google changes it.
+- New: Globe button turns Hinglish (Hindi in English letters) on / off right from the lyrics screen.
+- New: Share button sends the song name and the lyrics as text to any app.
+- New: Text size button opens a slider (50 to 160 percent) with a live number and Reset. The Small / Medium / Large chips in Settings still work (80 / 100 / 120 percent).
+- New: Fullscreen button hides all the buttons and shows only the lyrics. A small button at the top right brings them back (Back also does).
+- New: Wave seek bar on the lyrics screen: three soft waves that move while music plays, a dot, times underneath. Tap or drag to seek.
+- New: Previous / Play-Pause / Next round buttons on the lyrics screen.
+- Better: the line that is being sung glows, and its words fill by word length over the time the line is really sung (not over the silent gap after it). Hidden word-time tags in some lyric files no longer show as text.
+- Better: tablet / sideways lyrics get the same tool buttons under the lyrics (when the screen is tall enough).
+- Note: real word-by-word timing (like Apple Music / QQ Karaoke) is NOT available from LRCLIB or NetEase, so the word fill is estimated from the line time. Apple Music, QQ Karaoke, BetterLyrics, LastWave and lrc.red from your video are not added (they need keys, accounts or unstable private servers).
 
 ## step43 (v0.22.0) - includes everything up to step42
 - New: home screen widget 4x1 - cover on the left, song and artist in the middle, previous / play-pause / next on the right. Tap the widget to open VAME.

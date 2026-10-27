@@ -119,6 +119,20 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var lyricsSynced by mutableStateOf(false)
     var lyricsLoading by mutableStateOf(false)
 
+    // step44: lyrics provider, translation, text size (declared above init on purpose: loadLyrics runs in init)
+    var lyricsSource by mutableStateOf("")
+    var lyricsProvider by mutableIntStateOf(Prefs.lyricsProvider(app))
+    var lyricsTrans by mutableStateOf<List<String>>(emptyList())
+    var lyricsTransOn by mutableStateOf(Prefs.lyricsTransOn(app))
+    var lyricsTransLang by mutableIntStateOf(Prefs.lyricsTransLang(app))
+    var lyricsTransBusy by mutableStateOf(false)
+    var lyricsTransError by mutableStateOf("")
+    var lyricsPct by mutableIntStateOf(Prefs.lyricsPct(app))
+    var showProviderSheet by mutableStateOf(false)
+    var lyricsTrying by mutableStateOf(false)
+    var lyricsTryFail by mutableStateOf(false)
+    private var transJob: Job? = null
+
     // settings
     var title by mutableStateOf(Prefs.title(app))
     var endless by mutableStateOf(Prefs.endless(app))
@@ -844,22 +858,111 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun loadLyrics(song: Song) {
         lyricsJob?.cancel()
+        transJob?.cancel()
         lyrics = emptyList()
         rawLyrics = emptyList()
+        lyricsTrans = emptyList()
+        lyricsTransBusy = false
+        lyricsTransError = ""
         lyricsSynced = false
+        lyricsSource = ""
         lyricsLoading = true
+        lyricsTrying = false
+        lyricsTryFail = false
         lyricsJob = viewModelScope.launch {
             try {
-                val r = LyricsRepo.fetch(song.title, song.artist, song.durationSec)
-                rawLyrics = r.lines
-                lyrics = styleLyrics(r.lines)
-                lyricsSynced = r.synced
+                val r = LyricsRepo.fetch(song.title, song.artist, song.durationSec, lyricsProvider)
+                applyLyrics(r)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
             }
             lyricsLoading = false
         }
+    }
+
+    private fun applyLyrics(r: LyricsResult) {
+        rawLyrics = r.lines
+        lyrics = styleLyrics(r.lines)
+        lyricsSynced = r.synced
+        lyricsSource = r.source
+        lyricsTrans = emptyList()
+        lyricsTransError = ""
+        if (lyricsTransOn && r.lines.isNotEmpty()) loadTranslation()
+    }
+
+    // user picked a provider (0 Auto, 1 LRCLIB, 2 NetEase): save it and search again
+    fun chooseLyricsProvider(i: Int) {
+        lyricsProvider = i
+        Prefs.setLyricsProvider(getApplication<Application>(), i)
+        val s = current ?: return
+        loadLyrics(s)
+    }
+
+    // "Try another source": search again but skip the provider that gave the current lyrics
+    fun tryAnotherLyricsSource() {
+        val s = current ?: return
+        val skip = if (lyricsSource.isBlank()) emptySet() else setOf(lyricsSource)
+        lyricsJob?.cancel()
+        lyricsTrying = true
+        lyricsTryFail = false
+        lyricsJob = viewModelScope.launch {
+            try {
+                val r = LyricsRepo.fetch(s.title, s.artist, s.durationSec, 0, skip)
+                if (r.lines.isNotEmpty()) applyLyrics(r) else lyricsTryFail = true
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+            }
+            lyricsTrying = false
+            lyricsLoading = false
+        }
+    }
+
+    fun loadTranslation() {
+        transJob?.cancel()
+        val src = rawLyrics.map { it.text }
+        if (src.isEmpty()) return
+        lyricsTransBusy = true
+        lyricsTransError = ""
+        transJob = viewModelScope.launch {
+            try {
+                val code = LyricsRepo.langCodes[lyricsTransLang.coerceIn(0, LyricsRepo.langCodes.size - 1)]
+                val out = LyricsTranslate.run(src, code)
+                lyricsTrans = out
+                if (out.none { it.isNotBlank() }) lyricsTransError = "Translation failed. Check the internet."
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                lyricsTransError = "Translation failed. Check the internet."
+            }
+            lyricsTransBusy = false
+        }
+    }
+
+    fun toggleLyricsTrans(on: Boolean) {
+        lyricsTransOn = on
+        Prefs.setLyricsTransOn(getApplication<Application>(), on)
+        if (on && lyricsTrans.isEmpty() && !lyricsTransBusy) loadTranslation()
+    }
+
+    fun chooseLyricsTransLang(i: Int) {
+        lyricsTransLang = i
+        Prefs.setLyricsTransLang(getApplication<Application>(), i)
+        lyricsTrans = emptyList()
+        if (lyricsTransOn) loadTranslation()
+    }
+
+    fun updateLyricsPct(p: Int, save: Boolean) {
+        lyricsPct = p.coerceIn(50, 160)
+        if (save) Prefs.setLyricsPct(getApplication<Application>(), lyricsPct)
+    }
+
+    // plain text of the lyrics for the Share button
+    fun lyricsShareText(): String {
+        val s = current ?: return ""
+        val body = rawLyrics.joinToString("\n") { it.text }.trim()
+        return s.title + " - " + artistName(s.artist) + "\n\n" + body
     }
 
     private fun start(song: Song) {
@@ -1528,6 +1631,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun updateLyricsSize(i: Int) {
         lyricsSize = i
         Prefs.setLyricsSize(getApplication<Application>(), i)
+        updateLyricsPct(when (i) { 0 -> 80; 2 -> 120; else -> 100 }, true)
     }
 
     fun setKeepScreenLyricsOn(on: Boolean) {
