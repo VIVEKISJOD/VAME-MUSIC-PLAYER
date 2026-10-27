@@ -18,13 +18,13 @@
     <uses-feature android:name="android.software.leanback" android:required="false" />
 
     <application
-        android:name=".AmeosApp"
+        android:name=".VameApp"
         android:allowBackup="false"
         android:usesCleartextTraffic="true"
         android:icon="@mipmap/ic_launcher"
         android:banner="@drawable/tv_banner"
         android:label="VAME"
-        android:theme="@style/Theme.Ameos">
+        android:theme="@style/Theme.Vame">
 
         <activity
             android:name=".MainActivity"

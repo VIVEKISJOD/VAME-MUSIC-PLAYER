@@ -10,13 +10,13 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.graphics.Color
 
-val AmeosSeed = Color(0xFFC8283D)
-val AmeosPlayRed = Color(0xFFE0314A)
+val VameSeed = Color(0xFFC8283D)
+val VamePlayRed = Color(0xFFE0314A)
 
-private val AmeosColorsUnused = darkColorScheme(
+private val VameColorsUnused = darkColorScheme(
     primary = Color(0xFFFFB3B9),
     onPrimary = Color(0xFF560018),
-    primaryContainer = AmeosSeed,
+    primaryContainer = VameSeed,
     onPrimaryContainer = Color(0xFFFFFFFF),
     secondary = Color(0xFFE6BDC0),
     onSecondary = Color(0xFF44292C),
@@ -33,7 +33,7 @@ private val AmeosColorsUnused = darkColorScheme(
 )
 
 @Composable
-fun AmeosTheme(content: @Composable () -> Unit) {
+fun VameTheme(content: @Composable () -> Unit) {
     val colors = darkColorScheme(
         primary = Pal.accent,
         onPrimary = Color(0xFF1B1315),

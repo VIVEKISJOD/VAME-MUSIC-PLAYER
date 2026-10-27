@@ -12,14 +12,14 @@ removes everything.
 - **YouTube / YouTube Music** (through NewPipeExtractor): to search, get song details and stream audio.
 - **Google / YouTube Music account (optional)**: if you sign in, the login cookie is kept only on your phone and is sent only to YouTube to read your library (playlists and liked songs). Sign out in Settings removes it.
 - **Cover images** from the servers that host them.
-- **LRCLIB** (lrclib.net): the song title, artist and length are sent to look up lyrics.
+- **Lyrics services** (LRCLIB, NetEase, Kugou, Lyrics.ovh): the song title, artist and length are sent to look up lyrics. If you turn on lyrics translation, the lyric lines are sent to Google Translate.
 - **GitHub** (api.github.com): to check if a newer VAME release exists. Nothing about you is sent.
 - **Spotify** (open.spotify.com): only when you import a Spotify playlist link. The public playlist page is read.
 
 These services have their own privacy policies and can see your IP address like any website would.
 
 ## Permissions
-Internet, notifications, Bluetooth connection (to show and pick Bluetooth outputs), install apps (only to install VAME updates you accept), foreground service
+Internet, local network (only to play on another VAME device), notifications, Bluetooth connection (to show and pick Bluetooth outputs), install apps (only to install VAME updates you accept), foreground service
 and wake lock (to keep music playing), and an optional battery-optimization shortcut.
 
 Questions? Contact @vxvekggs on Instagram.

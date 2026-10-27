@@ -13,5 +13,5 @@ dependencyResolutionManagement {
         maven("https://jitpack.io")
     }
 }
-rootProject.name = "AmeosMusic"
+rootProject.name = "VameMusic"
 include(":app")

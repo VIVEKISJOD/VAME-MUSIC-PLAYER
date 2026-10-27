@@ -573,46 +573,6 @@ object SpotifyHub {
         }
     }
 
-    // VAME playlist -> a NEW Spotify playlist
-    fun copyToSpotify(c: Context, vm: MainViewModel, plId: String) {
-        val pl = vm.playlists.firstOrNull { it.id == plId } ?: return
-        run("\"" + pl.name + "\" copy ho rahi hai...") {
-            val uris = Spotify.matchSongs(c, pl.songs) { n, t -> status = "Songs dhoondh raha hoon: " + n + "/" + t }
-            if (uris.isEmpty()) throw IllegalStateException("Koi song Spotify par nahi mila")
-            status = "Spotify playlist bana raha hoon..."
-            withContext(Dispatchers.IO) {
-                val id = Spotify.createPlaylist(c, pl.name)
-                Spotify.addTracks(c, id, uris)
-            }
-            val list = withContext(Dispatchers.IO) { Spotify.playlists(c) }
-            playlists.clear()
-            playlists.addAll(list)
-            "Done: \"" + pl.name + "\" is now on Spotify (" + uris.size + " of " + pl.songs.size + " songs found)."
-        }
-    }
-
-    // VAME playlist -> added into a Spotify playlist that already exists (songs already there are skipped)
-    fun mergeIntoSpotify(c: Context, vm: MainViewModel, plId: String, target: SpPlaylist) {
-        val pl = vm.playlists.firstOrNull { it.id == plId } ?: return
-        run("\"" + pl.name + "\" ko \"" + target.name + "\" mein mila raha hoon...") {
-            val uris = Spotify.matchSongs(c, pl.songs) { n, t -> status = "Songs dhoondh raha hoon: " + n + "/" + t }
-            if (uris.isEmpty()) throw IllegalStateException("Koi song Spotify par nahi mila")
-            val existing: Set<String> = try {
-                withContext(Dispatchers.IO) { Spotify.playlistTracks(c, target.id, 1000).map { it.uri }.toSet() }
-            } catch (e: Spotify.ApiError) {
-                emptySet()
-            }
-            val fresh = uris.filter { it !in existing }
-            if (fresh.isEmpty()) {
-                "Nothing new: all those songs are already in \"" + target.name + "\"."
-            } else {
-                status = "Songs add kar raha hoon..."
-                withContext(Dispatchers.IO) { Spotify.addTracks(c, target.id, fresh) }
-                "Merged: " + fresh.size + " new songs added to \"" + target.name + "\"."
-            }
-        }
-    }
-
     // Spotify playlist -> a new VAME playlist (songs are found on YouTube by name)
     fun importToVame(c: Context, vm: MainViewModel, p: SpPlaylist) {
         run("\"" + p.name + "\" padh raha hoon...") {

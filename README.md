@@ -13,14 +13,19 @@
 
 ## Features
 
-- Search and play songs, with a full Now Playing page, synced lyrics (and Hinglish lyrics) and an Up next queue
-- Home, Search, Your Type and Library pages. Home shows music only (no "Top 100 hits" style compilations)
+- Search and play songs, with a full Now Playing page and an Up next queue
+- Lyrics: synced, with word glow, translation, Hinglish and a size slider. Sources: LRCLIB, NetEase, Kugou and Lyrics.ovh. If a song has no lyrics, VAME keeps looking in the background while it plays. Controls hide by themselves after 5 seconds
+- Home with YouTube Music shelves, your genres, Recents and a speed dial for pinned playlists, albums, artists and songs
+- Artist pages with top songs, albums, singles and EPs, playlists, similar artists and About; album and playlist pages with a full menu (sort, find, mix, save)
 - Your Type: suggestions built from what you listen to and the genres you pick
-- Playlists with your own name and cover photo, liked songs, liked artists, artist and album pages
+- Playlists with your own name and cover photo, liked songs, liked artists
 - Import a playlist from YouTube Music, YouTube or Spotify (link), or paste a list of songs
+- Optional Google sign-in to see your YouTube Music library
 - Offline downloads with a choice of quality
 - Sleep timer, play N times, loop, shuffle, playback speed, skip silence
-- Choose the sound output (phone, Bluetooth, headphones)
+- Choose the sound output (phone, Bluetooth, headphones) and play on another VAME device on the same Wi-Fi
+- Standby player with a clock, home screen widgets, glass look and many Settings
+- Phone, tablet and Android TV in the same app
 - "Official songs only" switch that hides remixes, slowed + reverb and lyric-channel uploads
 - Lock screen / notification controls
 
@@ -58,7 +63,6 @@ Full list with licenses: [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
 ## License
 
 VAME Music is free software under the **GNU General Public License v3.0** (see [LICENSE](LICENSE)).
-The interface is inspired by AmeOS 16 by the AmeOS team (CC BY 4.0).
 
 ## Follow
 

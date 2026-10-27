@@ -1,4 +1,9 @@
-# VAME Music - full changelog (up to zip step55, v0.31.0, 28 Oct 2026)
+# VAME Music - full changelog (up to zip step56, v0.32.0, 28 Oct 2026)
+
+## step56 (v0.32.0) - includes everything up to step55
+- Changed: the app no longer mentions or credits AmeOS anywhere (Settings > About, README, licenses). Internal names were renamed to VAME.
+- Changed: repo cleanup. Removed unused code (the old "Move to another app" screen and the old "copy to Spotify" code). README, third-party list and privacy page are updated with the current features, lyrics sources and permissions.
+- Not changed on purpose: the app id stays com.ameos.music, so updates install over your old version and keep your playlists and likes.
 
 ## step55 (v0.31.0) - includes everything up to step54
 - New: lyrics page controls hide by themselves after 5 seconds without a touch (top bar, tool buttons, wave bar, previous / play / next). The button at the top right brings them back. Same on the tablet lyrics page.
@@ -336,7 +341,7 @@
 - New: Settings > About has "Made by vxvekggs", a Follow on Instagram button and a Source code button.
 - New: open-source repo files (README, GPL-3.0 license, third-party licenses, disclaimer, privacy, contributing, security, issue templates).
 - New: automatic repo cleanup + build: uploading a zip unpacks it, deletes old zips and builds the APK.
-- Changed: removed "Powered by AmeOS" (the app is made by vxvekggs, only inspired by AmeOS).
+- Changed: the app credit line in Settings > About now only names the app and its open-source libraries.
 
 ## step14 (v0.8.0)
 - Fixed: Back on Search / Your Type / Library now goes to Home instead of leaving the app.

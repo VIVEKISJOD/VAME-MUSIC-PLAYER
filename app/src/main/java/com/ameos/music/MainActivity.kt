@@ -87,9 +87,9 @@ class MainActivity : ComponentActivity() {
         vm.connectStart()
         vm.widgetStart()
         setContent {
-            AmeosTheme {
+            VameTheme {
                 androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
-                    AmeosRoot(vm)
+                    VameRoot(vm)
                     LogoSplash()
                 }
             }
@@ -160,7 +160,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun AmeosRoot(vm: MainViewModel) {
+fun VameRoot(vm: MainViewModel) {
     // on Search / Your Type / Library, Back goes to Home (Home itself leaves the app).
     // This is registered first, so open pages and sheets still close before it.
     BackHandler(enabled = vm.tab != 0) { vm.tab = 0 }

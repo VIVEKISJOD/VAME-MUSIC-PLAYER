@@ -118,7 +118,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 // ===================== TV (Android TV / remote control) =====================
-// One APK for phone, tablet and TV. On a TV (or Settings > Interface > TV mode = On) AmeosRoot
+// One APK for phone, tablet and TV. On a TV (or Settings > Interface > TV mode = On) VameRoot
 // shows TvShell instead of the phone / tablet layout. Same data, same screens (Home, Explore,
 // Library, album / artist pages, Settings), plus a remote friendly player and now playing bar.
 

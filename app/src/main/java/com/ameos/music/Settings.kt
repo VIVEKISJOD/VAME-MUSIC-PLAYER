@@ -493,9 +493,8 @@ fun SettingsScreen(vm: MainViewModel) {
                 }
                 Spacer(Modifier.height(14.dp))
                 Text(
-                    "Open source under GPLv3. Interface inspired by AmeOS 16 by the AmeOS team " +
-                        "(CC BY 4.0). Built with NewPipeExtractor (GPLv3), AndroidX Media3, Compose, " +
-                        "Coil, OkHttp and Kotlin (Apache 2.0). Lyrics from LRCLIB and NetEase, translation by Google Translate. " +
+                    "Open source under GPLv3. Built with NewPipeExtractor (GPLv3), AndroidX Media3, Compose, " +
+                        "Coil, OkHttp and Kotlin (Apache 2.0). Lyrics from LRCLIB, NetEase, Kugou and Lyrics.ovh, translation by Google Translate. " +
                         "VAME is not affiliated with YouTube, Spotify or Apple.",
                     fontSize = 12.sp, color = Pal.textDim
                 )
