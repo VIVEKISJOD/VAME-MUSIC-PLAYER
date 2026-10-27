@@ -1,4 +1,8 @@
-# VAME Music - full changelog (up to zip step50, v0.27.1, 27 Oct 2026)
+# VAME Music - full changelog (up to zip step51, v0.27.2, 27 Oct 2026)
+
+## step51 (v0.27.2) - includes everything up to step50
+- Fixed: on TV, moving the remote down in Settings could land on the name / title text box, which opened the TV keyboard and trapped the remote. Now those boxes are plain buttons on TV: press OK to type, Done (or Back) to finish. The keyboard never opens by itself in Settings.
+- Phone and tablet: no change.
 
 ## step50 (v0.27.1) - includes everything up to step49
 - Fixed: signing in on TV, the keyboard would not go away after typing the email. It no longer opens in a forced way, so the remote's Back key closes it.

@@ -22,6 +22,9 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.Alignment
@@ -35,6 +38,54 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 private fun SettingsField(value: String, onChange: (String) -> Unit) {
+    if (UiOpts.tv) {
+        // TV: a text field would open the keyboard the moment the remote touches it and trap the remote.
+        // So it is a button first: OK on it opens the field + keyboard, Done / Back closes them again.
+        var editing by remember { mutableStateOf(false) }
+        val fr = remember { androidx.compose.ui.focus.FocusRequester() }
+        BackHandler(enabled = editing) { editing = false }
+        if (!editing) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padClick(RoundedCornerShape(20.dp), Color(0x33FFFFFF), 1.02f) { editing = true }
+                    .padding(horizontal = 18.dp, vertical = 16.dp)
+            ) {
+                Text(
+                    if (value.isBlank()) "Press OK to type" else value,
+                    fontSize = 16.sp, color = Color.White
+                )
+            }
+        } else {
+            LaunchedEffect(Unit) {
+                kotlinx.coroutines.delay(200)
+                try {
+                    fr.requestFocus()
+                } catch (e: Exception) {
+                }
+            }
+            TextField(
+                value = value,
+                onValueChange = onChange,
+                singleLine = true,
+                shape = RoundedCornerShape(20.dp),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Done
+                ),
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                    onDone = { editing = false }
+                ),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color(0x33FFFFFF),
+                    unfocusedContainerColor = Color(0x33FFFFFF),
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                ),
+                modifier = Modifier.fillMaxWidth().focusRequester(fr)
+            )
+        }
+        return
+    }
     TextField(
         value = value,
         onValueChange = onChange,
