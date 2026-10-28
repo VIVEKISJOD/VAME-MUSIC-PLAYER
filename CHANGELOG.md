@@ -1,4 +1,8 @@
-# VAME Music - full changelog (up to zip step57, v0.33.0, 28 Oct 2026)
+# VAME Music - full changelog (up to zip step58, v0.34.0, 28 Oct 2026)
+
+## step58 (v0.34.0) - includes everything up to step57
+- Fixed: searching an artist name now shows an "Artists" row at the top of the results (round picture and name). Tap it to open the artist page. Before, search only looked for songs and albums, so an artist name only gave songs.
+- Fixed: "Kuch nahi mila" no longer shows when only artists or albums were found.
 
 ## step57 (v0.33.0) - includes everything up to step56
 - New look for Home: a soft glow from the cover of your last song fades from the top, a big "Good evening" title with your name under it, and white pill chips (the chosen one is filled white).

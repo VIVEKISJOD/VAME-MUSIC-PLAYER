@@ -456,6 +456,22 @@ fun AlbumCard(a: Album, vm: MainViewModel) {
     }
 }
 
+@Composable
+fun SearchArtistCard(a: ArtistHit, vm: MainViewModel) {
+    Column(
+        Modifier.width(104.dp).pressScale().clickable { vm.openArtist(a.name) },
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Cover(a.cover, Modifier.size(104.dp), CircleShape, hiRes = true)
+        Text(
+            a.name, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
+            maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+        Text("Artist", fontSize = 12.sp, color = Color(0x99FFFFFF))
+    }
+}
+
 private data class Mood(val name: String, val sub: String, val query: String, val color: Color)
 
 private val Moods = listOf(
@@ -590,6 +606,14 @@ fun ExploreScreen(vm: MainViewModel) {
                 }
             }
         } else {
+            if (vm.artistResults.isNotEmpty()) {
+                item { SectionLabel("Artists") }
+                item {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        items(vm.artistResults) { a -> SearchArtistCard(a, vm) }
+                    }
+                }
+            }
             if (vm.albumResults.isNotEmpty()) {
                 item { SectionLabel("Albums") }
                 item {
@@ -597,6 +621,8 @@ fun ExploreScreen(vm: MainViewModel) {
                         items(vm.albumResults) { a -> AlbumCard(a, vm) }
                     }
                 }
+            }
+            if (vm.artistResults.isNotEmpty() || vm.albumResults.isNotEmpty()) {
                 item { SectionLabel("Songs") }
             }
             items(vm.results) { s -> SongRow(s, vm, vm.results) }

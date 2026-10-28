@@ -77,6 +77,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     // albums
     var recommendedAlbums by mutableStateOf<List<Album>>(emptyList())
     var albumResults by mutableStateOf<List<Album>>(emptyList())
+    var artistResults by mutableStateOf<List<ArtistHit>>(emptyList())
     var albumOpen by mutableStateOf(false)
     var albumInfo by mutableStateOf<Album?>(null)
     var albumSongs by mutableStateOf<List<Song>>(emptyList())
@@ -447,6 +448,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             searched = true
             try {
                 results = MusicRepo.search(q)
+                artistResults = try {
+                    MusicRepo.searchArtists(q)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    emptyList()
+                }
                 albumResults = try {
                     MusicRepo.searchAlbums(q).take(10)
                 } catch (e: CancellationException) {
@@ -454,7 +462,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 } catch (e: Exception) {
                     emptyList()
                 }
-                if (results.isEmpty()) error = "Kuch nahi mila"
+                if (results.isEmpty() && artistResults.isEmpty() && albumResults.isEmpty()) error = "Kuch nahi mila"
             } catch (e: Exception) {
                 error = "Search fail: " + (e.message ?: e.javaClass.simpleName)
             }
@@ -473,6 +481,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         query = ""
         results = emptyList()
         albumResults = emptyList()
+        artistResults = emptyList()
         error = null
     }
 

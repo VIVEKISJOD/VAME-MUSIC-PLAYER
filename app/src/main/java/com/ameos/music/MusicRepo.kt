@@ -6,6 +6,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import org.schabi.newpipe.extractor.ServiceList
+import org.schabi.newpipe.extractor.channel.ChannelInfoItem
 import org.schabi.newpipe.extractor.playlist.PlaylistInfo
 import org.schabi.newpipe.extractor.playlist.PlaylistInfoItem
 import org.schabi.newpipe.extractor.services.youtube.linkHandler.YoutubeSearchQueryHandlerFactory
@@ -24,6 +25,9 @@ data class Song(
 data class Resolved(val audio: String, val related: List<Song>)
 
 data class Album(val title: String, val artist: String, val url: String, val cover: String?)
+
+// an artist found by search (tap opens the artist page)
+data class ArtistHit(val name: String, val cover: String?)
 
 // the newest official upload of an artist: the song, its big picture, and a short name
 data class LatestRelease(val song: Song, val picture: String?, val label: String)
@@ -177,6 +181,27 @@ object MusicRepo {
     private fun title0(t: String): String {
         val cleaned = t.replace(Regex("\\s*[\\(\\[][^\\)\\]]*[\\)\\]]"), "").trim()
         return if (cleaned.isBlank()) t else cleaned
+    }
+
+    // artists (YouTube Music "Artists" search)
+    suspend fun searchArtists(query: String): List<ArtistHit> = withContext(Dispatchers.IO) {
+        val extractor = ServiceList.YouTube.getSearchExtractor(
+            query,
+            listOf(YoutubeSearchQueryHandlerFactory.MUSIC_ARTISTS),
+            ""
+        )
+        extractor.fetchPage()
+        extractor.initialPage.items
+            .filterIsInstance<ChannelInfoItem>()
+            .map {
+                ArtistHit(
+                    name = (it.name ?: "").replace(" - Topic", "").trim(),
+                    cover = bigCover(it.thumbnails.maxByOrNull { t -> t.height }?.url)
+                )
+            }
+            .filter { it.name.isNotBlank() }
+            .distinctBy { it.name.lowercase() }
+            .take(10)
     }
 
     // albums (YouTube Music "Albums" search)
