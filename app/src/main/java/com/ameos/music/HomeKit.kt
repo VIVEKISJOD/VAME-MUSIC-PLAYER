@@ -103,13 +103,13 @@ fun BigCard(item: ShelfItem, w: Dp, modifier: Modifier = Modifier) {
     val tick = rememberTick()
     val view = LocalView.current
     var center by remember { mutableStateOf(Offset.Zero) }
-    val shape = if (item.round) CircleShape else RoundedCornerShape(20.dp)
+    val shape = if (item.round) CircleShape else RoundedCornerShape(16.dp)
     Column(
         modifier
             .width(w)
             .onGloballyPositioned { center = it.boundsInRoot().center }
             .pressScale(0.97f)
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(16.dp))
             .clickable {
                 tick()
                 DetailOrigin.set(
@@ -125,15 +125,15 @@ fun BigCard(item: ShelfItem, w: Dp, modifier: Modifier = Modifier) {
             Box(Modifier.size(w).clip(shape).border(1.dp, GlassEdge, shape))
         }
         Text(
-            item.title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
+            item.title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
             color = if (item.active) Pal.accent else Color.White,
             maxLines = 1, overflow = TextOverflow.Ellipsis,
             textAlign = if (item.round) TextAlign.Center else TextAlign.Start,
-            modifier = Modifier.padding(top = 8.dp)
+            modifier = Modifier.padding(top = 10.dp)
         )
         if (item.sub.isNotBlank()) {
             Text(
-                item.sub, fontSize = 12.sp, color = Pal.textDim,
+                item.sub, fontSize = 12.sp, color = Color(0x99FFFFFF),
                 maxLines = 1, overflow = TextOverflow.Ellipsis,
                 textAlign = if (item.round) TextAlign.Center else TextAlign.Start
             )
@@ -167,17 +167,17 @@ fun CardGrid(list: List<ShelfItem>, cols: Int) {
 @Composable
 fun ShelfTitle(title: String, sub: String = "", trailing: (@Composable () -> Unit)? = null) {
     Row(
-        Modifier.appear().fillMaxWidth().padding(top = 26.dp, bottom = 12.dp),
+        Modifier.appear().fillMaxWidth().padding(top = 30.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(Modifier.weight(1f)) {
             Text(
-                title, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
-                maxLines = 1, overflow = TextOverflow.Ellipsis
+                title, fontSize = 21.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                letterSpacing = (-0.3).sp, maxLines = 1, overflow = TextOverflow.Ellipsis
             )
             if (sub.isNotBlank()) {
                 Text(
-                    sub.uppercase(), fontSize = 12.sp, color = Pal.textDim,
+                    sub.uppercase(), fontSize = 11.sp, letterSpacing = 0.8.sp, color = Color(0x99FFFFFF),
                     maxLines = 1, overflow = TextOverflow.Ellipsis
                 )
             }

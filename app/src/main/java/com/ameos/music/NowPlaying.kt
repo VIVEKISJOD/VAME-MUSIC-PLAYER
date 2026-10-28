@@ -32,6 +32,8 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.QueueMusic
@@ -417,11 +419,12 @@ fun NowPlayingScreen(vm: MainViewModel) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(
-                        song.title, fontSize = 26.sp, fontWeight = FontWeight.Bold,
+                        song.title, fontSize = 28.sp, fontWeight = FontWeight.Bold,
+                        letterSpacing = (-0.5).sp,
                         color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        song.artist, fontSize = 18.sp, color = Color(0x99FFFFFF),
+                        song.artist, fontSize = 17.sp, color = Color(0xB3FFFFFF),
                         maxLines = 1, overflow = TextOverflow.Ellipsis,
                         modifier = Modifier
                             .padding(top = 2.dp)
@@ -494,32 +497,37 @@ fun NowPlayingScreen(vm: MainViewModel) {
                 Text("-" + fmt(max - shownMs), fontSize = 17.sp, color = Color(0x99FFFFFF))
             }
 
-            // controls: rewind | play | forward
+            // controls: previous | play (one white focal point) | next
             Row(
                 Modifier.fillMaxWidth().padding(vertical = 14.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = { vm.prev() }, modifier = Modifier.size(80.dp).pressScale()) {
-                    Icon(Icons.Filled.FastRewind, null, tint = Color.White, modifier = Modifier.size(56.dp))
+                IconButton(onClick = { vm.prev() }, modifier = Modifier.size(76.dp).pressScale()) {
+                    Icon(Icons.Filled.SkipPrevious, null, tint = Color.White, modifier = Modifier.size(48.dp))
                 }
                 Box(
-                    Modifier.size(84.dp).pressScale().clip(CircleShape).clickable { vm.toggle() },
+                    Modifier
+                        .size(80.dp)
+                        .pressScale(0.94f)
+                        .clip(CircleShape)
+                        .background(Color.White)
+                        .clickable { vm.toggle() },
                     contentAlignment = Alignment.Center
                 ) {
                     if (vm.loading) {
                         CircularProgressIndicator(
-                            Modifier.size(40.dp), color = Color.White, strokeWidth = 3.dp
+                            Modifier.size(34.dp), color = Color(0xFF111111), strokeWidth = 3.dp
                         )
                     } else {
                         Icon(
                             if (vm.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                            null, tint = Color.White, modifier = Modifier.size(76.dp)
+                            null, tint = Color(0xFF111111), modifier = Modifier.size(46.dp)
                         )
                     }
                 }
-                IconButton(onClick = { vm.next() }, modifier = Modifier.size(80.dp).pressScale()) {
-                    Icon(Icons.Filled.FastForward, null, tint = Color.White, modifier = Modifier.size(56.dp))
+                IconButton(onClick = { vm.next() }, modifier = Modifier.size(76.dp).pressScale()) {
+                    Icon(Icons.Filled.SkipNext, null, tint = Color.White, modifier = Modifier.size(48.dp))
                 }
             }
 

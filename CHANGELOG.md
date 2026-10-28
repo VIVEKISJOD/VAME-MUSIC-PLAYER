@@ -1,4 +1,11 @@
-# VAME Music - full changelog (up to zip step56, v0.32.0, 28 Oct 2026)
+# VAME Music - full changelog (up to zip step57, v0.33.0, 28 Oct 2026)
+
+## step57 (v0.33.0) - includes everything up to step56
+- New look for Home: a soft glow from the cover of your last song fades from the top, a big "Good evening" title with your name under it, and white pill chips (the chosen one is filled white).
+- New: "Jump back in" card on Home. Big cover, the song you heard last and one white play button. If that song is playing now it says NOW PLAYING and opens the player.
+- Changed: cards are a little tighter (cover corners 16, clearer title and dim artist line), shelf titles are bolder with tighter letters. The big screen titles (Search, Library and others) use the same bold style.
+- Changed: Now Playing has proper previous / next icons and one big white play button as the only bright thing. Bigger song title, softer artist line.
+- Glass stays only where it matters (player, dock, sheets); the other screens stay plain.
 
 ## step56 (v0.32.0) - includes everything up to step55
 - Changed: the app no longer mentions or credits AmeOS anywhere (Settings > About, README, licenses). Internal names were renamed to VAME.

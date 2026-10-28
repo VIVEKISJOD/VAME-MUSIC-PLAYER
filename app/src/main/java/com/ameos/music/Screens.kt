@@ -54,8 +54,8 @@ fun ScreenTitle(text: String, trailing: @Composable () -> Unit = {}) {
         Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text, fontSize = 34.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
-            modifier = Modifier.weight(1f))
+        Text(text, fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.White,
+            letterSpacing = (-0.6).sp, modifier = Modifier.weight(1f))
         trailing()
     }
 }
@@ -91,6 +91,82 @@ internal fun ytItems(vm: MainViewModel, sh: YtShelf): List<ShelfItem> = sh.cards
 
 @Composable
 fun HomeScreen(vm: MainViewModel) {
+    // soft glow from the cover of the song you last heard, fading into the background
+    val tint = rememberCoverTint(vm.current?.cover ?: vm.played.firstOrNull()?.cover)
+    Box(Modifier.fillMaxSize()) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(380.dp)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(tint.copy(alpha = if (Pal.amoled) 0.30f else 0.55f), Color.Transparent)
+                    )
+                )
+        )
+        HomeList(vm)
+    }
+}
+
+// One calm card for the song you heard last: big cover, one button.
+@Composable
+private fun JumpBackIn(vm: MainViewModel) {
+    val s = vm.played.firstOrNull() ?: return
+    val tint = rememberCoverTint(s.cover)
+    val tick = rememberTick()
+    val playing = vm.current?.url == s.url
+    val shape = RoundedCornerShape(24.dp)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 22.dp)
+            .pressScale(0.98f)
+            .clip(shape)
+            .background(
+                Brush.horizontalGradient(
+                    listOf(androidx.compose.ui.graphics.lerp(tint, Color.White, 0.10f), Color(0x22FFFFFF))
+                )
+            )
+            .border(1.dp, Stroke, shape)
+            .clickable {
+                tick()
+                if (playing) vm.showPlayer = true else vm.play(s, vm.played.toList())
+            }
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Cover(s.cover, Modifier.size(84.dp), RoundedCornerShape(16.dp), hiRes = true)
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                if (playing) "NOW PLAYING" else "JUMP BACK IN",
+                fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp,
+                color = Color(0xB3FFFFFF)
+            )
+            Text(
+                s.title, fontSize = 19.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 3.dp)
+            )
+            Text(
+                artistName(s.artist), fontSize = 13.sp, color = Color(0xB3FFFFFF),
+                maxLines = 1, overflow = TextOverflow.Ellipsis
+            )
+        }
+        Spacer(Modifier.width(10.dp))
+        Box(
+            Modifier.size(52.dp).clip(CircleShape).background(Color.White),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                if (playing && vm.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                null, tint = Color(0xFF111111), modifier = Modifier.size(30.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun HomeList(vm: MainViewModel) {
     val big = LocalConfiguration.current.screenWidthDp >= 600
     val cw = shelfW()
     val cols = if (big) 5 else 2
@@ -98,41 +174,50 @@ fun HomeScreen(vm: MainViewModel) {
 
     LazyColumn(contentPadding = ScreenPad) {
         item {
-            ScreenTitle(vm.title.ifBlank { "Music" }) {
-                ProfileButton(vm, 34.dp, true)
-            }
-        }
-        item {
             val hour = remember { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) }
             val hi = if (hour < 5) "Late night" else if (hour < 12) "Good morning"
             else if (hour < 17) "Good afternoon" else if (hour < 22) "Good evening" else "Late night"
             val nm = vm.userName.ifBlank { vm.ytName }
-            Text(
-                if (nm.isBlank()) hi else hi + ", " + nm,
-                fontSize = 15.sp, color = Pal.textDim, modifier = Modifier.padding(bottom = 12.dp)
-            )
+            Row(
+                Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 18.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        hi, fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                        letterSpacing = (-0.6).sp, maxLines = 1, overflow = TextOverflow.Ellipsis
+                    )
+                    val sub = if (nm.isBlank()) vm.title.ifBlank { "Music" } else nm
+                    Text(sub, fontSize = 15.sp, color = Color(0xB3FFFFFF), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+                ProfileButton(vm, 40.dp, true)
+            }
         }
         item {
             val tick = rememberTick()
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("All", "Music", "Podcasts", "Playlists").forEachIndexed { i, t ->
-                    val chipBg by animateColorAsState(
-                        if (i == vm.homeFilter) Pal.accentDeep else Color(0x22FFFFFF),
-                        label = "chip"
-                    )
+                    val sel = i == vm.homeFilter
+                    val chipBg by animateColorAsState(if (sel) Color.White else Color(0x1AFFFFFF), label = "chip")
+                    val chipFg by animateColorAsState(if (sel) Color(0xFF111111) else Color.White, label = "chipFg")
+                    val cs = RoundedCornerShape(50)
                     Text(
-                        t, fontSize = 14.sp, color = Color.White,
+                        t, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = chipFg,
                         modifier = Modifier
-                            .clip(RoundedCornerShape(50))
+                            .clip(cs)
                             .background(chipBg)
+                            .then(if (sel) Modifier else Modifier.border(1.dp, Stroke, cs))
                             .clickable {
                                 tick()
                                 vm.pickFilter(i)
                             }
-                            .padding(horizontal = 14.dp, vertical = 8.dp)
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
                     )
                 }
             }
+        }
+        if (vm.homeFilter == 0 && vm.played.isNotEmpty()) {
+            item { JumpBackIn(vm) }
         }
         if (vm.homeFilter == 0 && vm.dials.isNotEmpty()) {
             item { SpeedDialShelf(vm) }
