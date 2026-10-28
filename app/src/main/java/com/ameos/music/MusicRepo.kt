@@ -24,6 +24,9 @@ data class Song(
 
 data class Resolved(val audio: String, val related: List<Song>)
 
+// step59: the audio link comes first (fast), the "similar songs" are worked out afterwards from the same info
+class FastAudio(val audio: String, val info: StreamInfo)
+
 data class Album(val title: String, val artist: String, val url: String, val cover: String?)
 
 // an artist found by search (tap opens the artist page)
@@ -271,6 +274,56 @@ object MusicRepo {
             emptyList()
         }
     }
+
+    private fun pickAudio(info: StreamInfo, q: Int): String {
+        val streams = info.audioStreams
+        val progressive = streams.filter { it.deliveryMethod == DeliveryMethod.PROGRESSIVE_HTTP }
+        val pool = if (progressive.isNotEmpty()) progressive else streams
+        val known = pool.filter { it.averageBitrate > 0 }
+        val sorted = (if (known.isNotEmpty()) known else pool).sortedBy { it.averageBitrate }
+        val best = when (q) {
+            2 -> sorted.firstOrNull()
+            1 -> sorted.getOrNull(sorted.size / 2)
+            else -> sorted.lastOrNull()
+        } ?: throw IllegalStateException("Is song ki audio nahi mili")
+        return best.content
+    }
+
+    // only what is needed to start playing; no waiting for the similar-songs search
+    suspend fun resolveAudio(videoUrl: String, q: Int = quality): FastAudio = withContext(Dispatchers.IO) {
+        val info = StreamInfo.getInfo(videoUrl)
+        FastAudio(pickAudio(info, q), info)
+    }
+
+    // similar songs for the song that is already playing (runs in the background)
+    suspend fun relatedFor(info: StreamInfo, videoUrl: String, artistHint: String): List<Song> =
+        withContext(Dispatchers.IO) {
+            coroutineScope {
+                val who = artistHint.ifBlank { info.uploaderName ?: "" }
+                val similarJob = async { similarMusic(who) }
+                try {
+                    val fromPage = info.relatedItems
+                        .filterIsInstance<StreamInfoItem>()
+                        .filter { it.duration in 60L..600L }
+                        .map { toSong(it) }
+                        .filter { looksLikeMusicChannel(it.artist) }
+                        .filter { !isCompilation(it.title, it.artist) }
+                        .filter { !officialOnly || isOfficial(it) }
+                    val similar: List<Song> = similarJob.await()
+                    val mixed = ArrayList<Song>()
+                    val n = maxOf(similar.size, fromPage.size)
+                    for (i in 0 until n) {
+                        similar.getOrNull(i)?.let { mixed.add(it) }
+                        fromPage.getOrNull(i)?.let { mixed.add(it) }
+                    }
+                    mixed.filter { it.url != videoUrl }.distinctBy { it.url }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    emptyList<Song>()
+                }
+            }
+        }
 
     suspend fun resolve(
         videoUrl: String,

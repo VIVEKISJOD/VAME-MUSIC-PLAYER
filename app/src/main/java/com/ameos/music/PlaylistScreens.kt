@@ -104,9 +104,11 @@ fun PlaylistScreen(vm: MainViewModel) {
                 Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                // fixed square size: on a tablet the old "55% of the width" made the cover huge and pushed the song list off the screen
+                val coverSize = minOf(220f, androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp * 0.30f).dp
                 Cover(
                     pl.shownCover(),
-                    Modifier.fillMaxWidth(0.55f).widthIn(max = 240.dp).aspectRatio(1f),
+                    Modifier.size(coverSize),
                     RoundedCornerShape(22.dp),
                     hiRes = true
                 )

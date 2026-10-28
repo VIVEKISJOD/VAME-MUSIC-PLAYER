@@ -1,4 +1,9 @@
-# VAME Music - full changelog (up to zip step58, v0.34.0, 28 Oct 2026)
+# VAME Music - full changelog (up to zip step59, v0.35.0, 28 Oct 2026)
+
+## step59 (v0.35.0) - includes everything up to step58
+- Fixed: your own playlists (made inside the app) opened with a huge cover that pushed the song list off the screen, mostly on the tablet. The cover now has a fixed size that also fits a short landscape screen. The album page had the same problem and is fixed too. (YouTube and Spotify playlists you moved opened a different page, which is why they were fine.)
+- Faster: songs start playing much sooner. Before, the app waited for the "similar songs" search before it started the song. Now it starts as soon as the audio link is ready and finds similar songs while the song plays. The player also needs less audio buffered before it starts (0.8 s instead of 2.5 s). The next song in the queue is prepared in advance as before.
+- Quality: nothing changed on purpose. "High" already picks the best audio YouTube gives (about 130 to 160 kbps Opus or 128 kbps AAC). YouTube does not offer more than that without a Premium account, so a higher number is not possible.
 
 ## step58 (v0.34.0) - includes everything up to step57
 - Fixed: searching an artist name now shows an "Artists" row at the top of the results (round picture and name). Tap it to open the artist page. Before, search only looked for songs and albums, so an artist name only gave songs.

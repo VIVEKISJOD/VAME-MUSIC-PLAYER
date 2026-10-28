@@ -231,7 +231,7 @@ fun AlbumScreen(vm: MainViewModel) {
                     } else {
                         Cover(
                             album.cover,
-                            Modifier.fillMaxWidth(0.78f).widthIn(max = 240.dp).aspectRatio(1f),
+                            Modifier.size(minOf(220f, androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp * 0.30f).dp),
                             RoundedCornerShape(20.dp),
                             hiRes = true
                         )

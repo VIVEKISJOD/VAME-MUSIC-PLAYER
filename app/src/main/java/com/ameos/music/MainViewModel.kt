@@ -201,6 +201,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         private set
 
     private val cache = HashMap<String, Resolved>()
+    // audio links worked out ahead of time (only the last few are kept)
+    private val fastCache = LinkedHashMap<String, FastAudio>()
     private var startJob: Job? = null
     private var lyricsJob: Job? = null
     private var sleepJob: Job? = null
@@ -857,13 +859,22 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         return fresh
     }
 
+    private suspend fun resolveAudioFor(song: Song): FastAudio {
+        val hit = fastCache[song.url]
+        if (hit != null) return hit
+        val fresh = MusicRepo.resolveAudio(song.url, MusicRepo.quality)
+        fastCache[song.url] = fresh
+        while (fastCache.size > 6) fastCache.remove(fastCache.keys.first())
+        return fresh
+    }
+
     private fun prefetchNext() {
         if (queue.size < 2) return
         val n = queue[(index + 1) % queue.size]
-        if (cache.containsKey(n.url)) return
+        if (fastCache.containsKey(n.url) || cache.containsKey(n.url)) return
         viewModelScope.launch {
             try {
-                resolveFor(n)
+                resolveAudioFor(n)
             } catch (e: Exception) {
             }
         }
@@ -1033,6 +1044,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         startLocal(song, 0L)
     }
 
+    private fun applyRelated(song: Song, related: List<Song>) {
+        if (related.isNotEmpty()) suggestions = related.take(10)
+        if (endless && queue.size - index < 8) {
+            val have = queue.map { it.url }.toSet()
+            val more = related.filter { it.url !in have }.take(10)
+            if (more.isNotEmpty()) queue = queue + more
+        }
+    }
+
     private fun startLocal(song: Song, startMs: Long) {
         startJob?.cancel()
         player.pause()
@@ -1044,8 +1064,19 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         startJob = viewModelScope.launch {
             try {
                 val local = Downloads.file(getApplication<Application>(), song)
-                val r = if (local != null) Resolved(Uri.fromFile(local).toString(), emptyList())
-                else resolveFor(song)
+                var fast: FastAudio? = null
+                val audioUrl: String = if (local != null) {
+                    Uri.fromFile(local).toString()
+                } else {
+                    val cachedFull = cache[song.url]
+                    if (cachedFull != null) {
+                        cachedFull.audio
+                    } else {
+                        val f = resolveAudioFor(song)
+                        fast = f
+                        f.audio
+                    }
+                }
                 val meta = MediaMetadata.Builder()
                     .setTitle(song.title)
                     .setArtist(song.artist)
@@ -1054,7 +1085,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     }
                     .build()
                 val item = MediaItem.Builder()
-                    .setUri(r.audio)
+                    .setUri(audioUrl)
                     .setMediaMetadata(meta)
                     .build()
                 player.setMediaItem(item)
@@ -1067,11 +1098,22 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 Prefs.saveHistory(getApplication<Application>(), played.toList())
                 countPlay(song)
 
-                if (r.related.isNotEmpty()) suggestions = r.related.take(10)
-                if (endless && queue.size - index < 8) {
-                    val have = queue.map { it.url }.toSet()
-                    val more = r.related.filter { it.url !in have }.take(10)
-                    if (more.isNotEmpty()) queue = queue + more
+                // similar songs are worked out while the song already plays
+                val cachedRelated = cache[song.url]?.related
+                if (cachedRelated != null) {
+                    applyRelated(song, cachedRelated)
+                } else if (fast != null) {
+                    val info = fast.info
+                    viewModelScope.launch {
+                        try {
+                            val rel = MusicRepo.relatedFor(info, song.url, song.artist)
+                            cache[song.url] = Resolved(audioUrl, rel)
+                            if (current?.url == song.url) applyRelated(song, rel)
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                        }
+                    }
                 }
 
                 val ctx = getApplication<Application>()

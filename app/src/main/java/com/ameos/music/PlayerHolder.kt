@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 
@@ -29,7 +30,13 @@ object PlayerHolder {
             .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
             .build()
 
+        // start after 0.8 s of audio instead of the default 2.5 s; keep a long buffer for steady play
+        val load = DefaultLoadControl.Builder()
+            .setBufferDurationsMs(30_000, 60_000, 800, 2_000)
+            .build()
+
         return ExoPlayer.Builder(context)
+            .setLoadControl(load)
             .setMediaSourceFactory(DefaultMediaSourceFactory(http))
             .setAudioAttributes(attrs, true)
             .setHandleAudioBecomingNoisy(true)
