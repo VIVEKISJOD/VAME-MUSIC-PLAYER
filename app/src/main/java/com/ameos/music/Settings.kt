@@ -349,6 +349,12 @@ fun SettingsScreen(vm: MainViewModel) {
                 KitChips(vm.artistTop, listOf("10", "25", "All")) { vm.updateArtistTop(it) }
             }
 
+            // ---------------- sound ----------------
+            KitHeader(Icons.Filled.GraphicEq, "Sound", "Equalizer, bass, loudness, 3D sound, fade")
+            KitCard {
+                SoundSection()
+            }
+
             // ---------------- playback ----------------
             KitHeader(Icons.Filled.PlayArrow, "Playback")
             KitCard {

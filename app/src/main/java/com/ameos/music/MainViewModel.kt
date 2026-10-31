@@ -252,6 +252,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 if (s != null && isPlaying) addListen(s)
             }
         }
+        // fade between songs (only does something when it is switched on in Settings > Sound)
+        viewModelScope.launch {
+            while (true) {
+                delay(200)
+                try {
+                    SoundFx.tickFade(player)
+                } catch (e: Exception) {
+                }
+            }
+        }
         PlaybackBridge.onNext = { next() }
         PlaybackBridge.onPrev = { prev() }
         PlaybackBridge.onToggle = { toggle() }

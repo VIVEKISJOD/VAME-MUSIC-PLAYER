@@ -1,4 +1,10 @@
-# VAME Music - full changelog (up to zip step59, v0.35.0, 28 Oct 2026)
+# VAME Music - full changelog (up to zip step60, v0.36.0, 28 Oct 2026)
+
+## step60 (v0.36.0) - includes everything up to step59
+- New: Settings > Sound. Equalizer with a switch, presets (Flat, Bass, Vocal, Rock, Pop, Treble, Custom) and one slider for every band. Bass boost, Loudness (up to +10 dB) and 3D sound (spatial, best with headphones), each with its own slider.
+- New: Fade between songs (Off, 3, 6 or 9 seconds). The end of a song fades out and the next one fades in. It is a fade, not two songs playing on top of each other.
+- These use Android's own audio effects. If a phone does not support one of them, Sound shows a line saying which. Your choices are saved.
+- Note: this makes the sound better to your ear, it does not make the music lossless (YouTube audio stays about 130 to 160 kbps).
 
 ## step59 (v0.35.0) - includes everything up to step58
 - Fixed: your own playlists (made inside the app) opened with a huge cover that pushed the song list off the screen, mostly on the tablet. The cover now has a fixed size that also fits a short landscape screen. The album page had the same problem and is fixed too. (YouTube and Spotify playlists you moved opened a different page, which is why they were fine.)

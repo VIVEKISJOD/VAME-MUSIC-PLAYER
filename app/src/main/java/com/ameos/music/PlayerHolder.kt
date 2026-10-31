@@ -35,12 +35,14 @@ object PlayerHolder {
             .setBufferDurationsMs(30_000, 60_000, 800, 2_000)
             .build()
 
-        return ExoPlayer.Builder(context)
+        val built = ExoPlayer.Builder(context)
             .setLoadControl(load)
             .setMediaSourceFactory(DefaultMediaSourceFactory(http))
             .setAudioAttributes(attrs, true)
             .setHandleAudioBecomingNoisy(true)
             .setWakeMode(C.WAKE_MODE_NETWORK)
             .build()
+        SoundFx.init(context, built)
+        return built
     }
 }
