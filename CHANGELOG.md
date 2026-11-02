@@ -1,4 +1,7 @@
-# VAME Music - full changelog (up to zip step61, v0.37.0, 28 Oct 2026)
+# VAME Music - full changelog (up to zip step62, v0.37.1, 28 Oct 2026)
+
+## step62 (v0.37.1) - includes everything up to step61
+- Fixed: the build of step61 failed because of one word in the rap word list ("kr$na": Kotlin read $na as a variable). Nothing else changed.
 
 ## step61 (v0.37.0) - includes everything up to step60
 - New: lyric styles. Soft (rounded puffy font), Dark (metal font, red), Rap (tall bold CAPS), Romantic (elegant italic), Party (wide bold, cover colours) and Retro (golden serif). The colour of the sung line also comes from the cover. Auto guesses the style from the title, the artist and how fast the words come; if it is not sure it keeps the Classic look. Pick a style yourself in the Aa panel on the lyrics page or in Settings > Lyrics.

@@ -60,7 +60,7 @@ object LyricStyle {
     }
 
     private val darkWords = listOf("metal", "hardcore", "drill", "phonk", "demon", "devil", "dark", "death", "hell", "kill", "scream", "horror", "gothic", "shaitan", "maut", "qatl")
-    private val rapWords = listOf("rap", "hip hop", "hiphop", "freestyle", "cypher", "diss", "mc ", "seedhe maut", "raftaar", "emiway", "divine", "krsna", "kr$na", "badshah", "honey singh", "ikka", "talha anjum", "trap", "bars")
+    private val rapWords = listOf("rap", "hip hop", "hiphop", "freestyle", "cypher", "diss", "mc ", "seedhe maut", "raftaar", "emiway", "divine", "krsna", "krsna rap", "badshah", "honey singh", "ikka", "talha anjum", "trap", "bars")
     private val softWords = listOf("lofi", "lo-fi", "acoustic", "chill", "soothing", "sleep", "calm", "piano", "slowed", "reverb", "unplugged", "mellow", "relax")
     private val romanticWords = listOf("love", "pyar", "ishq", "mohabbat", "dil", "sad", "broken", "tanha", "judai", "dard", "heart", "romantic", "ballad", "arijit", "atif", "tum ", "kasam", "bewafa", "yaad")
     private val partyWords = listOf("dj", "remix", "party", "dance", "club", "edm", "bhangra", "punjabi", "garba", "mashup", "nacho", "beat", "sharaab", "daru")
