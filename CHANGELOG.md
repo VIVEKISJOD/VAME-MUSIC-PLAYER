@@ -1,4 +1,8 @@
-# VAME Music - full changelog (up to zip step62, v0.37.1, 28 Oct 2026)
+# VAME Music - full changelog (up to zip step63, v0.37.2, 28 Oct 2026)
+
+## step63 (v0.37.2) - includes everything up to step62
+- Fixed: the lyric fonts are now inside the app, nothing to upload. They are free fonts (SIL Open Font License): Erica One (Soft), Boldonse (Dark), Big Shoulders Bold (Rap), Crimson Pro Italic (Romantic), Bricolage Grotesque Bold (Party) and Gloock (Retro).
+- Note: the first fonts planned (Baloo 2, Metal Mania, Teko, Playfair, Bungee, Rozha) could not be added because they were not available offline, so look-alikes were used. There is no true gothic "demon" font yet: Dark uses a very heavy wide font in red.
 
 ## step62 (v0.37.1) - includes everything up to step61
 - Fixed: the build of step61 failed because of one word in the rap word list ("kr$na": Kotlin read $na as a variable). Nothing else changed.

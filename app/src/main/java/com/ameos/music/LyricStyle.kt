@@ -31,12 +31,12 @@ object LyricStyle {
 
     private val specs = listOf(
         LyricSpec("Classic", "", emptyList(), false, 0f, 1f, 0.55f, null, 0f, 10, 450),
-        LyricSpec("Soft", "baloo", listOf("bold"), false, 0f, 1f, 0.6f, null, 0.55f, 8, 800),
-        LyricSpec("Dark", "metalmania", emptyList(), true, 1f, 1.1f, 0.9f, Color(0xFFFF3B30), 0f, 14, 260),
-        LyricSpec("Rap", "teko", listOf("bold"), true, 1f, 1.3f, 0.35f, null, 0f, 22, 200),
-        LyricSpec("Romantic", "playfair", listOf("bold", "italic"), false, 0f, 0.95f, 0.5f, Color(0xFFFFD6E0), 0f, 8, 950),
-        LyricSpec("Party", "bungee", emptyList(), true, 0.5f, 0.78f, 0.8f, null, 1f, 18, 280),
-        LyricSpec("Retro", "rozha", emptyList(), false, 0f, 0.95f, 0.55f, Color(0xFFFFD27A), 0f, 12, 600)
+        LyricSpec("Soft", "ericaone", emptyList(), false, 0f, 0.95f, 0.6f, null, 0.55f, 8, 800),
+        LyricSpec("Dark", "boldonse", emptyList(), true, 0.5f, 0.62f, 0.9f, Color(0xFFFF3B30), 0f, 14, 260),
+        LyricSpec("Rap", "bigshoulders", listOf("bold"), true, 1f, 1.25f, 0.35f, null, 0f, 22, 200),
+        LyricSpec("Romantic", "crimsonpro", listOf("italic"), false, 0f, 1.08f, 0.5f, Color(0xFFFFD6E0), 0f, 8, 950),
+        LyricSpec("Party", "bricolage", listOf("bold"), true, 0.5f, 0.9f, 0.8f, null, 1f, 18, 280),
+        LyricSpec("Retro", "gloock", emptyList(), false, 0f, 0.95f, 0.55f, Color(0xFFFFD27A), 0f, 12, 600)
     )
 
     var choice by mutableIntStateOf(0)

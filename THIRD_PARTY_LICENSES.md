@@ -22,3 +22,7 @@ NewPipeExtractor brings in its own libraries. Their licenses are listed in the N
 ## Design
 
 The VAME logo and name belong to the project owner (@vxvekggs).
+
+## Lyric fonts (included in app/src/main/assets/fonts/)
+
+Erica One, Boldonse, Big Shoulders, Crimson Pro, Bricolage Grotesque and Gloock, all under the SIL Open Font License 1.1. The license texts are next to the font files (*-OFL.txt).

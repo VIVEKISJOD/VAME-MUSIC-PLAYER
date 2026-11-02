@@ -1,10 +1,12 @@
-VAME lyric fonts
-Put the .ttf files here (app/src/main/assets/fonts/). The app finds them by the name in the file:
-  Soft      -> any file with "Baloo" in its name        (Baloo 2, choose Bold)
-  Dark      -> any file with "MetalMania" in its name    (Metal Mania)
-  Rap       -> any file with "Teko" in its name          (Teko, choose Bold)
-  Romantic  -> any file with "Playfair" in its name      (Playfair Display, choose Bold Italic)
-  Party     -> any file with "Bungee" in its name        (Bungee)
-  Retro     -> any file with "Rozha" in its name         (Rozha One)
-All fonts are free (SIL Open Font License) from fonts.google.com.
-If a font is missing, that style simply uses the normal font. Nothing breaks.
+VAME lyric fonts (already included, nothing to upload)
+The app finds a font in this folder by the name inside the file name:
+  Soft      -> "EricaOne"          Erica One (heavy, puffy)
+  Dark      -> "Boldonse"          Boldonse (very heavy, wide)
+  Rap       -> "BigShoulders"      Big Shoulders Bold (tall, narrow)
+  Romantic  -> "CrimsonPro"        Crimson Pro Italic (elegant)
+  Party     -> "Bricolage"         Bricolage Grotesque Bold (playful, bold)
+  Retro     -> "Gloock"            Gloock (display serif)
+All of them are free under the SIL Open Font License (the *-OFL.txt files are the licenses).
+To use another font for a style, put a .ttf with the same name part here (for example a file called
+"Boldonse-Regular.ttf" that holds your own font replaces the Dark font).
+If a font file is missing the style simply uses the normal font. Nothing breaks.
