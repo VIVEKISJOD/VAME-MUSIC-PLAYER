@@ -418,6 +418,18 @@ fun SettingsScreen(vm: MainViewModel) {
                 KitChips(vm.lyricsTransHi, LyricsRepo.langNames) { vm.chooseTransHi(it) }
                 KitLabel("Other songs translate to", "Used for English and all other songs.")
                 KitChips(vm.lyricsTransEn, LyricsRepo.langNames) { vm.chooseTransEn(it) }
+                KitLabel("Lyrics style", "Auto picks a look and a font that fits the song (soft, dark, rap, romantic, party, retro).")
+                KitChips(LyricStyle.choice, LyricStyle.names) {
+                    LyricStyle.choice = it
+                    LyricStyle.save(ctx)
+                }
+                KitSwitch(
+                    "Moving lines", "Lines go left and right with the speed of the song (synced lyrics only).",
+                    LyricStyle.moving
+                ) {
+                    LyricStyle.moving = it
+                    LyricStyle.save(ctx)
+                }
                 KitLabel("Lyrics alignment")
                 KitChips(if (vm.lyricsLeft) 1 else 0, listOf("Centered", "Left")) { vm.setLyricsLeftOn(it == 1) }
                 KitSwitch(

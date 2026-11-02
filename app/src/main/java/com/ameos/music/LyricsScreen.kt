@@ -45,6 +45,7 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -338,7 +339,18 @@ private fun LyricsList(vm: MainViewModel, pos: Long) {
         return
     }
     val synced = vm.lyricsSynced
-    val fs = (34 * vm.lyricsPct.coerceIn(50, 160) / 100).coerceAtLeast(14)
+    // look of the lyrics: style from the song (or the one you picked), fonts from assets/fonts
+    val fctx = LocalContext.current
+    val song = vm.current
+    val coverTint = rememberCoverTint(song?.cover)
+    val detected = remember(song?.url, lines.size) { LyricStyle.detect(song?.title ?: "", song?.artist ?: "", lines) }
+    val spec = LyricStyle.specFor(LyricStyle.choice, detected)
+    val family = remember(spec.fontKey) { LyricFonts.family(fctx, spec.fontKey, spec.prefer) }
+    val sides = remember(lines) { LyricMotion.sides(lines) }
+    val moving = synced && LyricStyle.moving
+    val sungColor = spec.fixed ?: lerp(Color.White, lerp(coverTint, Color.White, 0.55f), spec.tintMix)
+    val restColor = lerp(Color.White, sungColor, 0.5f)
+    val fs = (34f * vm.lyricsPct.coerceIn(50, 160) / 100f * spec.scale).toInt().coerceAtLeast(14)
     val trSize = (fs * 55 / 100).coerceAtLeast(12)
     val trOn = vm.lyricsTransOn && vm.lyricsTrans.size == lines.size
     val al = if (vm.lyricsLeft) TextAlign.Start else TextAlign.Center
@@ -374,10 +386,22 @@ private fun LyricsList(vm: MainViewModel, pos: Long) {
             }
             val blurR by animateDpAsState(blurTarget, tween(450), label = "blur")
             val a by animateFloatAsState(alphaTarget, tween(450), label = "alpha")
-            val text = if (line.text.isBlank()) "..." else line.text
+            val raw = if (line.text.isBlank()) "..." else line.text
+            val text = if (spec.caps) raw.uppercase() else raw
             val tr = if (trOn) vm.lyricsTrans[i] else ""
+            val side = if (moving) sides.getOrElse(i) { 0 } else 0
+            val lineAl = if (!moving) al else when (side) {
+                -1 -> TextAlign.Start
+                1 -> TextAlign.End
+                else -> if (vm.lyricsLeft) TextAlign.Start else TextAlign.Center
+            }
+            val dx by animateDpAsState(
+                if (moving && i != active) (side * spec.slide).dp else 0.dp,
+                tween(spec.animMs), label = "dx"
+            )
             val base = Modifier
                 .fillMaxWidth()
+                .offset(x = dx)
                 .clickable(enabled = synced) { vm.seekTo(line.timeMs) }
                 .padding(horizontal = 28.dp, vertical = 14.dp)
             val mod = if (blurR > 0.dp) base.blur(blurR) else base
@@ -397,7 +421,7 @@ private fun LyricsList(vm: MainViewModel, pos: Long) {
                         words.forEachIndexed { wi, w ->
                             val t = ((p - startC) / (w.length + 1).toFloat()).coerceIn(0f, 1f)
                             startC += w.length + 1
-                            withStyle(SpanStyle(color = Color.White.copy(alpha = 0.40f + 0.60f * t))) {
+                            withStyle(SpanStyle(color = sungColor.copy(alpha = 0.40f + 0.60f * t))) {
                                 append(w)
                             }
                             if (wi < words.size - 1) append(" ")
@@ -405,24 +429,26 @@ private fun LyricsList(vm: MainViewModel, pos: Long) {
                     }
                     Text(
                         styled, fontSize = fs.sp, lineHeight = (fs + 8).sp,
-                        fontWeight = FontWeight.Bold, textAlign = al,
+                        fontWeight = FontWeight.Bold, textAlign = lineAl,
+                        fontFamily = family, letterSpacing = spec.track.sp,
                         style = TextStyle(
-                            shadow = Shadow(Color.White.copy(alpha = 0.55f), Offset.Zero, 24f)
+                            shadow = Shadow(sungColor.copy(alpha = spec.glow), Offset.Zero, 24f)
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )
                 } else {
                     Text(
                         text, fontSize = fs.sp, lineHeight = (fs + 8).sp,
-                        fontWeight = FontWeight.Bold, textAlign = al,
-                        color = Color.White.copy(alpha = a),
+                        fontWeight = FontWeight.Bold, textAlign = lineAl,
+                        fontFamily = family, letterSpacing = spec.track.sp,
+                        color = restColor.copy(alpha = a),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
                 if (tr.isNotBlank()) {
                     Text(
                         tr, fontSize = trSize.sp, lineHeight = (trSize + 6).sp,
-                        fontWeight = FontWeight.Medium, textAlign = al,
+                        fontWeight = FontWeight.Medium, textAlign = lineAl,
                         color = Color.White.copy(alpha = a * 0.7f),
                         modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
                     )

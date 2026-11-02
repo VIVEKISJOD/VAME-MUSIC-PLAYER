@@ -1,4 +1,10 @@
-# VAME Music - full changelog (up to zip step60, v0.36.0, 28 Oct 2026)
+# VAME Music - full changelog (up to zip step61, v0.37.0, 28 Oct 2026)
+
+## step61 (v0.37.0) - includes everything up to step60
+- New: lyric styles. Soft (rounded puffy font), Dark (metal font, red), Rap (tall bold CAPS), Romantic (elegant italic), Party (wide bold, cover colours) and Retro (golden serif). The colour of the sung line also comes from the cover. Auto guesses the style from the title, the artist and how fast the words come; if it is not sure it keeps the Classic look. Pick a style yourself in the Aa panel on the lyrics page or in Settings > Lyrics.
+- New: moving lines. Slow songs keep the lines in the middle, medium songs move them left and right every two lines, fast songs every line. Other lines sit a little to their side and slide to the middle when sung. Switch it off with "Moving lines" (synced lyrics only).
+- Fonts are not inside the zip. Upload the free Google Fonts files (Baloo 2, Metal Mania, Teko, Playfair Display, Bungee, Rozha One) to app/src/main/assets/fonts/ (see the README.txt there). A style without its font uses the normal font.
+- New: playlist song list. No more boxes: a clean list with the number (or moving bars on the song that is playing), cover, title, artist with length, a three dots menu and a thin line between songs. The song that plays is marked in the accent colour.
 
 ## step60 (v0.36.0) - includes everything up to step59
 - New: Settings > Sound. Equalizer with a switch, presets (Flat, Bass, Vocal, Rock, Pop, Treble, Custom) and one slider for every band. Bass boost, Loudness (up to +10 dB) and 3D sound (spatial, best with headphones), each with its own slider.

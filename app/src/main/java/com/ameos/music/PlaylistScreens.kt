@@ -170,7 +170,7 @@ fun PlaylistScreen(vm: MainViewModel) {
                     state = listState,
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 150.dp)
                 ) {
-                    itemsIndexed(shown) { _, s -> PlaylistSongRow(vm, pl, s) }
+                    itemsIndexed(shown) { i, s -> PlaylistSongRow(vm, pl, s, i + 1) }
                 }
             }
         }
@@ -196,47 +196,67 @@ fun PlaylistScreen(vm: MainViewModel) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun PlaylistSongRow(vm: MainViewModel, pl: Playlist, s: Song) {
+private fun PlaylistSongRow(vm: MainViewModel, pl: Playlist, s: Song, number: Int) {
     var menu by remember { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .appear()
-            .padding(vertical = 4.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .glassFill()
-            .combinedClickable(
-                onClick = { vm.play(s, pl.songs) },
-                onLongClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    vm.songMenu = s
+    val playing = vm.current?.url == s.url
+    val mins = if (s.durationSec > 0L) (s.durationSec / 60).toString() + ":" + (s.durationSec % 60).toString().padStart(2, '0') else ""
+    Column(Modifier.fillMaxWidth().appear()) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(if (playing) Pal.accent.copy(alpha = 0.12f) else Color.Transparent)
+                .combinedClickable(
+                    onClick = { vm.play(s, pl.songs) },
+                    onLongClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        vm.songMenu = s
+                    }
+                )
+                .padding(start = 6.dp, end = 2.dp, top = 8.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // number, or the moving bars icon on the song that is playing
+            Box(Modifier.width(28.dp), contentAlignment = Alignment.Center) {
+                if (playing) {
+                    Icon(Icons.Filled.GraphicEq, null, tint = Pal.accent, modifier = Modifier.size(18.dp))
+                } else {
+                    Text(number.toString(), fontSize = 13.sp, color = Pal.textDim)
                 }
-            )
-            .padding(10.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Cover(s.cover, Modifier.size(52.dp), RoundedCornerShape(10.dp))
-        Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f)) {
-            Text(s.title, fontSize = 16.sp, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(s.artist, fontSize = 13.sp, color = Pal.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
-        Box {
-            IconButton(onClick = { menu = true }) {
-                Icon(Icons.Filled.MoreHoriz, null, tint = Pal.textDim)
             }
-            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                DropdownMenuItem(
-                    text = { Text("Play next") },
-                    onClick = { menu = false; vm.playNext(s) }
+            Cover(s.cover, Modifier.size(50.dp), RoundedCornerShape(9.dp))
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    s.title, fontSize = 16.sp, fontWeight = FontWeight.Medium,
+                    color = if (playing) Pal.accent else Color.White,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis
                 )
-                DropdownMenuItem(
-                    text = { Text("Remove from playlist") },
-                    onClick = { menu = false; vm.removeFromPlaylist(pl.id, s) }
+                Text(
+                    if (mins.isNotEmpty()) artistName(s.artist) + "  \u2022  " + mins else artistName(s.artist),
+                    fontSize = 13.sp, color = Pal.muted, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 2.dp)
                 )
             }
+            Box {
+                IconButton(onClick = { menu = true }) {
+                    Icon(Icons.Filled.MoreVert, null, tint = Pal.textDim)
+                }
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    DropdownMenuItem(
+                        text = { Text("Play next") },
+                        onClick = { menu = false; vm.playNext(s) }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Remove from playlist") },
+                        onClick = { menu = false; vm.removeFromPlaylist(pl.id, s) }
+                    )
+                }
+            }
         }
+        // thin line that starts under the cover, not under the number
+        Box(Modifier.fillMaxWidth().padding(start = 46.dp).height(1.dp).background(Color(0x12FFFFFF)))
     }
 }
 

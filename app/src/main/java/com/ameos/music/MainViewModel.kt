@@ -229,6 +229,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             loadLyrics(lastSong)
         }
         playlists.addAll(PlaylistStore.load(app))
+        LyricStyle.load(app)
         player.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(playing: Boolean) {
                 isPlaying = playing

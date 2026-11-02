@@ -257,6 +257,22 @@ fun LyricsTools(
                     )
                     Text("A", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
+                Text(
+                    "Style: " + LyricStyle.names[LyricStyle.choice], fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold, color = Color(0xFFD0D0D0),
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+                KitChips(LyricStyle.choice, LyricStyle.names) {
+                    LyricStyle.choice = it
+                    LyricStyle.save(ctx)
+                }
+                KitSwitch(
+                    "Moving lines", "Lines go left and right with the speed of the song.",
+                    LyricStyle.moving
+                ) {
+                    LyricStyle.moving = it
+                    LyricStyle.save(ctx)
+                }
             }
         }
         if (vm.lyricsTransOn && (vm.lyricsTransBusy || vm.lyricsTransError.isNotBlank())) {
