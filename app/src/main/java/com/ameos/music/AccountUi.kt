@@ -144,7 +144,7 @@ fun LoginScreen(vm: MainViewModel) {
                 Column(Modifier.weight(1f).padding(start = 8.dp)) {
                     Text(
                         "Sign in with Google", fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold, color = Color.White
+                        fontWeight = FontWeight.SemiBold, color = Pal.fg
                     )
                     Text(
                         "Optional. Only used to show your YouTube Music library.",
@@ -156,26 +156,26 @@ fun LoginScreen(vm: MainViewModel) {
                     // TV: a button that opens the on-screen keyboard (it also opens by itself on a text field)
                     Row(
                         Modifier
-                            .padClick(RoundedCornerShape(50), Color(0x33FFFFFF), 1.05f) {
+                            .padClick(RoundedCornerShape(50), Pal.fg.copy(alpha = 0.12f), 1.05f) {
                                 holder[0]?.let { showKeyboard(it) }
                             }
                             .padding(horizontal = 18.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Filled.Keyboard, null, tint = Color.White, modifier = Modifier.size(24.dp))
+                        Icon(Icons.Filled.Keyboard, null, tint = Pal.fg, modifier = Modifier.size(24.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Keyboard", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                        Text("Keyboard", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Pal.fg)
                     }
                     Spacer(Modifier.width(8.dp))
                     Row(
                         Modifier
-                            .padClick(RoundedCornerShape(50), Color(0x33FFFFFF), 1.05f) {
+                            .padClick(RoundedCornerShape(50), Pal.fg.copy(alpha = 0.12f), 1.05f) {
                                 holder[0]?.let { hideKeyboard(it) }
                             }
                             .padding(horizontal = 18.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Hide keyboard", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                        Text("Hide keyboard", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Pal.fg)
                     }
                     Spacer(Modifier.width(8.dp))
                     Row(
@@ -199,12 +199,12 @@ fun LoginScreen(vm: MainViewModel) {
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                         .clip(RoundedCornerShape(18.dp))
-                        .background(Color(0x22FFFFFF))
+                        .background(Stroke)
                         .padding(14.dp)
                 ) {
                     Text(
                         "No typing: sign in from your phone", fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold, color = Color.White
+                        fontWeight = FontWeight.Bold, color = Pal.fg
                     )
                     Text(
                         "On your phone (same Wi-Fi, already signed in): VAME > Settings > Account > " +
@@ -283,7 +283,7 @@ private fun SendToTv() {
     var code by remember { androidx.compose.runtime.mutableStateOf("") }
     var msg by remember { androidx.compose.runtime.mutableStateOf("") }
     Text(
-        "Sign in a TV", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White,
+        "Sign in a TV", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Pal.fg,
         modifier = Modifier.padding(top = 6.dp)
     )
     Text(
@@ -301,8 +301,8 @@ private fun SendToTv() {
         ),
         shape = RoundedCornerShape(20.dp),
         colors = androidx.compose.material3.TextFieldDefaults.colors(
-            focusedContainerColor = Color(0x33FFFFFF),
-            unfocusedContainerColor = Color(0x33FFFFFF),
+            focusedContainerColor = Pal.fg.copy(alpha = 0.12f),
+            unfocusedContainerColor = Pal.fg.copy(alpha = 0.12f),
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent
         ),
@@ -349,7 +349,7 @@ private fun AccButton(text: String, onClick: () -> Unit) {
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+        Text(text, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Pal.fg)
     }
     Spacer(Modifier.height(8.dp))
 }
@@ -375,7 +375,7 @@ fun AccountSection(vm: MainViewModel, label: Boolean = true) {
             Column(Modifier.weight(1f)) {
                 Text(
                     if (vm.ytName.isBlank()) "Google account" else vm.ytName,
-                    fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
+                    fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Pal.fg,
                     maxLines = 1, overflow = TextOverflow.Ellipsis
                 )
                 Text(

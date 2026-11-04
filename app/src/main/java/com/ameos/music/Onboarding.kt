@@ -61,7 +61,7 @@ fun OnboardingScreen(vm: MainViewModel) {
         ) {
             Text(
                 "What type of songs do you like?",
-                fontSize = if (tv) 36.sp else 32.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
+                fontSize = if (tv) 36.sp else 32.sp, fontWeight = FontWeight.SemiBold, color = Pal.fg,
                 modifier = Modifier.padding(top = if (tv) 24.dp else 40.dp)
             )
             Text(
@@ -89,7 +89,7 @@ fun OnboardingScreen(vm: MainViewModel) {
                             ) {
                                 Text(
                                     g, fontSize = 17.sp, fontWeight = FontWeight.Bold,
-                                    color = if (on) Color(0xFF3A1014) else Color.White,
+                                    color = if (on) Color(0xFF3A1014) else Pal.fg,
                                     textAlign = TextAlign.Center
                                 )
                             }
@@ -107,7 +107,7 @@ fun OnboardingScreen(vm: MainViewModel) {
             ) {
                 Text(
                     if (sel.isEmpty()) "Skip" else "Continue",
-                    fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color.White
+                    fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Pal.fg
                 )
             }
         }

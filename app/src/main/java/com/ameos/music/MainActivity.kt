@@ -76,6 +76,7 @@ class MainActivity : ComponentActivity() {
         Pal.load(applicationContext)
         UiOpts.load(applicationContext)
         UiOpts.applyTv(applicationContext)
+        if (UiOpts.tv) Pal.light = false
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(AndroidColor.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.dark(AndroidColor.TRANSPARENT)
@@ -167,6 +168,18 @@ fun VameRoot(vm: MainViewModel) {
     if (vm.showUpdate && vm.updateInfo != null) UpdateDialog(vm)
     val tablet = isTabletLandscape()
     val phoneLand = isPhoneLandscape()
+    // status / navigation bar icons: dark on the light pages, light on the dark screens
+    val act = androidx.compose.ui.platform.LocalContext.current as? ComponentActivity
+    val darkBars = !Pal.light || vm.artistOpen || (vm.showPlayer && vm.current != null && !tablet) ||
+        (vm.showLyrics && vm.current != null && !tablet) || vm.recapOpen
+    LaunchedEffect(darkBars) {
+        act?.enableEdgeToEdge(
+            statusBarStyle = if (darkBars) SystemBarStyle.dark(AndroidColor.TRANSPARENT)
+            else SystemBarStyle.light(AndroidColor.TRANSPARENT, AndroidColor.TRANSPARENT),
+            navigationBarStyle = if (darkBars) SystemBarStyle.dark(AndroidColor.TRANSPARENT)
+            else SystemBarStyle.light(AndroidColor.TRANSPARENT, AndroidColor.TRANSPARENT)
+        )
+    }
     // tablet standby only exists on the sideways tablet; leaving it (rotate) switches it off
     LaunchedEffect(tablet) { if (!tablet) vm.tabStandby = false }
     // Standby: a phone turned sideways while music plays opens the big landscape player by itself,
@@ -230,7 +243,7 @@ fun VameRoot(vm: MainViewModel) {
             Box(
                 Modifier.fillMaxSize().background(
                     Brush.verticalGradient(
-                        listOf(pageTint.copy(alpha = if (Pal.amoled) 0.30f else 0.42f), Color.Transparent),
+                        listOf(pageTint.copy(alpha = if (Pal.light) 0.22f else if (Pal.amoled) 0.30f else 0.42f), Color.Transparent),
                         endY = 1100f
                     )
                 )
@@ -265,7 +278,7 @@ fun VameRoot(vm: MainViewModel) {
                     enter = fadeIn(tween(320)) + scaleIn(tween(360, easing = FastOutSlowInEasing), initialScale = 0.96f),
                     exit = fadeOut(tween(240))
                 ) {
-                    StandbyPlayer(vm)
+                    DarkScope { StandbyPlayer(vm) }
                 }
                 // lyrics on a tablet: full screen, cover + name on the left, lyrics on the right
                 AnimatedVisibility(
@@ -273,7 +286,7 @@ fun VameRoot(vm: MainViewModel) {
                     enter = fadeIn(tween(320)) + scaleIn(tween(360, easing = FastOutSlowInEasing), initialScale = 0.96f),
                     exit = fadeOut(tween(240))
                 ) {
-                    TabletLyricsScreen(vm)
+                    DarkScope { TabletLyricsScreen(vm) }
                 }
             } else {
                 Box(Modifier.fillMaxSize().nestedScroll(dockScroll)) {
@@ -285,7 +298,7 @@ fun VameRoot(vm: MainViewModel) {
                     cover = vm.current?.cover,
                     fly = !phoneLand
                 ) {
-                    if (phoneLand) StandbyPlayer(vm) else NowPlayingScreen(vm)
+                    DarkScope { if (phoneLand) StandbyPlayer(vm) else NowPlayingScreen(vm) }
                 }
                 // lyrics grow from the bottom left (where the lyrics button is) and shrink back
                 MorphLayer(
@@ -293,7 +306,7 @@ fun VameRoot(vm: MainViewModel) {
                     originX = 0.15f, originY = 0.95f, startScaleX = 0.3f, startScaleY = 0.2f
                 ) {
                     // sideways phone: cover + title on the left, lyrics on the right
-                    if (phoneLand) TabletLyricsScreen(vm) else LyricsScreen(vm)
+                    DarkScope { if (phoneLand) TabletLyricsScreen(vm) else LyricsScreen(vm) }
                 }
             }
             MorphLayer(
@@ -301,6 +314,12 @@ fun VameRoot(vm: MainViewModel) {
                 originX = 0.92f, originY = 0.04f, startScaleX = 0.25f, startScaleY = 0.25f
             ) {
                 SettingsScreen(vm)
+            }
+            MorphLayer(
+                visible = GlassUi.open,
+                originX = 0.5f, originY = 0.3f, startScaleX = 0.8f, startScaleY = 0.8f
+            ) {
+                GlassSettingsScreen(vm)
             }
             // the music stays on top of Settings (pill or box), so it can be stopped from there
             if (UiOpts.tv) {
@@ -329,7 +348,7 @@ fun VameRoot(vm: MainViewModel) {
                 visible = vm.recapOpen,
                 originX = 0.5f, originY = 0.5f, startScaleX = 0.8f, startScaleY = 0.8f
             ) {
-                RecapScreen(vm)
+                DarkScope { RecapScreen(vm) }
             }
             AnimatedVisibility(
                 visible = vm.showOnboarding,
@@ -400,7 +419,8 @@ fun MainPages(vm: MainViewModel, tablet: Boolean, dockFolded: Boolean, onExpand:
             if (!(UiOpts.tv && covered)) AnimatedContent(
                 targetState = vm.tab,
                 transitionSpec = {
-                    val dir = if (targetState > initialState) 1 else -1
+                    val order = listOf(0, 4, 2, 3, 1)
+                    val dir = if (order.indexOf(targetState) > order.indexOf(initialState)) 1 else -1
                     (fadeIn(tween(260, delayMillis = 70)) +
                         slideInHorizontally(tween(340, easing = FastOutSlowInEasing)) { dir * (it / 12) } +
                         scaleIn(tween(340, easing = FastOutSlowInEasing), initialScale = 0.95f)) togetherWith
@@ -411,25 +431,10 @@ fun MainPages(vm: MainViewModel, tablet: Boolean, dockFolded: Boolean, onExpand:
                 when (t) {
                     0 -> if (UiOpts.tv) TvHome(vm) else HomeScreen(vm)
                     1 -> ExploreScreen(vm)
-                    2 -> YourTypeScreen(vm)
+                    2 -> RadioScreen(vm)
+                    4 -> NewScreen(vm)
                     else -> LibraryScreen(vm)
                 }
-            }
-        }
-        Column(
-            Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .widthIn(max = if (tablet) 640.dp else 2000.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            val err = vm.error
-            if (err != null) {
-                Text(err, color = Color(0xFFFFB4AB), fontSize = 12.sp)
-            }
-            if (!tablet) {
-                Dock(vm, dockFolded, onExpand)
             }
         }
         AnimatedVisibility(
@@ -471,6 +476,23 @@ fun MainPages(vm: MainViewModel, tablet: Boolean, dockFolded: Boolean, onExpand:
         ) {
             ArtistScreen(vm)
         }
+        Column(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .zIndex(5f)
+                .navigationBarsPadding()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .widthIn(max = if (tablet) 640.dp else 2000.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            val err = vm.error
+            if (err != null) {
+                Text(err, color = Color(0xFFFFB4AB), fontSize = 12.sp)
+            }
+            if (!tablet) {
+                Dock(vm, dockFolded, onExpand)
+            }
+        }
     }
 }
 
@@ -485,7 +507,7 @@ private fun PlayerPanel(vm: MainViewModel) {
             .width(panelW)
             .fillMaxHeight()
     ) {
-        NowPlayingScreen(vm)
+        DarkScope { NowPlayingScreen(vm) }
     }
 }
 

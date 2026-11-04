@@ -116,7 +116,7 @@ private fun BoxBtn(icon: androidx.compose.ui.graphics.vector.ImageVector, size: 
             },
         contentAlignment = Alignment.Center
     ) {
-        Icon(icon, null, tint = Color.White, modifier = Modifier.size((size * 0.62f).dp))
+        Icon(icon, null, tint = Pal.fg, modifier = Modifier.size((size * 0.62f).dp))
     }
 }
 
@@ -218,7 +218,7 @@ private fun TabletMiniBox(vm: MainViewModel, visible: Boolean, onOpen: () -> Uni
                         Modifier
                             .size(42.dp)
                             .clip(CircleShape)
-                            .background(Color(0x40FFFFFF))
+                            .background(Pal.fg.copy(alpha = 0.14f))
                             .clickable {
                                 tick()
                                 vm.toggle()
@@ -227,12 +227,12 @@ private fun TabletMiniBox(vm: MainViewModel, visible: Boolean, onOpen: () -> Uni
                     ) {
                         if (vm.loading) {
                             CircularProgressIndicator(
-                                Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp
+                                Modifier.size(20.dp), color = Pal.fg, strokeWidth = 2.dp
                             )
                         } else {
                             Icon(
                                 if (vm.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                                null, tint = Color.White, modifier = Modifier.size(26.dp)
+                                null, tint = Pal.fg, modifier = Modifier.size(26.dp)
                             )
                         }
                     }

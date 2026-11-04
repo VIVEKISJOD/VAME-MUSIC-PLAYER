@@ -4,6 +4,7 @@ import android.content.Context
 import android.media.audiofx.BassBoost
 import android.media.audiofx.Equalizer
 import android.media.audiofx.LoudnessEnhancer
+import android.media.audiofx.PresetReverb
 import android.media.audiofx.Virtualizer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -15,6 +16,7 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -24,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.media3.common.C
+import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 
@@ -49,6 +52,8 @@ object SoundFx {
     var loud by mutableIntStateOf(0)       // 0 .. 1000 (milli-dB gain)
     var spatial by mutableIntStateOf(0)    // 0 .. 1000
     var crossfade by mutableIntStateOf(0)  // seconds, 0 = off
+    var pitchSemis by mutableFloatStateOf(0f) // step64 Effects page: -12 .. +12 semitones
+    var reverb by mutableIntStateOf(0)        // step64 Effects page: 0 .. 100 percent (0 = off)
     var note by mutableStateOf("")
 
     private var ctx: Context? = null
@@ -56,14 +61,22 @@ object SoundFx {
     private var bb: BassBoost? = null
     private var le: LoudnessEnhancer? = null
     private var vi: Virtualizer? = null
+    private var rv: PresetReverb? = null
+    private var pl: ExoPlayer? = null
     private var fading = false
 
     private fun prefs() = ctx?.getSharedPreferences("vame_sound", Context.MODE_PRIVATE)
 
     fun init(c: Context, player: ExoPlayer) {
         ctx = c.applicationContext
+        pl = player
         load()
+        applyPitch()
         player.addListener(object : Player.Listener {
+            override fun onPlaybackParametersChanged(playbackParameters: PlaybackParameters) {
+                // the app sets the speed alone in a few places; keep the chosen pitch
+                applyPitch()
+            }
             override fun onAudioSessionIdChanged(audioSessionId: Int) {
                 attach(audioSessionId)
             }
@@ -80,6 +93,8 @@ object SoundFx {
         loud = p.getInt("loud", 0)
         spatial = p.getInt("spatial", 0)
         crossfade = p.getInt("crossfade", 0)
+        pitchSemis = p.getFloat("pitchSemis", 0f).coerceIn(-12f, 12f)
+        reverb = p.getInt("reverb", 0).coerceIn(0, 100)
         val saved = (p.getString("levels", "") ?: "").split(",").mapNotNull { it.toFloatOrNull() }
         if (saved.isNotEmpty()) {
             levels.clear()
@@ -96,6 +111,8 @@ object SoundFx {
             .putInt("loud", loud)
             .putInt("spatial", spatial)
             .putInt("crossfade", crossfade)
+            .putFloat("pitchSemis", pitchSemis)
+            .putInt("reverb", reverb)
             .putString("levels", levels.joinToString(","))
             .apply()
     }
@@ -105,6 +122,8 @@ object SoundFx {
         try { bb?.release() } catch (e: Exception) { }
         try { le?.release() } catch (e: Exception) { }
         try { vi?.release() } catch (e: Exception) { }
+        try { rv?.release() } catch (e: Exception) { }
+        rv = null
         eq = null
         bb = null
         le = null
@@ -118,11 +137,13 @@ object SoundFx {
         bb = try { BassBoost(0, sessionId) } catch (e: Throwable) { null }
         le = try { LoudnessEnhancer(sessionId) } catch (e: Throwable) { null }
         vi = try { Virtualizer(0, sessionId) } catch (e: Throwable) { null }
+        rv = try { PresetReverb(0, sessionId) } catch (e: Throwable) { null }
         val missing = ArrayList<String>()
         if (eq == null) missing.add("equalizer")
         if (bb == null) missing.add("bass boost")
         if (le == null) missing.add("loudness")
         if (vi == null) missing.add("3D sound")
+        if (rv == null) missing.add("reverb")
         note = if (missing.isEmpty()) "" else "This phone does not support: " + missing.joinToString(", ") + "."
         try {
             val e = eq
@@ -138,6 +159,7 @@ object SoundFx {
     }
 
     fun apply() {
+        applyReverb()
         try {
             val e = eq
             if (e != null) {
@@ -179,6 +201,53 @@ object SoundFx {
             }
         } catch (e: Exception) {
         }
+    }
+
+    private fun applyReverb() {
+        try {
+            val r = rv ?: return
+            if (reverb > 0) {
+                r.setPreset(
+                    if (reverb < 34) PresetReverb.PRESET_SMALLROOM
+                    else if (reverb < 67) PresetReverb.PRESET_MEDIUMHALL
+                    else PresetReverb.PRESET_LARGEHALL
+                )
+                r.setEnabled(true)
+            } else {
+                r.setEnabled(false)
+            }
+        } catch (e: Exception) {
+        }
+    }
+
+    // pitch in semitones: the player keeps its speed, only the pitch changes
+    fun applyPitch() {
+        val p = pl ?: return
+        try {
+            val cur = p.playbackParameters
+            val want = Math.pow(2.0, (pitchSemis / 12f).toDouble()).toFloat()
+            if (Math.abs(cur.pitch - want) > 0.001f) {
+                p.setPlaybackParameters(PlaybackParameters(cur.speed, want))
+            }
+        } catch (e: Exception) {
+        }
+    }
+
+    // Effects page: speed (the app's own speed value), pitch and reverb in one call
+    fun setEffects(vm: MainViewModel, speed: Float, semis: Float, rev: Int) {
+        vm.speed = speed.coerceIn(0.5f, 2f)
+        Prefs.setSpeed(vm.getApplication<android.app.Application>(), vm.speed)
+        pitchSemis = semis.coerceIn(-12f, 12f)
+        reverb = rev.coerceIn(0, 100)
+        try {
+            val p = pl
+            if (p != null) {
+                val want = Math.pow(2.0, (pitchSemis / 12f).toDouble()).toFloat()
+                p.setPlaybackParameters(PlaybackParameters(vm.speed, want))
+            }
+        } catch (e: Exception) {
+        }
+        applyReverb()
     }
 
     fun pickPreset(i: Int) {
@@ -234,7 +303,7 @@ private fun FxSlider(
 ) {
     Column(Modifier.fillMaxWidth().padding(top = 4.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(label, fontSize = 15.sp, color = Color.White)
+            Text(label, fontSize = 15.sp, color = Pal.fg)
             Text(valueText, fontSize = 13.sp, color = Pal.muted)
         }
         Slider(
@@ -245,7 +314,7 @@ private fun FxSlider(
             colors = SliderDefaults.colors(
                 thumbColor = Pal.accent,
                 activeTrackColor = Pal.accent,
-                inactiveTrackColor = Color(0x33FFFFFF)
+                inactiveTrackColor = Pal.fg.copy(alpha = 0.18f)
             )
         )
     }

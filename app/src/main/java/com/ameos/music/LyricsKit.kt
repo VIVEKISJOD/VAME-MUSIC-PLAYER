@@ -205,6 +205,95 @@ private fun ToolBtn(icon: ImageVector, lit: Boolean, onClick: () -> Unit) {
 
 private val PanelBg = Color(0xE6141414)
 
+// size slider + style chips + Moving lines switch (dark card, used under the tool row and on the player's lyrics page)
+@Composable
+internal fun LyricsStylePanel(vm: MainViewModel, modifier: Modifier = Modifier) {
+    val ctx = LocalContext.current
+    Column(
+        modifier
+            .padding(horizontal = 16.dp)
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .background(PanelBg)
+            .padding(start = 18.dp, end = 18.dp, top = 12.dp, bottom = 10.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "Lyrics size: " + vm.lyricsPct + "%", fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold, color = Color(0xFFD0D0D0),
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                "Reset", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFFD0D0D0),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .clickable { vm.updateLyricsPct(100, true) }
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            )
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("A", fontSize = 13.sp, color = Color(0xFFD0D0D0))
+            Slider(
+                value = vm.lyricsPct.toFloat(),
+                onValueChange = { vm.updateLyricsPct(it.roundToInt(), false) },
+                onValueChangeFinished = { vm.updateLyricsPct(vm.lyricsPct, true) },
+                valueRange = 50f..160f,
+                modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+                colors = SliderDefaults.colors(
+                    thumbColor = Color.White,
+                    activeTrackColor = Color.White.copy(alpha = 0.85f),
+                    inactiveTrackColor = Color(0x33FFFFFF)
+                )
+            )
+            Text("A", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
+        }
+        Text(
+            "Style: " + LyricStyle.names[LyricStyle.choice], fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold, color = Color(0xFFD0D0D0),
+            modifier = Modifier.padding(top = 4.dp)
+        )
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(top = 8.dp, bottom = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            LyricStyle.names.forEachIndexed { i, n ->
+                val on = LyricStyle.choice == i
+                Text(
+                    n, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                    color = if (on) Color(0xFF16161A) else Color.White,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(if (on) Color.White else Color(0x26FFFFFF))
+                        .clickable {
+                            LyricStyle.choice = i
+                            LyricStyle.save(ctx)
+                        }
+                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                )
+            }
+        }
+        Row(
+            Modifier.fillMaxWidth().padding(top = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(Modifier.weight(1f).padding(end = 10.dp)) {
+                Text("Moving lines", fontSize = 15.sp, color = Color.White)
+                Text(
+                    "Lines go left and right with the speed of the song.",
+                    fontSize = 12.sp, color = Color(0xFFB0B0B0)
+                )
+            }
+            androidx.compose.material3.Switch(
+                checked = LyricStyle.moving,
+                onCheckedChange = {
+                    LyricStyle.moving = it
+                    LyricStyle.save(ctx)
+                }
+            )
+        }
+    }
+}
+
 // Row of round tools: provider, translate, Hinglish, share, text size, fullscreen.
 // Size and translate open a small panel above the row.
 @Composable
@@ -219,61 +308,7 @@ fun LyricsTools(
     val ctx = LocalContext.current
     Column(modifier.fillMaxWidth()) {
         AnimatedVisibility(visible = panel == 1) {
-            Column(
-                Modifier
-                    .padding(horizontal = 16.dp)
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(PanelBg)
-                    .padding(start = 18.dp, end = 18.dp, top = 12.dp, bottom = 6.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        "Lyrics size: " + vm.lyricsPct + "%", fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold, color = Color(0xFFD0D0D0),
-                        modifier = Modifier.weight(1f)
-                    )
-                    Text(
-                        "Reset", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFFD0D0D0),
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(10.dp))
-                            .clickable { vm.updateLyricsPct(100, true) }
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("A", fontSize = 13.sp, color = Color(0xFFD0D0D0))
-                    Slider(
-                        value = vm.lyricsPct.toFloat(),
-                        onValueChange = { vm.updateLyricsPct(it.roundToInt(), false) },
-                        onValueChangeFinished = { vm.updateLyricsPct(vm.lyricsPct, true) },
-                        valueRange = 50f..160f,
-                        modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
-                        colors = SliderDefaults.colors(
-                            thumbColor = Color.White,
-                            activeTrackColor = Color.White.copy(alpha = 0.85f),
-                            inactiveTrackColor = Color(0x33FFFFFF)
-                        )
-                    )
-                    Text("A", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                }
-                Text(
-                    "Style: " + LyricStyle.names[LyricStyle.choice], fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold, color = Color(0xFFD0D0D0),
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-                KitChips(LyricStyle.choice, LyricStyle.names) {
-                    LyricStyle.choice = it
-                    LyricStyle.save(ctx)
-                }
-                KitSwitch(
-                    "Moving lines", "Lines go left and right with the speed of the song.",
-                    LyricStyle.moving
-                ) {
-                    LyricStyle.moving = it
-                    LyricStyle.save(ctx)
-                }
-            }
+            LyricsStylePanel(vm)
         }
         if (vm.lyricsTransOn && (vm.lyricsTransBusy || vm.lyricsTransError.isNotBlank())) {
             Text(
@@ -328,17 +363,17 @@ fun LyricsProviderDialog(vm: MainViewModel) {
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 22.dp)
         ) {
-            Text("Lyrics provider", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text("Lyrics provider", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Pal.fg)
 
             val cur = if (vm.lyricsSource.isBlank()) "none" else vm.lyricsSource
             val kind = if (vm.lyrics.isEmpty()) "" else if (vm.lyricsSynced) " (synced)" else " (plain text)"
             Text(
-                "Current: " + cur + kind, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
+                "Current: " + cur + kind, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Pal.fg,
                 modifier = Modifier
                     .padding(top = 14.dp)
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(20.dp))
-                    .background(Color(0x22FFFFFF))
+                    .background(Pal.fg.copy(alpha = 0.08f))
                     .padding(16.dp)
             )
 
@@ -352,23 +387,23 @@ fun LyricsProviderDialog(vm: MainViewModel) {
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Filled.Refresh, null, tint = Color.White, modifier = Modifier.size(24.dp))
+                Icon(Icons.Filled.Refresh, null, tint = Pal.fg, modifier = Modifier.size(24.dp))
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("Try another source", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Try another source", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Pal.fg)
                     Text(
                         "Skips the current provider and searches the others.",
                         fontSize = 13.sp, color = Pal.textDim
                     )
                 }
                 if (vm.lyricsTrying) {
-                    CircularProgressIndicator(Modifier.size(22.dp), color = Color.White, strokeWidth = 2.5.dp)
+                    CircularProgressIndicator(Modifier.size(22.dp), color = Pal.fg, strokeWidth = 2.5.dp)
                 }
             }
             if (vm.lyricsTryFail && !vm.lyricsTrying) {
                 Text(
                     "No other source has lyrics for this song.", fontSize = 13.sp,
-                    color = Color(0xFFFFB4A8), modifier = Modifier.padding(top = 8.dp, start = 4.dp)
+                    color = Color(0xFFD0442F), modifier = Modifier.padding(top = 8.dp, start = 4.dp)
                 )
             }
 
@@ -393,12 +428,12 @@ fun LyricsProviderDialog(vm: MainViewModel) {
                         onClick = null,
                         colors = RadioButtonDefaults.colors(
                             selectedColor = Pal.accent,
-                            unselectedColor = Color(0x99FFFFFF)
+                            unselectedColor = Pal.muted
                         ),
                         modifier = Modifier.padding(horizontal = 10.dp)
                     )
                     Column(Modifier.weight(1f)) {
-                        Text(n, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text(n, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Pal.fg)
                         Text(
                             LyricsRepo.providerNotes[i], fontSize = 13.sp, color = Pal.textDim,
                             maxLines = 2, overflow = TextOverflow.Ellipsis

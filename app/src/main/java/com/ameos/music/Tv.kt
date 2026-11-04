@@ -334,7 +334,7 @@ fun PadSlider(
             colors = SliderDefaults.colors(
                 thumbColor = Pal.accent,
                 activeTrackColor = Pal.accent,
-                inactiveTrackColor = Color(0x33FFFFFF)
+                inactiveTrackColor = Pal.fg.copy(alpha = 0.18f)
             )
         )
         return

@@ -126,14 +126,14 @@ fun BigCard(item: ShelfItem, w: Dp, modifier: Modifier = Modifier) {
         }
         Text(
             item.title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-            color = if (item.active) Pal.accent else Color.White,
+            color = if (item.active) Pal.accent else Pal.fg,
             maxLines = 1, overflow = TextOverflow.Ellipsis,
             textAlign = if (item.round) TextAlign.Center else TextAlign.Start,
             modifier = Modifier.padding(top = 10.dp)
         )
         if (item.sub.isNotBlank()) {
             Text(
-                item.sub, fontSize = 12.sp, color = Color(0x99FFFFFF),
+                item.sub, fontSize = 12.sp, color = Pal.textDim,
                 maxLines = 1, overflow = TextOverflow.Ellipsis,
                 textAlign = if (item.round) TextAlign.Center else TextAlign.Start
             )
@@ -172,12 +172,12 @@ fun ShelfTitle(title: String, sub: String = "", trailing: (@Composable () -> Uni
     ) {
         Column(Modifier.weight(1f)) {
             Text(
-                title, fontSize = 21.sp, fontWeight = FontWeight.Bold, color = Color.White,
-                letterSpacing = (-0.3).sp, maxLines = 1, overflow = TextOverflow.Ellipsis
+                title, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Pal.fg,
+                letterSpacing = (-0.4).sp, maxLines = 1, overflow = TextOverflow.Ellipsis
             )
             if (sub.isNotBlank()) {
                 Text(
-                    sub.uppercase(), fontSize = 11.sp, letterSpacing = 0.8.sp, color = Color(0x99FFFFFF),
+                    sub.uppercase(), fontSize = 11.sp, letterSpacing = 0.8.sp, color = Pal.textDim,
                     maxLines = 1, overflow = TextOverflow.Ellipsis
                 )
             }
@@ -197,7 +197,8 @@ fun shimmerBrush(): Brush {
         label = "shimmerX"
     )
     return Brush.linearGradient(
-        colors = listOf(Color(0x12FFFFFF), Color(0x30FFFFFF), Color(0x12FFFFFF)),
+        colors = if (Pal.light) listOf(Color(0x14000000), Color(0x28000000), Color(0x14000000))
+        else listOf(Color(0x12FFFFFF), Color(0x30FFFFFF), Color(0x12FFFFFF)),
         start = Offset(x * 1400f - 500f, 0f),
         end = Offset(x * 1400f, 300f)
     )
@@ -245,7 +246,7 @@ fun EmptyState(
             Icon(icon, null, tint = Pal.accent, modifier = Modifier.size(30.dp))
         }
         Text(
-            title, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
+            title, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = Pal.fg,
             textAlign = TextAlign.Center, modifier = Modifier.padding(top = 14.dp)
         )
         Text(
@@ -258,7 +259,7 @@ fun EmptyState(
                 modifier = Modifier
                     .padding(top = 16.dp)
                     .clip(RoundedCornerShape(50))
-                    .background(Pal.accentDeep)
+                    .background(Pal.accent)
                     .clickable {
                         tick()
                         onAction()

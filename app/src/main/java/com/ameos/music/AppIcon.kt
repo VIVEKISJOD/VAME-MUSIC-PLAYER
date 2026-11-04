@@ -121,7 +121,7 @@ fun AppIconSection(label: Boolean = true) {
                         .background(Brush.linearGradient(listOf(v.a, v.b)))
                         .border(
                             if (on) 3.dp else 1.dp,
-                            if (on) Color.White else Color(0x44FFFFFF),
+                            if (on) Pal.fg else Pal.fg.copy(alpha = 0.25f),
                             RoundedCornerShape(20.dp)
                         ),
                     contentAlignment = Alignment.Center
@@ -133,7 +133,7 @@ fun AppIconSection(label: Boolean = true) {
                 }
                 Text(
                     v.name, fontSize = 11.sp,
-                    color = if (on) Color.White else Color(0xFF8C7C7E),
+                    color = if (on) Pal.fg else Color(0xFF8C7C7E),
                     fontWeight = if (on) FontWeight.Bold else FontWeight.Normal,
                     modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
                 )

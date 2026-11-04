@@ -3,6 +3,8 @@ package com.ameos.music
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.Composable
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.runtime.CompositionLocalProvider
@@ -32,9 +34,51 @@ private val VameColorsUnused = darkColorScheme(
     error = Color(0xFFFFB4AB)
 )
 
+// true inside the screens that are always dark (player, lyrics, artist page, standby, TV, recap)
+val LocalDark = compositionLocalOf { false }
+
+// a dark island inside the light app: white text, dark Material colours
+@Composable
+fun DarkScope(content: @Composable () -> Unit) {
+    val colors = darkColorScheme(
+        primary = Pal.accentSoft,
+        onPrimary = Color(0xFF1B1315),
+        background = Color(0xFF1C1B1B),
+        onBackground = Color.White,
+        surface = Color(0xFF1C1B1B),
+        onSurface = Color.White,
+        surfaceVariant = Color(0xFF2B2A2A),
+        onSurfaceVariant = Color(0xCCFFFFFF),
+        surfaceContainer = Color(0xE61E1D1D),
+        surfaceContainerHigh = Color(0xE6282727),
+        outline = Color(0x88FFFFFF),
+        error = Color(0xFFFFB4AB)
+    )
+    CompositionLocalProvider(LocalDark provides true) {
+        MaterialTheme(colorScheme = colors, typography = Typography()) { content() }
+    }
+}
+
 @Composable
 fun VameTheme(content: @Composable () -> Unit) {
-    val colors = darkColorScheme(
+    val colors = if (Pal.light) lightColorScheme(
+        primary = Pal.accent,
+        onPrimary = Color.White,
+        primaryContainer = Pal.accent.copy(alpha = 0.18f),
+        onPrimaryContainer = Pal.fg,
+        secondary = Pal.textDim,
+        onSecondary = Color.White,
+        background = Pal.bgMid,
+        onBackground = Pal.fg,
+        surface = Pal.bgMid,
+        onSurface = Pal.fg,
+        surfaceVariant = Pal.surface2,
+        onSurfaceVariant = Pal.textDim,
+        surfaceContainer = Color(0xF2F6F6FA),
+        surfaceContainerHigh = Color(0xF2EEEEF4),
+        outline = Pal.muted,
+        error = Color(0xFFB3261E)
+    ) else darkColorScheme(
         primary = Pal.accent,
         onPrimary = Color(0xFF1B1315),
         primaryContainer = Pal.accentDeep,

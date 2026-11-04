@@ -254,7 +254,7 @@ fun UpdateDialog(vm: MainViewModel) {
     AlertDialog(
         onDismissRequest = { if (!busy) vm.showUpdate = false },
         containerColor = Pal.surface,
-        titleContentColor = Color.White,
+        titleContentColor = Pal.fg,
         textContentColor = Pal.textDim,
         title = { Text("Update available: " + info.version) },
         text = {
@@ -264,7 +264,7 @@ fun UpdateDialog(vm: MainViewModel) {
                 if (busy) {
                     Text(
                         if (vm.updateProgress > 0) "Downloading... " + vm.updateProgress + "%" else "Downloading...",
-                        fontSize = 15.sp, color = Color.White,
+                        fontSize = 15.sp, color = Pal.fg,
                         modifier = Modifier.padding(top = 12.dp)
                     )
                     if (vm.updateProgress > 0) {

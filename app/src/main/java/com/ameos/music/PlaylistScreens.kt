@@ -84,18 +84,18 @@ fun PlaylistScreen(vm: MainViewModel) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { vm.closePlaylist() }) {
-                    Icon(Icons.Filled.ArrowBack, null, tint = Color.White)
+                    Icon(Icons.Filled.ArrowBack, null, tint = Pal.fg)
                 }
                 Spacer(Modifier.weight(1f))
                 IconButton(onClick = { menuOpen = true }) {
-                    Icon(Icons.Filled.MoreVert, null, tint = Color.White)
+                    Icon(Icons.Filled.MoreVert, null, tint = Pal.fg)
                 }
                 IconButton(onClick = {
                     vm.editPlaylistId = pl.id
                     vm.pendingSong = null
                     vm.showPlaylistDialog = true
                 }) {
-                    Icon(Icons.Filled.Edit, null, tint = Color.White)
+                    Icon(Icons.Filled.Edit, null, tint = Pal.fg)
                 }
             }
 
@@ -115,7 +115,7 @@ fun PlaylistScreen(vm: MainViewModel) {
                 Spacer(Modifier.height(12.dp))
                 Text(
                     pl.name, fontSize = 24.sp, fontWeight = FontWeight.Bold,
-                    color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                    color = Pal.fg, maxLines = 2, overflow = TextOverflow.Ellipsis,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
                 Text(pl.songs.size.toString() + " songs", fontSize = 13.sp, color = PDim)
@@ -127,20 +127,20 @@ fun PlaylistScreen(vm: MainViewModel) {
             ) {
                 Column {
                     Text("CREATED BY", fontSize = 11.sp, color = Pal.muted)
-                    Text("You", fontSize = 15.sp, color = Color.White)
+                    Text("You", fontSize = 15.sp, color = Pal.fg)
                 }
                 Spacer(Modifier.width(24.dp))
                 Column {
                     Text("LASTS", fontSize = 11.sp, color = Pal.muted)
-                    Text(mins.toString() + " Mins", fontSize = 15.sp, color = Color.White)
+                    Text(mins.toString() + " Mins", fontSize = 15.sp, color = Pal.fg)
                 }
                 Spacer(Modifier.weight(1f))
                 Row(
-                    Modifier.clip(RoundedCornerShape(50)).background(Color(0xFF5A1A1A)),
+                    Modifier.clip(RoundedCornerShape(50)).background(if (Pal.light) Pal.surface2 else Color(0xFF5A1A1A)),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = { vm.playPlaylist(pl.id, true) }) {
-                        Icon(Icons.Filled.Shuffle, null, tint = Color.White)
+                        Icon(Icons.Filled.Shuffle, null, tint = Pal.fg)
                     }
                     Box(
                         Modifier
@@ -154,7 +154,7 @@ fun PlaylistScreen(vm: MainViewModel) {
                     }
                 }
             }
-            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0x22FFFFFF)))
+            Box(Modifier.fillMaxWidth().height(1.dp).background(Stroke))
             if (findOn) FindBar(findQ, { findQ = it }) { findOn = false; findQ = "" }
 
             if (pl.songs.isEmpty()) {
@@ -168,13 +168,13 @@ fun PlaylistScreen(vm: MainViewModel) {
                 LazyColumn(
                     Modifier.weight(1f),
                     state = listState,
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 150.dp)
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 200.dp)
                 ) {
                     itemsIndexed(shown) { i, s -> PlaylistSongRow(vm, pl, s, i + 1) }
                 }
             }
         }
-        ScrollTopButton(listState, Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 100.dp))
+        ScrollTopButton(listState, Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 210.dp))
         MiniPlayer(
             vm,
             Modifier
@@ -230,7 +230,7 @@ private fun PlaylistSongRow(vm: MainViewModel, pl: Playlist, s: Song, number: In
             Column(Modifier.weight(1f)) {
                 Text(
                     s.title, fontSize = 16.sp, fontWeight = FontWeight.Medium,
-                    color = if (playing) Pal.accent else Color.White,
+                    color = if (playing) Pal.accent else Pal.fg,
                     maxLines = 1, overflow = TextOverflow.Ellipsis
                 )
                 Text(
@@ -256,7 +256,7 @@ private fun PlaylistSongRow(vm: MainViewModel, pl: Playlist, s: Song, number: In
             }
         }
         // thin line that starts under the cover, not under the number
-        Box(Modifier.fillMaxWidth().padding(start = 46.dp).height(1.dp).background(Color(0x12FFFFFF)))
+        Box(Modifier.fillMaxWidth().padding(start = 46.dp).height(1.dp).background(Stroke.copy(alpha = 0.5f)))
     }
 }
 
@@ -291,7 +291,7 @@ fun PlaylistEditDialog(vm: MainViewModel) {
         ) {
             Text(
                 if (editing != null) "Edit playlist" else "New playlist",
-                fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Pal.fg,
                 modifier = Modifier.align(Alignment.Start)
             )
             Spacer(Modifier.height(18.dp))
@@ -317,7 +317,7 @@ fun PlaylistEditDialog(vm: MainViewModel) {
                             .background(Color(0xAA000000)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Filled.Edit, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Filled.Edit, null, tint = Pal.fg, modifier = Modifier.size(18.dp))
                     }
                 } else {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -338,8 +338,8 @@ fun PlaylistEditDialog(vm: MainViewModel) {
                     unfocusedContainerColor = PCard,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
+                    focusedTextColor = Pal.fg,
+                    unfocusedTextColor = Pal.fg,
                     cursorColor = PAccent
                 ),
                 modifier = Modifier.fillMaxWidth()
@@ -355,7 +355,7 @@ fun PlaylistEditDialog(vm: MainViewModel) {
                         .padding(vertical = 15.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Cancel", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Cancel", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Pal.fg)
                 }
                 Box(
                     Modifier
@@ -376,7 +376,7 @@ fun PlaylistEditDialog(vm: MainViewModel) {
                 ) {
                     Text(
                         if (editing != null) "Save" else "Create",
-                        fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF3A1014)
+                        fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White
                     )
                 }
             }
@@ -418,7 +418,7 @@ fun AddToPlaylistDialog(vm: MainViewModel) {
                 .glassPanel(RoundedCornerShape(32.dp))
                 .padding(20.dp)
         ) {
-            Text("Add to playlist", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text("Add to playlist", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Pal.fg)
             Text(
                 song.title, fontSize = 14.sp, color = PDim, maxLines = 1,
                 overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp, bottom = 12.dp)
@@ -446,7 +446,7 @@ fun AddToPlaylistDialog(vm: MainViewModel) {
                         Icon(Icons.Filled.Add, null, tint = PAccent)
                     }
                     Spacer(Modifier.width(14.dp))
-                    Text("New playlist", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("New playlist", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Pal.fg)
                 }
                 vm.playlists.forEach { p ->
                     val has = p.songs.any { it.url == song.url }
@@ -472,7 +472,7 @@ fun AddToPlaylistDialog(vm: MainViewModel) {
                         Spacer(Modifier.width(14.dp))
                         Column(Modifier.weight(1f)) {
                             Text(
-                                p.name, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                                p.name, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Pal.fg,
                                 maxLines = 1, overflow = TextOverflow.Ellipsis
                             )
                             Text(p.songs.size.toString() + " songs", fontSize = 13.sp, color = PDim)
@@ -491,7 +491,7 @@ fun AddToPlaylistDialog(vm: MainViewModel) {
                     .padding(vertical = 15.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text("Close", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text("Close", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Pal.fg)
             }
         }
     }

@@ -91,7 +91,7 @@ fun FindBar(q: String, onChange: (String) -> Unit, onClose: () -> Unit) {
             .padding(start = 16.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(Icons.Filled.Search, null, tint = Color.White, modifier = Modifier.size(20.dp))
+        Icon(Icons.Filled.Search, null, tint = Pal.fg, modifier = Modifier.size(20.dp))
         Spacer(Modifier.width(10.dp))
         Box(Modifier.weight(1f).padding(vertical = 12.dp)) {
             if (q.isEmpty()) Text("Find in playlist", fontSize = 15.sp, color = Pal.textDim)
@@ -99,8 +99,8 @@ fun FindBar(q: String, onChange: (String) -> Unit, onClose: () -> Unit) {
                 value = q,
                 onValueChange = onChange,
                 singleLine = true,
-                textStyle = TextStyle(color = Color.White, fontSize = 15.sp),
-                cursorBrush = SolidColor(Color.White),
+                textStyle = TextStyle(color = Pal.fg, fontSize = 15.sp),
+                cursorBrush = SolidColor(Pal.fg),
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -108,7 +108,7 @@ fun FindBar(q: String, onChange: (String) -> Unit, onClose: () -> Unit) {
             Modifier.size(44.dp).clip(RoundedCornerShape(50)).clickable { onClose() },
             contentAlignment = Alignment.Center
         ) {
-            Icon(Icons.Filled.Close, null, tint = Color.White, modifier = Modifier.size(20.dp))
+            Icon(Icons.Filled.Close, null, tint = Pal.fg, modifier = Modifier.size(20.dp))
         }
     }
 }
@@ -122,9 +122,9 @@ private fun MenuRow(icon: ImageVector, text: String, onClick: () -> Unit) {
             .padding(horizontal = 24.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, null, tint = Color.White, modifier = Modifier.size(24.dp))
+        Icon(icon, null, tint = Pal.fg, modifier = Modifier.size(24.dp))
         Spacer(Modifier.width(24.dp))
-        Text(text, fontSize = 17.sp, fontWeight = FontWeight.Medium, color = Color.White)
+        Text(text, fontSize = 17.sp, fontWeight = FontWeight.Medium, color = Pal.fg)
     }
 }
 
@@ -141,9 +141,9 @@ private fun BigAction(icon: ImageVector, label: String, modifier: Modifier, onCl
                 .clickable { onClick() },
             contentAlignment = Alignment.Center
         ) {
-            Icon(icon, null, tint = Color.White, modifier = Modifier.size(26.dp))
+            Icon(icon, null, tint = Pal.fg, modifier = Modifier.size(26.dp))
         }
-        Text(label, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.White, modifier = Modifier.padding(top = 8.dp))
+        Text(label, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Pal.fg, modifier = Modifier.padding(top = 8.dp))
     }
 }
 
@@ -198,7 +198,7 @@ fun PlaylistMenuSheet(
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
                     Text(
-                        title, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
+                        title, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = Pal.fg,
                         maxLines = 1, overflow = TextOverflow.Ellipsis
                     )
                     Text(subtitle, fontSize = 14.sp, color = Pal.textDim, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -207,10 +207,10 @@ fun PlaylistMenuSheet(
                     Modifier.size(48.dp).clip(RoundedCornerShape(50)).clickable { if (pick) pick = false else onDismiss() },
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Filled.Close, null, tint = Color.White)
+                    Icon(Icons.Filled.Close, null, tint = Pal.fg)
                 }
             }
-            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0x33FFFFFF)))
+            Box(Modifier.fillMaxWidth().height(1.dp).background(Stroke))
 
             if (pick) {
                 Column(Modifier.verticalScroll(rememberScrollState()).padding(bottom = 12.dp)) {

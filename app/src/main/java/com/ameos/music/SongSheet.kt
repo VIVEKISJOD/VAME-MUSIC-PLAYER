@@ -56,7 +56,7 @@ private fun SongSheetRow(icon: ImageVector, title: String, sub: String, onClick:
         Icon(icon, null, tint = SsSub, modifier = Modifier.size(26.dp))
         Spacer(Modifier.width(18.dp))
         Column(Modifier.weight(1f)) {
-            Text(title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text(title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Pal.fg)
             Text(sub, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = SsSub)
         }
     }
@@ -134,7 +134,7 @@ fun SongSheet(vm: MainViewModel) {
                             Modifier
                                 .size(44.dp, 5.dp)
                                 .clip(RoundedCornerShape(50))
-                                .background(Color(0x66FFFFFF))
+                                .background(Pal.muted)
                         )
                     }
                     Column(Modifier.padding(horizontal = 16.dp)) {
@@ -147,7 +147,7 @@ fun SongSheet(vm: MainViewModel) {
                             Column(Modifier.weight(1f)) {
                                 Text(
                                     song.title, fontSize = 22.sp, fontWeight = FontWeight.Bold,
-                                    color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis
+                                    color = Pal.fg, maxLines = 1, overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
                                     song.artist, fontSize = 18.sp, fontWeight = FontWeight.SemiBold,

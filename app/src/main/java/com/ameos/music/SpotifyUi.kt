@@ -87,7 +87,7 @@ private fun SpRow(cover: String?, title: String, sub: String, actions: @Composab
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(
-                title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
+                title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Pal.fg,
                 maxLines = 1, overflow = TextOverflow.Ellipsis
             )
             Text(sub, fontSize = 12.sp, color = Pal.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -128,10 +128,10 @@ fun SpotifyScreen(vm: MainViewModel) {
         ) {
             Row(Modifier.fillMaxWidth().padding(top = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { SpotifyHub.open = false }) {
-                    Icon(Icons.Filled.ArrowBack, null, tint = Color.White)
+                    Icon(Icons.Filled.ArrowBack, null, tint = Pal.fg)
                 }
                 Column {
-                    Text("Spotify", fontSize = 32.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                    Text("Spotify", fontSize = 32.sp, fontWeight = FontWeight.SemiBold, color = Pal.fg)
                     Text("Listen and bring playlists into VAME", fontSize = 13.sp, color = Pal.muted)
                 }
             }
@@ -145,7 +145,7 @@ fun SpotifyScreen(vm: MainViewModel) {
                             Spacer(Modifier.width(12.dp))
                         }
                         Text(
-                            SpotifyHub.status, fontSize = 14.sp, color = Color.White,
+                            SpotifyHub.status, fontSize = 14.sp, color = Pal.fg,
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -159,7 +159,7 @@ fun SpotifyScreen(vm: MainViewModel) {
             if (!SpotifyHub.signedIn) {
                 Spacer(Modifier.height(12.dp))
                 KitCard {
-                    Text("Connect Spotify (one time)", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                    Text("Connect Spotify (one time)", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Pal.fg)
                     KitNote(
                         "Spotify only lets an app talk to your account if you make a free app for it. " +
                             "It takes 2 minutes:"
@@ -181,8 +181,8 @@ fun SpotifyScreen(vm: MainViewModel) {
                         placeholder = { Text("Client ID", color = Pal.muted) },
                         shape = RoundedCornerShape(20.dp),
                         colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color(0x33FFFFFF),
-                            unfocusedContainerColor = Color(0x33FFFFFF),
+                            focusedContainerColor = Pal.fg.copy(alpha = 0.12f),
+                            unfocusedContainerColor = Pal.fg.copy(alpha = 0.12f),
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent
                         ),
@@ -210,7 +210,7 @@ fun SpotifyScreen(vm: MainViewModel) {
                         Column(Modifier.weight(1f)) {
                             Text(
                                 SpotifyHub.name.ifBlank { "Spotify" }, fontSize = 16.sp,
-                                fontWeight = FontWeight.SemiBold, color = Color.White,
+                                fontWeight = FontWeight.SemiBold, color = Pal.fg,
                                 maxLines = 1, overflow = TextOverflow.Ellipsis
                             )
                             Text("Connected", fontSize = 12.sp, color = Pal.muted)
@@ -285,11 +285,11 @@ private fun SpotifyLoginWeb(app: Context) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { SpotifyHub.showLogin = false }) {
-                    Icon(Icons.Filled.Close, null, tint = Color.White)
+                    Icon(Icons.Filled.Close, null, tint = Pal.fg)
                 }
                 Text(
                     "Connect Spotify", fontSize = 18.sp, fontWeight = FontWeight.SemiBold,
-                    color = Color.White, modifier = Modifier.weight(1f)
+                    color = Pal.fg, modifier = Modifier.weight(1f)
                 )
             }
             if (progress in 1..99) {
@@ -371,14 +371,14 @@ private fun SpotifyWebPlayer(vm: MainViewModel, url: String) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { SpotifyHub.webUrl = null }) {
-                    Icon(Icons.Filled.Close, null, tint = Color.White)
+                    Icon(Icons.Filled.Close, null, tint = Pal.fg)
                 }
                 Column(Modifier.weight(1f)) {
-                    Text("Spotify", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                    Text("Spotify", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Pal.fg)
                     Text("Log in with your Spotify account. Premium needed.", fontSize = 12.sp, color = Pal.muted)
                 }
                 IconButton(onClick = { openOutside(ctx, holder[0]?.url ?: curUrl) }) {
-                    Icon(Icons.Filled.OpenInBrowser, null, tint = Color.White)
+                    Icon(Icons.Filled.OpenInBrowser, null, tint = Pal.fg)
                 }
             }
             if (progress in 1..99) {

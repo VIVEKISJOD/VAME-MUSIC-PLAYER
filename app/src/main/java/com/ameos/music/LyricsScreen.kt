@@ -310,7 +310,12 @@ fun LyricsScreen(vm: MainViewModel) {
 }
 
 @Composable
-private fun LyricsList(vm: MainViewModel, pos: Long) {
+internal fun LyricsList(
+    vm: MainViewModel,
+    pos: Long,
+    topPad: androidx.compose.ui.unit.Dp = 120.dp,
+    bottomPad: androidx.compose.ui.unit.Dp = 300.dp
+) {
     val lines = vm.lyrics
     if (vm.lyricsLoading || lines.isEmpty()) {
         Column(
@@ -362,7 +367,7 @@ private fun LyricsList(vm: MainViewModel, pos: Long) {
     LazyColumn(
         state = state,
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(top = 120.dp, bottom = 300.dp)
+        contentPadding = PaddingValues(top = topPad, bottom = bottomPad)
     ) {
         itemsIndexed(lines) { i, line ->
             val dist = if (active < 0) 0 else abs(i - active)

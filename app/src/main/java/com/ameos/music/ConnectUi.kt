@@ -59,7 +59,7 @@ fun RemoteCard(vm: MainViewModel, modifier: Modifier = Modifier) {
             Column(Modifier.weight(1f)) {
                 Text(
                     song?.title ?: "Choose a song", fontSize = 14.sp, fontWeight = FontWeight.Bold,
-                    color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis
+                    color = Pal.fg, maxLines = 1, overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     "Playing on " + t.name, fontSize = 12.sp, color = Pal.accent,
@@ -67,36 +67,36 @@ fun RemoteCard(vm: MainViewModel, modifier: Modifier = Modifier) {
                 )
             }
             IconButton(onClick = { Connect.cmd(t, "prev") }, modifier = Modifier.size(38.dp)) {
-                Icon(Icons.Filled.SkipPrevious, null, tint = Color.White)
+                Icon(Icons.Filled.SkipPrevious, null, tint = Pal.fg)
             }
             IconButton(onClick = { Connect.cmd(t, "toggle") }, modifier = Modifier.size(42.dp)) {
                 Icon(
                     if (vm.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                    null, tint = Color.White, modifier = Modifier.size(30.dp)
+                    null, tint = Pal.fg, modifier = Modifier.size(30.dp)
                 )
             }
             IconButton(onClick = { Connect.cmd(t, "next") }, modifier = Modifier.size(38.dp)) {
-                Icon(Icons.Filled.SkipNext, null, tint = Color.White)
+                Icon(Icons.Filled.SkipNext, null, tint = Pal.fg)
             }
         }
         LinearProgressIndicator(
             progress = { (pos.toFloat() / dur.toFloat()).coerceIn(0f, 1f) },
             modifier = Modifier.fillMaxWidth().padding(top = 6.dp).height(3.dp),
             color = Pal.accent,
-            trackColor = Color(0x33FFFFFF)
+            trackColor = Pal.fg.copy(alpha = 0.12f)
         )
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = { vm.connectTo(null) }) {
-                Icon(Icons.Filled.PhoneAndroid, null, tint = Color.White, modifier = Modifier.size(22.dp))
+                Icon(Icons.Filled.PhoneAndroid, null, tint = Pal.fg, modifier = Modifier.size(22.dp))
             }
-            Text("This device", fontSize = 12.sp, color = Color(0xAAFFFFFF))
+            Text("This device", fontSize = 12.sp, color = Pal.textDim)
             Spacer(Modifier.weight(1f))
             IconButton(onClick = { Connect.cmd(t, "vol", (vol - 10).coerceIn(0, 100).toLong()) }) {
-                Icon(Icons.Filled.VolumeDown, null, tint = Color.White, modifier = Modifier.size(22.dp))
+                Icon(Icons.Filled.VolumeDown, null, tint = Pal.fg, modifier = Modifier.size(22.dp))
             }
-            Text(vol.toString() + "%", fontSize = 12.sp, color = Color(0xAAFFFFFF))
+            Text(vol.toString() + "%", fontSize = 12.sp, color = Pal.textDim)
             IconButton(onClick = { Connect.cmd(t, "vol", (vol + 10).coerceIn(0, 100).toLong()) }) {
-                Icon(Icons.Filled.VolumeUp, null, tint = Color.White, modifier = Modifier.size(22.dp))
+                Icon(Icons.Filled.VolumeUp, null, tint = Pal.fg, modifier = Modifier.size(22.dp))
             }
         }
     }

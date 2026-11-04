@@ -49,7 +49,7 @@ private fun Chip(label: String, selected: Boolean, modifier: Modifier, onClick: 
     ) {
         Text(
             label, fontSize = 15.sp, fontWeight = FontWeight.Bold,
-            color = if (selected) Color(0xFF3A1014) else Color.White,
+            color = if (selected) Color(0xFF3A1014) else Pal.fg,
             textAlign = TextAlign.Center
         )
     }
@@ -63,7 +63,7 @@ private fun SectionTitle(icon: androidx.compose.ui.graphics.vector.ImageVector, 
     ) {
         Icon(icon, null, tint = Accent, modifier = Modifier.size(22.dp))
         Spacer(Modifier.width(10.dp))
-        Text(text, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color.White)
+        Text(text, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Pal.fg)
     }
 }
 
@@ -86,8 +86,8 @@ private fun NumberField(
                 unfocusedContainerColor = CardBg,
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
+                focusedTextColor = Pal.fg,
+                unfocusedTextColor = Pal.fg,
                 cursorColor = Accent
             ),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -128,7 +128,7 @@ fun SleepDialog(vm: MainViewModel) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.Bedtime, null, tint = Accent, modifier = Modifier.size(28.dp))
                 Spacer(Modifier.width(12.dp))
-                Text("Sleep and repeat", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text("Sleep and repeat", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Pal.fg)
             }
 
             // what is running now
@@ -147,13 +147,13 @@ fun SleepDialog(vm: MainViewModel) {
                         if (vm.sleepLeftSec > 0) {
                             val m = vm.sleepLeftSec / 60
                             val s = (vm.sleepLeftSec % 60).toString().padStart(2, '0')
-                            Text("Stops in $m:$s", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text("Stops in $m:$s", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Pal.fg)
                         }
                         if (vm.sleepAfterSong) {
-                            Text("Stops when this song ends", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text("Stops when this song ends", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Pal.fg)
                         }
                         if (vm.timesLeft > 0) {
-                            Text("Plays left: ${vm.timesLeft}", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text("Plays left: ${vm.timesLeft}", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Pal.fg)
                         }
                     }
                     Text(
@@ -202,7 +202,7 @@ fun SleepDialog(vm: MainViewModel) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text("Let the song finish", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Let the song finish", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Pal.fg)
                     Text(
                         "When time is up, the current song plays to its end first.",
                         fontSize = 13.sp, color = Dim
@@ -246,7 +246,7 @@ fun SleepDialog(vm: MainViewModel) {
                     .padding(vertical = 15.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text("Done", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text("Done", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Pal.fg)
             }
         }
     }

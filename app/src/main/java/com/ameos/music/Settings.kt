@@ -48,12 +48,12 @@ private fun SettingsField(value: String, onChange: (String) -> Unit) {
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .padClick(RoundedCornerShape(20.dp), Color(0x33FFFFFF), 1.02f) { editing = true }
+                    .padClick(RoundedCornerShape(20.dp), Pal.fg.copy(alpha = 0.12f), 1.02f) { editing = true }
                     .padding(horizontal = 18.dp, vertical = 16.dp)
             ) {
                 Text(
                     if (value.isBlank()) "Press OK to type" else value,
-                    fontSize = 16.sp, color = Color.White
+                    fontSize = 16.sp, color = Pal.fg
                 )
             }
         } else {
@@ -76,8 +76,8 @@ private fun SettingsField(value: String, onChange: (String) -> Unit) {
                     onDone = { editing = false }
                 ),
                 colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color(0x33FFFFFF),
-                    unfocusedContainerColor = Color(0x33FFFFFF),
+                    focusedContainerColor = Pal.fg.copy(alpha = 0.12f),
+                    unfocusedContainerColor = Pal.fg.copy(alpha = 0.12f),
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
                 ),
@@ -92,8 +92,8 @@ private fun SettingsField(value: String, onChange: (String) -> Unit) {
         singleLine = true,
         shape = RoundedCornerShape(20.dp),
         colors = TextFieldDefaults.colors(
-            focusedContainerColor = Color(0x33FFFFFF),
-            unfocusedContainerColor = Color(0x33FFFFFF),
+            focusedContainerColor = Pal.fg.copy(alpha = 0.12f),
+            unfocusedContainerColor = Pal.fg.copy(alpha = 0.12f),
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent
         ),
@@ -142,7 +142,7 @@ fun SettingsScreen(vm: MainViewModel) {
                 Column {
                     Text(
                         "Settings", fontSize = 34.sp, fontWeight = FontWeight.SemiBold,
-                        color = Color.White
+                        color = Pal.fg
                     )
                     Text(
                         "VAME " + Updater.currentVersion(ctx) +
@@ -492,7 +492,7 @@ fun SettingsScreen(vm: MainViewModel) {
             KitCard {
                 Text(
                     "VAME Music v" + Updater.currentVersion(ctx) + " - made by vxvekggs",
-                    fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White
+                    fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Pal.fg
                 )
                 Spacer(Modifier.height(10.dp))
                 InstagramButton(ctx)
@@ -507,7 +507,7 @@ fun SettingsScreen(vm: MainViewModel) {
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Source code on GitHub", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Source code on GitHub", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Pal.fg)
                 }
                 Spacer(Modifier.height(14.dp))
                 Text(
@@ -560,8 +560,8 @@ private fun InstagramButton(ctx: Context) {
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(Icons.Filled.PersonAdd, null, tint = Color.White, modifier = Modifier.size(20.dp))
+        Icon(Icons.Filled.PersonAdd, null, tint = Pal.fg, modifier = Modifier.size(20.dp))
         Spacer(Modifier.width(8.dp))
-        Text("Follow @vxvekggs on Instagram", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+        Text("Follow @vxvekggs on Instagram", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Pal.fg)
     }
 }

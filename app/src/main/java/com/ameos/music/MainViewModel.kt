@@ -1953,6 +1953,19 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         startRadio()
     }
 
+    // Radio tab: play a radio made from one artist name (search the artist, then start the endless mix)
+    fun playRadioFor(name: String) {
+        viewModelScope.launch {
+            try {
+                val songs = MusicRepo.search(name + " songs")
+                val seed = songs.firstOrNull() ?: return@launch
+                play(seed, listOf(seed))
+                startRadio()
+            } catch (e: Exception) {
+            }
+        }
+    }
+
     // adds every song to one of your playlists; returns how many were new
     fun addAllToPlaylist(id: String, songs: List<Song>): Int {
         var n = 0

@@ -75,7 +75,7 @@ private fun SheetRow(icon: ImageVector, title: String, sub: String? = null, onCl
         Icon(icon, null, tint = SubTxt, modifier = Modifier.size(26.dp))
         Spacer(Modifier.width(18.dp))
         Column(Modifier.weight(1f)) {
-            Text(title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text(title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Pal.fg)
             if (sub != null) {
                 Text(sub, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = SubTxt)
             }
@@ -93,10 +93,10 @@ private fun ActionBtn(icon: ImageVector, label: String, modifier: Modifier, onCl
             .padding(vertical = 14.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Icon(icon, null, tint = Color.White, modifier = Modifier.size(24.dp))
+        Icon(icon, null, tint = Pal.fg, modifier = Modifier.size(24.dp))
         Spacer(Modifier.height(6.dp))
         Text(
-            label, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White,
+            label, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Pal.fg,
             maxLines = 1, overflow = TextOverflow.Ellipsis
         )
     }
@@ -172,7 +172,7 @@ fun QuickSheet(vm: MainViewModel) {
                             Modifier
                                 .size(44.dp, 5.dp)
                                 .clip(RoundedCornerShape(50))
-                                .background(Color(0x66FFFFFF))
+                                .background(Pal.muted)
                         )
                     }
                     Column(
@@ -191,7 +191,7 @@ fun QuickSheet(vm: MainViewModel) {
                             Column(Modifier.weight(1f)) {
                                 Text(
                                     song.title, fontSize = 22.sp, fontWeight = FontWeight.Bold,
-                                    color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis
+                                    color = Pal.fg, maxLines = 1, overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
                                     song.artist, fontSize = 18.sp, fontWeight = FontWeight.SemiBold,
@@ -341,7 +341,7 @@ fun QuickSheet(vm: MainViewModel) {
                             Spacer(Modifier.width(18.dp))
                             Text(
                                 song.artist, fontSize = 20.sp, fontWeight = FontWeight.Bold,
-                                color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis
+                                color = Pal.fg, maxLines = 1, overflow = TextOverflow.Ellipsis
                             )
                         }
 
@@ -367,7 +367,7 @@ fun QuickSheet(vm: MainViewModel) {
                                     Column(Modifier.weight(1f)) {
                                         Text(
                                             r.title, fontSize = 17.sp, fontWeight = FontWeight.Bold,
-                                            color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis
+                                            color = Pal.fg, maxLines = 1, overflow = TextOverflow.Ellipsis
                                         )
                                         Text(
                                             r.artist, fontSize = 14.sp, color = SubTxt,

@@ -54,7 +54,7 @@ fun ScreenTitle(text: String, trailing: @Composable () -> Unit = {}) {
         Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text, fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.White,
+        Text(text, fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Pal.fg,
             letterSpacing = (-0.6).sp, modifier = Modifier.weight(1f))
         trailing()
     }
@@ -69,7 +69,7 @@ fun ProfileButton(vm: MainViewModel, size: androidx.compose.ui.unit.Dp, tappable
     if (vm.ytSignedIn && photo != null) {
         Cover(photo, mod, CircleShape)
     } else {
-        Icon(Icons.Filled.AccountCircle, null, tint = Color.White, modifier = mod)
+        Icon(Icons.Filled.AccountCircle, null, tint = Pal.fg, modifier = mod)
     }
 }
 
@@ -100,7 +100,7 @@ fun HomeScreen(vm: MainViewModel) {
                 .height(380.dp)
                 .background(
                     Brush.verticalGradient(
-                        listOf(tint.copy(alpha = if (Pal.amoled) 0.30f else 0.55f), Color.Transparent)
+                        listOf(tint.copy(alpha = if (Pal.light) 0.38f else if (Pal.amoled) 0.30f else 0.55f), Color.Transparent)
                     )
                 )
         )
@@ -124,7 +124,7 @@ private fun JumpBackIn(vm: MainViewModel) {
             .clip(shape)
             .background(
                 Brush.horizontalGradient(
-                    listOf(androidx.compose.ui.graphics.lerp(tint, Color.White, 0.10f), Color(0x22FFFFFF))
+                    listOf(tint.copy(alpha = if (Pal.light) 0.45f else 1f), if (Pal.light) Color(0x99FFFFFF) else Color(0x22FFFFFF))
                 )
             )
             .border(1.dp, Stroke, shape)
@@ -141,25 +141,25 @@ private fun JumpBackIn(vm: MainViewModel) {
             Text(
                 if (playing) "NOW PLAYING" else "JUMP BACK IN",
                 fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp,
-                color = Color(0xB3FFFFFF)
+                color = Pal.textDim
             )
             Text(
-                s.title, fontSize = 19.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                s.title, fontSize = 19.sp, fontWeight = FontWeight.Bold, color = Pal.fg,
                 maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 3.dp)
             )
             Text(
-                artistName(s.artist), fontSize = 13.sp, color = Color(0xB3FFFFFF),
+                artistName(s.artist), fontSize = 13.sp, color = Pal.textDim,
                 maxLines = 1, overflow = TextOverflow.Ellipsis
             )
         }
         Spacer(Modifier.width(10.dp))
         Box(
-            Modifier.size(52.dp).clip(CircleShape).background(Color.White),
+            Modifier.size(52.dp).clip(CircleShape).background(Pal.fg),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 if (playing && vm.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                null, tint = Color(0xFF111111), modifier = Modifier.size(30.dp)
+                null, tint = Pal.onFg, modifier = Modifier.size(30.dp)
             )
         }
     }
@@ -172,57 +172,75 @@ private fun HomeList(vm: MainViewModel) {
     val cols = if (big) 5 else 2
     val ytShelves = if (UiOpts.homeYt) vm.ytHome else emptyList()
 
+    // chips: 0 Everything, 1 For you, 2 Discover, 3 Artists (vm.homeFilter keeps the choice)
+    val f = vm.homeFilter
+    val all = f == 0
+    val forYou = f == 0 || f == 1
+    val discover = f == 0 || f == 2
+    val artistsOn = f == 0 || f == 3
+    val recapNow = remember(vm.statMinutes, vm.statPlays) { vm.recap() }
+
     LazyColumn(contentPadding = ScreenPad) {
         item {
             val hour = remember { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) }
             val hi = if (hour < 5) "Late night" else if (hour < 12) "Good morning"
             else if (hour < 17) "Good afternoon" else if (hour < 22) "Good evening" else "Late night"
             val nm = vm.userName.ifBlank { vm.ytName }
-            Row(
-                Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 18.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(Modifier.weight(1f)) {
+            Column(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 16.dp)) {
+                Text(
+                    if (nm.isBlank()) hi else hi + " \u00B7 " + nm,
+                    fontSize = 14.sp, color = Pal.textDim, maxLines = 1, overflow = TextOverflow.Ellipsis
+                )
+                Row(Modifier.padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        Modifier.size(58.dp).clip(CircleShape).glassFill(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        ProfileButton(vm, 58.dp, true)
+                    }
+                    Spacer(Modifier.width(14.dp))
                     Text(
-                        hi, fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.White,
-                        letterSpacing = (-0.6).sp, maxLines = 1, overflow = TextOverflow.Ellipsis
+                        vm.title.ifBlank { "VAME" }, fontSize = 40.sp, fontWeight = FontWeight.Bold,
+                        color = Pal.fg, letterSpacing = (-1).sp, maxLines = 1,
+                        overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f)
                     )
-                    val sub = if (nm.isBlank()) vm.title.ifBlank { "Music" } else nm
-                    Text(sub, fontSize = 15.sp, color = Color(0xB3FFFFFF), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
-                ProfileButton(vm, 40.dp, true)
             }
         }
         item {
             val tick = rememberTick()
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("All", "Music", "Podcasts", "Playlists").forEachIndexed { i, t ->
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(listOf("Everything", "For you", "Discover", "Artists").withIndex().toList()) { iv ->
+                    val i = iv.index
+                    val t = iv.value
                     val sel = i == vm.homeFilter
-                    val chipBg by animateColorAsState(if (sel) Color.White else Color(0x1AFFFFFF), label = "chip")
-                    val chipFg by animateColorAsState(if (sel) Color(0xFF111111) else Color.White, label = "chipFg")
+                    val chipBg by animateColorAsState(
+                        if (sel) Pal.fg else if (Pal.light) Color.White else Color(0x1AFFFFFF), label = "chip"
+                    )
+                    val chipFg by animateColorAsState(if (sel) Pal.onFg else Pal.fg, label = "chipFg")
                     val cs = RoundedCornerShape(50)
                     Text(
-                        t, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = chipFg,
+                        t, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = chipFg,
                         modifier = Modifier
                             .clip(cs)
                             .background(chipBg)
                             .then(if (sel) Modifier else Modifier.border(1.dp, Stroke, cs))
                             .clickable {
                                 tick()
-                                vm.pickFilter(i)
+                                vm.homeFilter = i
                             }
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .padding(horizontal = 18.dp, vertical = 9.dp)
                     )
                 }
             }
         }
-        if (vm.homeFilter == 0 && vm.played.isNotEmpty()) {
+        if (forYou && vm.played.isNotEmpty()) {
             item { JumpBackIn(vm) }
         }
-        if (vm.homeFilter == 0 && vm.dials.isNotEmpty()) {
+        if (forYou && vm.dials.isNotEmpty()) {
             item { SpeedDialShelf(vm) }
         }
-        if (vm.homeFilter == 0) {
+        if (forYou) {
             // Recents: cards, and the grid button opens all of them as a grid
             if (UiOpts.homeLastAlbums && vm.played.isNotEmpty()) {
                 item {
@@ -230,14 +248,14 @@ private fun HomeList(vm: MainViewModel) {
                     val rec = vm.played.toList()
                     val cards = rec.map { s -> songItem(vm, s, rec) }
                     Column(Modifier.animateContentSize()) {
-                        ShelfTitle("Recents") {
+                        ShelfTitle("Keep listening") {
                             Box(
                                 Modifier.size(40.dp).clip(CircleShape).clickable { showAll.value = !showAll.value },
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     Icons.Filled.GridView, null,
-                                    tint = if (showAll.value) Pal.accent else Color.White,
+                                    tint = if (showAll.value) Pal.accent else Pal.fg,
                                     modifier = Modifier.size(24.dp)
                                 )
                             }
@@ -246,14 +264,18 @@ private fun HomeList(vm: MainViewModel) {
                     }
                 }
             }
+        }
+        if (discover) {
             // first two YouTube Music shelves (Listen again, Quick picks...)
             for (sh in ytShelves.take(2)) {
                 item { ShelfTitle(sh.title, sh.sub) }
                 item { CardShelf(ytItems(vm, sh), cw) }
             }
+        }
+        if (forYou) {
             // songs you liked (or songs for you)
             item {
-                ShelfTitle(if (vm.liked.isNotEmpty()) "Liked songs" else "Songs for you") {
+                ShelfTitle(if (vm.liked.isNotEmpty()) "Liked songs" else "Made for you") {
                     if (vm.liked.isNotEmpty()) {
                         Text(
                             "See all", fontSize = 13.sp, color = Pal.textDim,
@@ -289,6 +311,8 @@ private fun HomeList(vm: MainViewModel) {
                 item { ShelfTitle("Quick picks") }
                 item { CardShelf(picks.map { s -> songItem(vm, s, picks) }, cw) }
             }
+        }
+        if (discover) {
             for (sh in (if (UiOpts.homeShelves) vm.genreShelves else emptyList())) {
                 item { ShelfTitle(sh.name) }
                 item { CardShelf(sh.songs.map { s -> songItem(vm, s, sh.songs) }, cw) }
@@ -311,91 +335,51 @@ private fun HomeList(vm: MainViewModel) {
                     }
                 }
             }
-            if (UiOpts.homeArtists && vm.likedArtists.isNotEmpty()) {
+        }
+        if (artistsOn) {
+            val shown = ArrayList<ArtistItem>()
+            shown.addAll(vm.likedArtists)
+            for (a in recapNow.topArtists) {
+                if (shown.none { it.name.equals(a.name, ignoreCase = true) }) shown.add(ArtistItem(a.name, a.cover))
+            }
+            if (UiOpts.homeArtists && shown.isNotEmpty()) {
                 item { ShelfTitle("Your artists") }
                 item {
                     CardShelf(
-                        vm.likedArtists.toList().map { a ->
+                        shown.take(20).map { a ->
                             ShelfItem(a.cover, a.name, "Artist", true) { vm.openArtist(a.name) }
                         },
                         if (big) 150.dp else 118.dp
                     )
                 }
             }
-            if (vm.suggestions.isNotEmpty()) {
-                item { ShelfTitle("Suggested for you") }
-                item {
-                    val sg = vm.suggestions.take(12)
-                    CardShelf(sg.map { s -> songItem(vm, s, vm.suggestions) }, cw)
-                }
-            }
-        }
-        if (vm.homeFilter == 1) {
-            item { ShelfTitle("Songs for you") }
-            item {
-                if (vm.recommended.isEmpty()) {
-                    ShimmerShelf(cw)
-                } else {
-                    CardGrid(vm.recommended.map { s -> songItem(vm, s, vm.recommended) }, cols)
-                }
-            }
-        }
-        if (vm.homeFilter == 2) {
-            item { ShelfTitle("Podcasts") }
-            item {
-                if (vm.podcasts.isEmpty()) {
-                    ShimmerShelf(cw)
-                } else {
-                    CardGrid(vm.podcasts.map { s -> songItem(vm, s, vm.podcasts) }, cols)
-                }
-            }
-        }
-        if (vm.homeFilter == 3) {
-            item { SectionLabel("Playlists (" + (vm.playlists.size + vm.ytPlaylistsShown.size) + ")") }
-            item {
-                val hw = LocalConfiguration.current.screenWidthDp
-                val cols = if (hw >= 600) 4 else 2
-                val hl = ArrayList<LibTile>()
-                hl.add(LibTile("New playlist", "Save your own mix", null, Icons.Filled.Add, null) {
-                    vm.editPlaylistId = null
-                    vm.pendingSong = null
-                    vm.showPlaylistDialog = true
-                })
-                hl.add(LibTile("Import playlist", "From a playlist link", null, Icons.Filled.FileDownload, null) {
-                    vm.importStatus = ""
-                    vm.importedId = null
-                    vm.showImportDialog = true
-                })
-                hl.add(LibTile(
-                    "Liked Songs", vm.liked.size.toString() + " songs", null,
-                    Icons.Filled.Favorite, listOf(Color(0xFF8B6CF0), Color(0xFFEF5DA8))
-                ) { vm.likedOpen = true })
-                for (p in vm.playlists) {
-                    hl.add(LibTile(p.name, p.songs.size.toString() + " songs", p.shownCover(), Icons.Filled.LibraryMusic, null) {
-                        vm.openPlaylist(p.id)
-                    })
-                }
-                for (yp in vm.ytPlaylistsShown) {
-                    hl.add(LibTile(yp.title, yp.subtitle.ifBlank { "Playlist" }, yp.cover, Icons.Filled.LibraryMusic, null) {
-                        vm.openYtPlaylist(yp)
-                    })
-                }
-                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    for (rowTiles in hl.chunked(cols)) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                            for (t in rowTiles) PlTile(t, Modifier.weight(1f))
-                            for (k in rowTiles.size until cols) Spacer(Modifier.weight(1f))
-                        }
+            // artist cards that YouTube Music offers (Fans might also like...)
+            for (sh in ytShelves) {
+                val ar = sh.cards.filter { it.kind == "artist" }
+                if (ar.size >= 3) {
+                    item { ShelfTitle(sh.title) }
+                    item {
+                        CardShelf(
+                            ar.map { c -> ShelfItem(c.cover, c.title, "Artist", true) { vm.openArtist(c.title) } },
+                            if (big) 150.dp else 118.dp
+                        )
                     }
                 }
             }
-            if (vm.playlists.isEmpty() && vm.ytPlaylistsShown.isEmpty()) {
+            if (f == 3 && shown.isEmpty()) {
                 item {
                     EmptyState(
-                        Icons.Filled.LibraryMusic, "No playlists yet",
-                        "Make one with the New playlist tile, or sign in from Library to see your YouTube Music playlists."
+                        Icons.Filled.Person, "No artists yet",
+                        "Like an artist or play some songs and they show up here."
                     )
                 }
+            }
+        }
+        if (discover && vm.suggestions.isNotEmpty()) {
+            item { ShelfTitle("Suggested for you") }
+            item {
+                val sg = vm.suggestions.take(12)
+                CardShelf(sg.map { s -> songItem(vm, s, vm.suggestions) }, cw)
             }
         }
     }
@@ -438,7 +422,7 @@ private fun GenreTileView(tile: GenreTile, color: Color, modifier: Modifier, onC
             Text(tile.name, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White,
                 maxLines = 2, overflow = TextOverflow.Ellipsis)
             if (tile.artists.isNotEmpty()) {
-                Text(tile.artists, fontSize = 11.sp, color = Pal.textDim, maxLines = 1,
+                Text(tile.artists, fontSize = 11.sp, color = Color(0xCCFFFFFF), maxLines = 1,
                     overflow = TextOverflow.Ellipsis)
             }
         }
@@ -449,7 +433,7 @@ private fun GenreTileView(tile: GenreTile, color: Color, modifier: Modifier, onC
 fun AlbumCard(a: Album, vm: MainViewModel) {
     Column(Modifier.width(140.dp).pressScale().clickable { vm.openAlbum(a) }) {
         Cover(a.cover, Modifier.size(140.dp), RoundedCornerShape(16.dp), hiRes = true)
-        Text(a.title, fontSize = 14.sp, color = Color.White, maxLines = 1,
+        Text(a.title, fontSize = 14.sp, color = Pal.fg, maxLines = 1,
             overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
         Text(a.artist, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -464,11 +448,11 @@ fun SearchArtistCard(a: ArtistHit, vm: MainViewModel) {
     ) {
         Cover(a.cover, Modifier.size(104.dp), CircleShape, hiRes = true)
         Text(
-            a.name, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
+            a.name, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Pal.fg,
             maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 8.dp)
         )
-        Text("Artist", fontSize = 12.sp, color = Color(0x99FFFFFF))
+        Text("Artist", fontSize = 12.sp, color = Pal.muted)
     }
 }
 
@@ -512,7 +496,7 @@ private fun MoodTile(m: Mood, cover: String?, modifier: Modifier, onClick: () ->
                 Box(Modifier.fillMaxSize().background(m.color.copy(alpha = 0.58f)))
                 Text(
                     m.sub, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
-                    color = Color.White.copy(alpha = 0.92f), textAlign = TextAlign.Center,
+                    color = Color.White.copy(alpha = 0.95f), textAlign = TextAlign.Center,
                     maxLines = 2, overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.align(Alignment.BottomCenter).padding(start = 8.dp, end = 8.dp, bottom = 14.dp)
                 )
@@ -537,7 +521,7 @@ fun ExploreScreen(vm: MainViewModel) {
         .mapNotNull { it.cover }.distinct()
     LazyColumn(contentPadding = ScreenPad) {
         item {
-            ScreenTitle("Explore") {
+            ScreenTitle("Search") {
                 ProfileButton(vm, 34.dp, true)
             }
         }
@@ -559,8 +543,8 @@ fun ExploreScreen(vm: MainViewModel) {
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { vm.search() }),
                 colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color(0x33FFFFFF),
-                    unfocusedContainerColor = Color(0x33FFFFFF),
+                    focusedContainerColor = if (Pal.light) Color(0xCCFFFFFF) else Color(0x33FFFFFF),
+                    unfocusedContainerColor = if (Pal.light) Color(0xCCFFFFFF) else Color(0x33FFFFFF),
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
                 ),
@@ -677,7 +661,7 @@ fun YourTypeScreen(vm: MainViewModel) {
                 ) {
                     Text("Discover new Music", fontSize = 26.sp, fontWeight = FontWeight.SemiBold,
                         color = Color.White, textAlign = TextAlign.Center)
-                    Text("Picked for you", fontSize = 13.sp, color = Pal.textDim,
+                    Text("Picked for you", fontSize = 13.sp, color = Color(0xCCFFFFFF),
                         modifier = Modifier.padding(top = 4.dp))
                 }
             }
@@ -696,15 +680,15 @@ fun YourTypeScreen(vm: MainViewModel) {
                     Modifier.fillMaxWidth().padding(top = 50.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("We're ready, user.", fontSize = 16.sp, color = Color.White)
+                    Text("We're ready, user.", fontSize = 16.sp, color = Pal.fg)
                     Spacer(Modifier.height(10.dp))
                     Box(
                         Modifier.size(48.dp).pressScale(0.9f).clip(CircleShape)
-                            .background(Color(0x22FFFFFF))
+                            .background(Stroke)
                             .clickable { vm.loadDiscover() },
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Filled.KeyboardArrowDown, null, tint = Color.White,
+                        Icon(Icons.Filled.KeyboardArrowDown, null, tint = Pal.fg,
                             modifier = Modifier.size(30.dp))
                     }
                 }
@@ -752,14 +736,14 @@ private fun BigTile(
             Cover(cover, Modifier.fillMaxSize(), RoundedCornerShape(18.dp), hiRes = true)
             if (cover == null) {
                 Icon(
-                    Icons.Filled.LibraryMusic, null, tint = Color(0x55FFFFFF),
+                    Icons.Filled.LibraryMusic, null, tint = Pal.muted,
                     modifier = Modifier.align(Alignment.Center).size(44.dp)
                 )
             }
         }
         Spacer(Modifier.height(8.dp))
         Text(
-            title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
+            title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Pal.fg,
             maxLines = 1, overflow = TextOverflow.Ellipsis
         )
         Text(sub, fontSize = 12.sp, color = Pal.muted, maxLines = 1)
@@ -775,7 +759,7 @@ private fun LibItem(
         Cover(cover, Modifier.size(46.dp), if (circle) CircleShape else RoundedCornerShape(10.dp))
         Spacer(Modifier.width(10.dp))
         Column {
-            Text(title, fontSize = 15.sp, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(title, fontSize = 15.sp, color = Pal.fg, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (sub != null) {
                 Text(sub, fontSize = 11.sp, color = Pal.muted, maxLines = 1,
                     overflow = TextOverflow.Ellipsis)
@@ -813,11 +797,11 @@ private fun PlTile(t: LibTile, modifier: Modifier) {
             if (t.cover != null) {
                 Cover(t.cover, Modifier.fillMaxSize(), shape, hiRes = true)
             } else if (t.icon != null) {
-                Icon(t.icon, null, tint = Color.White, modifier = Modifier.size(46.dp))
+                Icon(t.icon, null, tint = if (t.grad != null) Color.White else Pal.fg, modifier = Modifier.size(46.dp))
             }
         }
         Text(
-            t.title, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
+            t.title, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = Pal.fg,
             maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 10.dp)
         )
         Text(t.sub, fontSize = 14.sp, color = Pal.textDim, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -835,15 +819,15 @@ private fun LibRow(icon: androidx.compose.ui.graphics.vector.ImageVector, title:
                 .padding(vertical = 14.dp, horizontal = 2.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(icon, null, tint = Color.White, modifier = Modifier.size(30.dp))
+            Icon(icon, null, tint = Pal.fg, modifier = Modifier.size(30.dp))
             Spacer(Modifier.width(22.dp))
             Column(Modifier.weight(1f)) {
-                Text(title, fontSize = 21.sp, color = Color.White)
+                Text(title, fontSize = 21.sp, color = Pal.fg)
                 if (sub != null) Text(sub, fontSize = 13.sp, color = Pal.muted)
             }
             Icon(Icons.Filled.ChevronRight, null, tint = Pal.muted)
         }
-        Box(Modifier.fillMaxWidth().padding(start = 52.dp).height(1.dp).background(Color(0x22FFFFFF)))
+        Box(Modifier.fillMaxWidth().padding(start = 52.dp).height(1.dp).background(Stroke))
     }
 }
 
@@ -870,7 +854,7 @@ private fun StatCard(width: androidx.compose.ui.unit.Dp, label: String, bigText:
         )
         Column(Modifier.align(Alignment.CenterStart).padding(top = 10.dp)) {
             Text(
-                bigText, fontSize = bigSize.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                bigText, fontSize = bigSize.sp, fontWeight = FontWeight.Bold, color = Pal.fg,
                 maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = (bigSize + 2).sp
             )
             Text(
@@ -881,7 +865,7 @@ private fun StatCard(width: androidx.compose.ui.unit.Dp, label: String, bigText:
         Row(Modifier.align(Alignment.BottomStart).fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    bottomLeft, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color.White, maxLines = 1,
+                    bottomLeft, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Pal.fg, maxLines = 1,
                     overflow = TextOverflow.Ellipsis, letterSpacing = 2.sp,
                     fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
                 )
@@ -891,7 +875,7 @@ private fun StatCard(width: androidx.compose.ui.unit.Dp, label: String, bigText:
                 Column(horizontalAlignment = Alignment.End) {
                     Text(bottomRightSub ?: "", fontSize = 10.sp, color = Pal.textDim, letterSpacing = 1.sp,
                         fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
-                    Text(bottomRight, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                    Text(bottomRight, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Pal.fg,
                         letterSpacing = 2.sp, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
                 }
             }
@@ -958,7 +942,7 @@ fun LibraryScreen(vm: MainViewModel) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = { vm.recapOpen = true }) {
-                        Icon(Icons.Filled.History, null, tint = Color.White)
+                        Icon(Icons.Filled.History, null, tint = Pal.fg)
                     }
                     IconButton(onClick = { vm.showSettings = true }) {
                         ProfileButton(vm, 30.dp, false)
@@ -1007,9 +991,9 @@ fun LibraryScreen(vm: MainViewModel) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("YouTube Music", fontSize = 26.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                    Text("YouTube Music", fontSize = 26.sp, fontWeight = FontWeight.SemiBold, color = Pal.fg)
                     Text(
-                        if (vm.ytBusy) "Loading..." else "Refresh", fontSize = 16.sp, color = Color.White,
+                        if (vm.ytBusy) "Loading..." else "Refresh", fontSize = 16.sp, color = Pal.fg,
                         modifier = Modifier
                             .clip(RoundedCornerShape(50))
                             .clickable { vm.refreshYt() }
@@ -1035,7 +1019,7 @@ fun LibraryScreen(vm: MainViewModel) {
             if (vm.ytArtists.isNotEmpty()) {
                 item {
                     Text(
-                        "Your YouTube artists", fontSize = 22.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
+                        "Your YouTube artists", fontSize = 22.sp, fontWeight = FontWeight.SemiBold, color = Pal.fg,
                         modifier = Modifier.padding(top = 22.dp, bottom = 12.dp)
                     )
                 }
@@ -1053,7 +1037,7 @@ fun LibraryScreen(vm: MainViewModel) {
             if (vm.ytStatus.startsWith("Library load fail")) {
                 item {
                     Text(
-                        vm.ytStatus, fontSize = 12.sp, color = Color(0xFFFFB4AB),
+                        vm.ytStatus, fontSize = 12.sp, color = Color(0xFFD0453A),
                         modifier = Modifier.padding(top = 8.dp)
                     )
                 }
@@ -1072,9 +1056,9 @@ fun LibraryScreen(vm: MainViewModel) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Playlists", fontSize = 26.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                Text("Playlists", fontSize = 26.sp, fontWeight = FontWeight.SemiBold, color = Pal.fg)
                 Text(
-                    if (showAll) "Show less" else "Show all", fontSize = 16.sp, color = Color.White,
+                    if (showAll) "Show less" else "Show all", fontSize = 16.sp, color = Pal.fg,
                     modifier = Modifier
                         .clip(RoundedCornerShape(50))
                         .clickable { showAll = !showAll }
@@ -1108,7 +1092,7 @@ fun LibraryScreen(vm: MainViewModel) {
         if (vm.played.isNotEmpty()) {
             item {
                 Text(
-                    "Recently played", fontSize = 26.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
+                    "Recently played", fontSize = 26.sp, fontWeight = FontWeight.SemiBold, color = Pal.fg,
                     modifier = Modifier.padding(top = 28.dp, bottom = 12.dp)
                 )
             }
@@ -1126,7 +1110,7 @@ fun LibraryScreen(vm: MainViewModel) {
         if (vm.savedAlbums.isNotEmpty()) {
             item {
                 Text(
-                    "Saved albums", fontSize = 26.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
+                    "Saved albums", fontSize = 26.sp, fontWeight = FontWeight.SemiBold, color = Pal.fg,
                     modifier = Modifier.padding(top = 28.dp, bottom = 12.dp)
                 )
             }
@@ -1143,7 +1127,7 @@ fun LibraryScreen(vm: MainViewModel) {
         }
         item {
             Text(
-                "Artists", fontSize = 26.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
+                "Artists", fontSize = 26.sp, fontWeight = FontWeight.SemiBold, color = Pal.fg,
                 modifier = Modifier.padding(top = 28.dp, bottom = 12.dp)
             )
         }

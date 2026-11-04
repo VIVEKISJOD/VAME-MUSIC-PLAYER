@@ -44,7 +44,7 @@ fun KitCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -
             .fillMaxWidth()
             .clip(shape)
             .glassFill()
-            .border(1.dp, Color(0x22FFFFFF), shape)
+            .border(1.dp, Stroke, shape)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         content = content
     )
@@ -67,7 +67,7 @@ fun KitHeader(icon: ImageVector, title: String, sub: String? = null) {
         }
         Spacer(Modifier.width(12.dp))
         Column {
-            Text(title, fontSize = 19.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+            Text(title, fontSize = 19.sp, fontWeight = FontWeight.SemiBold, color = Pal.fg)
             if (sub != null) Text(sub, fontSize = 12.sp, color = Pal.muted)
         }
     }
@@ -80,7 +80,7 @@ fun KitDivider() {
             .fillMaxWidth()
             .padding(vertical = 6.dp)
             .height(1.dp)
-            .background(Color(0x1FFFFFFF))
+            .background(Stroke)
     )
 }
 
@@ -88,7 +88,7 @@ fun KitDivider() {
 @Composable
 fun KitLabel(title: String, sub: String? = null) {
     Column(Modifier.padding(top = 6.dp)) {
-        Text(title, fontSize = 16.sp, color = Color.White)
+        Text(title, fontSize = 16.sp, color = Pal.fg)
         if (sub != null) Text(sub, fontSize = 12.sp, color = Pal.muted)
     }
 }
@@ -106,7 +106,7 @@ fun KitSwitch(title: String, sub: String, checked: Boolean, onChange: (Boolean) 
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(Modifier.weight(1f).padding(end = 12.dp)) {
-            Text(title, fontSize = 16.sp, color = Color.White)
+            Text(title, fontSize = 16.sp, color = Pal.fg)
             Text(sub, fontSize = 12.sp, color = Pal.muted)
         }
         Switch(
@@ -116,9 +116,9 @@ fun KitSwitch(title: String, sub: String, checked: Boolean, onChange: (Boolean) 
                 checkedThumbColor = Color.White,
                 checkedTrackColor = Color(0xFF2FBF71),
                 checkedBorderColor = Color(0xFF2FBF71),
-                uncheckedThumbColor = Color(0xFF8A8A92),
-                uncheckedTrackColor = Color(0xFF2C2C32),
-                uncheckedBorderColor = Color(0xFF5A5A62)
+                uncheckedThumbColor = if (Pal.light) Color.White else Color(0xFF8A8A92),
+                uncheckedTrackColor = if (Pal.light) Color(0xFFD4D4DA) else Color(0xFF2C2C32),
+                uncheckedBorderColor = if (Pal.light) Color(0xFFB8B8C0) else Color(0xFF5A5A62)
             )
         )
     }
@@ -134,7 +134,7 @@ fun KitAction(title: String, sub: String, onClick: () -> Unit) {
             .padRing(RoundedCornerShape(12.dp)) { onClick() }
             .padding(vertical = 8.dp, horizontal = if (UiOpts.tv) 8.dp else 0.dp)
     ) {
-        Text(title, fontSize = 16.sp, color = Color.White)
+        Text(title, fontSize = 16.sp, color = Pal.fg)
         Text(sub, fontSize = 12.sp, color = Pal.muted)
     }
 }
@@ -149,12 +149,12 @@ fun KitChips(selected: Int, names: List<String>, onPick: (Int) -> Unit) {
             val on = selected == i
             Box(
                 Modifier
-                    .padClick(RoundedCornerShape(50), if (on) Pal.accent else Color(0x33FFFFFF), 1.05f) { onPick(i) }
+                    .padClick(RoundedCornerShape(50), if (on) Pal.accent else Pal.fg.copy(alpha = 0.12f), 1.05f) { onPick(i) }
                     .padding(horizontal = 16.dp, vertical = 9.dp)
             ) {
                 Text(
                     n, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-                    color = if (on) Pal.bgTop else Color.White
+                    color = if (on) Pal.bgTop else Pal.fg
                 )
             }
         }
@@ -171,7 +171,7 @@ fun KitButton(text: String, primary: Boolean = false, enabled: Boolean = true, o
             .clip(RoundedCornerShape(50))
             .then(
                 if (primary) Modifier.background(Pal.accent)
-                else Modifier.glassFill().border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(50))
+                else Modifier.glassFill().border(1.dp, Stroke, RoundedCornerShape(50))
             )
             .padRing(RoundedCornerShape(50), enabled) { onClick() }
             .padding(vertical = 13.dp, horizontal = 16.dp),
@@ -180,7 +180,7 @@ fun KitButton(text: String, primary: Boolean = false, enabled: Boolean = true, o
     ) {
         Text(
             text, fontSize = 15.sp, fontWeight = FontWeight.Bold,
-            color = if (primary) Pal.bgTop else Color.White,
+            color = if (primary) Pal.bgTop else Pal.fg,
             textAlign = TextAlign.Center
         )
     }
@@ -193,10 +193,10 @@ fun KitSmallBtn(text: String, enabled: Boolean = true, onClick: () -> Unit) {
     Box(
         Modifier
             .alpha(if (enabled) 1f else 0.45f)
-            .padClick(RoundedCornerShape(50), Color(0x33FFFFFF), 1.05f) { if (enabled) onClick() }
+            .padClick(RoundedCornerShape(50), Pal.fg.copy(alpha = 0.12f), 1.05f) { if (enabled) onClick() }
             .padding(horizontal = 14.dp, vertical = 7.dp)
     ) {
-        Text(text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+        Text(text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Pal.fg)
     }
 }
 

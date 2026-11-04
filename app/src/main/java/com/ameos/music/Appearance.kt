@@ -50,6 +50,15 @@ fun AppearanceSection(label: Boolean = true) {
     val ctx = LocalContext.current
     if (label) SectionLabel("Appearance")
 
+    // step64: light (default) or dark look; the Glass page tunes the dock, mini player and sheets
+    KitSwitch("Light look", "Soft grey pages with dark text. Off = the dark look below.", Pal.light) {
+        Pal.light = it
+        Pal.save(ctx)
+    }
+    KitAction("Glass", "Material, colour, frost, tint, film and active tab of the dock and mini player") {
+        GlassUi.open = true
+    }
+
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         listOf("Colour glass", "AMOLED", "AMOLED glass").forEachIndexed { i, name ->
             val on = Pal.mode == i
@@ -60,7 +69,7 @@ fun AppearanceSection(label: Boolean = true) {
                     .glassFill()
                     .border(
                         if (on) 2.dp else 1.dp,
-                        if (on) Pal.accent else Color(0x33FFFFFF),
+                        if (on) Pal.accent else Pal.fg.copy(alpha = 0.12f),
                         RoundedCornerShape(18.dp)
                     )
                     .padRing(RoundedCornerShape(18.dp)) {
@@ -79,7 +88,7 @@ fun AppearanceSection(label: Boolean = true) {
                             if (i == 0) Brush.verticalGradient(listOf(Pal.bgTop, Color(0xFF0A0808)))
                             else Brush.verticalGradient(listOf(Color.Black, Color.Black))
                         )
-                        .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(12.dp)),
+                        .border(1.dp, Stroke, RoundedCornerShape(12.dp)),
                     contentAlignment = Alignment.BottomCenter
                 ) {
                     Box(
@@ -91,19 +100,19 @@ fun AppearanceSection(label: Boolean = true) {
                             .background(
                                 when (i) {
                                     1 -> Color(0xFF181818)
-                                    2 -> Color(0x44FFFFFF)
-                                    else -> Color(0x33FFFFFF)
+                                    2 -> Pal.fg.copy(alpha = 0.25f)
+                                    else -> Pal.fg.copy(alpha = 0.12f)
                                 }
                             )
                             .border(
                                 1.dp,
-                                if (i == 1) Color(0x22FFFFFF) else Color(0x66FFFFFF),
+                                if (i == 1) Stroke else Pal.muted,
                                 RoundedCornerShape(50)
                             )
                     )
                 }
                 Text(
-                    name, fontSize = 12.sp, color = Color.White,
+                    name, fontSize = 12.sp, color = Pal.fg,
                     fontWeight = if (on) FontWeight.Bold else FontWeight.Normal,
                     modifier = Modifier.padding(top = 8.dp)
                 )
@@ -115,7 +124,7 @@ fun AppearanceSection(label: Boolean = true) {
         fontSize = 12.sp, color = Color(0xFF8C7C7E), modifier = Modifier.padding(top = 6.dp, bottom = 14.dp)
     )
 
-    Text("Palette", fontSize = 16.sp, color = Color.White)
+    Text("Palette", fontSize = 16.sp, color = Pal.fg)
     Row(
         Modifier
             .fillMaxWidth()
@@ -144,20 +153,20 @@ fun AppearanceSection(label: Boolean = true) {
                         )
                         .border(
                             if (on) 3.dp else 1.dp,
-                            if (on) Color.White else Color(0x44FFFFFF),
+                            if (on) Pal.fg else Pal.fg.copy(alpha = 0.25f),
                             CircleShape
                         )
                 )
                 Text(
                     p.name, fontSize = 11.sp,
-                    color = if (on) Color.White else Color(0xFF8C7C7E),
+                    color = if (on) Pal.fg else Color(0xFF8C7C7E),
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }
         }
     }
 
-    Text("Custom colour", fontSize = 16.sp, color = Color.White, modifier = Modifier.padding(top = 14.dp))
+    Text("Custom colour", fontSize = 16.sp, color = Pal.fg, modifier = Modifier.padding(top = 14.dp))
     PadSlider(
         value = Pal.hue,
         onChange = {
@@ -167,7 +176,7 @@ fun AppearanceSection(label: Boolean = true) {
         onFinished = { Pal.save(ctx) },
         range = 0f..359f
     )
-    Text("Colour strength", fontSize = 16.sp, color = Color.White)
+    Text("Colour strength", fontSize = 16.sp, color = Pal.fg)
     PadSlider(
         value = Pal.sat,
         onChange = { Pal.sat = it },

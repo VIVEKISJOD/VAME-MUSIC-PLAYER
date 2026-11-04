@@ -1,4 +1,14 @@
-# VAME Music - full changelog (up to zip step63, v0.37.2, 28 Oct 2026)
+# VAME Music - full changelog (up to zip step64, v0.38.0, 4 Nov 2026)
+
+## step64 (v0.38.0) - includes everything up to step63
+- New: whole app look rebuilt from your screenshots. LIGHT look by default (soft grey pages, dark text, one orange accent). Settings > Look > "Light look" switch goes back to the dark look (TV always dark). The player, lyrics, artist page, standby and recap stay dark.
+- New: floating glass dock with Home / New / Radio / Library / Search and the mini player as its own glass pill above it. It stays visible on album, artist and playlist pages. The old fold-on-scroll is gone.
+- New: Now Playing has 4 pages with a glass switch at the bottom: Cover, Lyrics, Effects, Info. Lyrics page uses your lyric styles (Soft, Dark, Rap, Romantic, Party, Retro, moving lines) plus translate, Aa style panel and provider buttons.
+- New: Effects page: Speed, Pitch (semitones), Reverb, presets (Original, Slowed + Reverb, Sped Up) and sleep timer chips. Uses Android audio effects; a phone that lacks reverb shows a note.
+- New: New tab (new release cards + New songs list), Radio tab (recommended stations, popular stations, your genre mixes; tap = endless radio). "Your type" tab is replaced by Radio.
+- New: Settings > Look > Glass page: Material (Fastest / Balanced / Quality), Colour, Frost, Tint, Film, Active tab, with a live preview.
+- Changed: artist page like your picture (big name over the photo, round info / play / star buttons).
+- Honest: Frost is a milky film, not a real blur of what is behind (Android does not give that to apps). Not compiled here: syntax was checked with a Kotlin compiler but not the full build.
 
 ## step63 (v0.37.2) - includes everything up to step62
 - Fixed: the lyric fonts are now inside the app, nothing to upload. They are free fonts (SIL Open Font License): Erica One (Soft), Boldonse (Dark), Big Shoulders Bold (Rap), Crimson Pro Italic (Romantic), Bricolage Grotesque Bold (Party) and Gloock (Retro).

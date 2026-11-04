@@ -51,6 +51,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.foundation.combinedClickable
+import kotlinx.coroutines.launch
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.ui.graphics.RectangleShape
@@ -92,11 +96,9 @@ private fun ArtistTopRow(s: Song, vm: MainViewModel, list: List<Song>) {
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .glassFill()
-            .border(1.dp, Stroke, RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(14.dp))
             .clickable { vm.play(s, list) }
-            .padding(8.dp),
+            .padding(vertical = 6.dp, horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Cover(s.cover, Modifier.size(52.dp), RoundedCornerShape(8.dp))
@@ -107,8 +109,10 @@ private fun ArtistTopRow(s: Song, vm: MainViewModel, list: List<Song>) {
                 color = if (playing) ShowAllColor else Color.White,
                 maxLines = 1, overflow = TextOverflow.Ellipsis
             )
+            val mins = (s.durationSec / 60).toString() + ":" + (s.durationSec % 60).toString().padStart(2, '0')
             Text(
-                s.artist, fontSize = 14.sp, color = Color(0xCCFFFFFF),
+                artistName(s.artist) + (if (s.durationSec > 0) " \u00B7 " + mins else ""),
+                fontSize = 14.sp, color = Color(0xCCFFFFFF),
                 maxLines = 1, overflow = TextOverflow.Ellipsis
             )
         }
@@ -147,6 +151,13 @@ private fun ArtistCard(card: YtCard, w: Dp, onClick: () -> Unit) {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ArtistScreen(vm: MainViewModel) {
+    // the artist page is always dark (white text, white glass), also in the light look
+    DarkScope { ArtistScreenInner(vm) }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun ArtistScreenInner(vm: MainViewModel) {
     BackHandler(enabled = vm.artistOpen) { vm.closeArtist() }
     val ctx = LocalContext.current
     val name = vm.openArtistName
@@ -158,13 +169,13 @@ fun ArtistScreen(vm: MainViewModel) {
     val latest = vm.artistLatestRelease
     // the picture: the artist's own YouTube Music photo, else newest official upload, else a song cover
     val heroPic = page?.pic ?: (if (vm.artistLatestPic) latest?.picture else null) ?: cover
-    val shown = when (vm.artistTop) {
+    val shownBase = when (vm.artistTop) {
         0 -> songs.take(10)
         1 -> songs.take(25)
         else -> songs
     }
     val tint = rememberCoverTint(heroPic)
-    val bg = lerp(tint, Color.Black, 0.55f)
+    val bg = lerp(Color(0xFF1B1B1D), tint, 0.10f)
     val light = lerp(tint, Color.White, 0.78f)
     val dark = lerp(tint, Color.Black, 0.75f)
     val ls = rememberLazyListState()
@@ -173,10 +184,14 @@ fun ArtistScreen(vm: MainViewModel) {
     val titleA by animateFloatAsState(if (showTitle) 1f else 0f, label = "artistTitle")
     var openShelves by remember { mutableStateOf(setOf<String>()) }
     var moreAbout by remember { mutableStateOf(false) }
+    var sortAz by remember { mutableStateOf(false) }
+    val shown = if (sortAz) shownBase.sortedBy { it.title.lowercase() } else shownBase
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
     LaunchedEffect(name) {
         ls.scrollToItem(0)
         openShelves = emptySet()
         moreAbout = false
+        sortAz = false
     }
     val screenW = LocalConfiguration.current.screenWidthDp
     val pageW = (screenW - 48).coerceAtMost(560).dp
@@ -193,30 +208,37 @@ fun ArtistScreen(vm: MainViewModel) {
         LazyColumn(
             Modifier.fillMaxSize(),
             state = ls,
-            contentPadding = PaddingValues(bottom = 170.dp)
+            contentPadding = PaddingValues(bottom = 210.dp)
         ) {
             // big picture that fades into the page, with the name on top of the fade
             item {
-                Box(Modifier.fillMaxWidth().height(430.dp)) {
-                    Cover(heroPic, Modifier.fillMaxSize(), RectangleShape, hiRes = true)
+                Box(Modifier.fillMaxWidth().height(520.dp)) {
+                    Cover(
+                        heroPic, Modifier.fillMaxSize(), RectangleShape, hiRes = true
+                    )
                     Box(
                         Modifier
                             .fillMaxSize()
                             .background(
                                 Brush.verticalGradient(
-                                    0.45f to Color.Transparent,
+                                    0f to Color(0x40000000),
+                                    0.40f to Color.Transparent,
+                                    0.80f to bg.copy(alpha = 0.85f),
                                     1f to bg
                                 )
                             )
                     )
+                    val big = name.uppercase()
+                    val nameSp = if (big.length <= 10) 64 else if (big.length <= 16) 52 else if (big.length <= 24) 40 else 32
                     Column(
                         Modifier
                             .align(Alignment.BottomCenter)
-                            .padding(horizontal = 20.dp, vertical = 2.dp),
+                            .padding(horizontal = 16.dp, vertical = 2.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            name, fontSize = 46.sp, fontWeight = FontWeight.ExtraBold,
+                            big, fontSize = nameSp.sp, fontWeight = FontWeight.Black,
+                            letterSpacing = (-1.5).sp, lineHeight = (nameSp + 2).sp,
                             color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center
                         )
@@ -227,33 +249,43 @@ fun ArtistScreen(vm: MainViewModel) {
                     }
                 }
             }
-            // shuffle, big play, favourite star
+            // info, big play (long press = shuffle), favourite star
             item {
                 Row(
-                    Modifier.fillMaxWidth().padding(top = 10.dp),
+                    Modifier.fillMaxWidth().padding(top = 14.dp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    ArtistRoundBtn(Icons.Filled.Shuffle) { vm.playArtist(true) }
-                    Spacer(Modifier.width(22.dp))
+                    ArtistRoundBtn(Icons.Filled.Info) {
+                        moreAbout = true
+                        scope.launch { ls.animateScrollToItem((ls.layoutInfo.totalItemsCount - 1).coerceAtLeast(0)) }
+                    }
+                    Spacer(Modifier.width(26.dp))
                     Box(
                         Modifier
-                            .size(84.dp)
+                            .size(76.dp)
                             .clip(CircleShape)
-                            .background(light)
-                            .clickable { vm.playArtist(false) },
+                            .background(Color.White)
+                            .combinedClickable(
+                                onClick = { vm.playArtist(false) },
+                                onLongClick = { vm.playArtist(true) }
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            Icons.Filled.PlayArrow, null, tint = dark,
-                            modifier = Modifier.size(46.dp)
+                            Icons.Filled.PlayArrow, null, tint = Color.Black,
+                            modifier = Modifier.size(44.dp)
                         )
                     }
-                    Spacer(Modifier.width(22.dp))
+                    Spacer(Modifier.width(26.dp))
                     ArtistRoundBtn(if (fav) Icons.Filled.Star else Icons.Outlined.StarBorder) {
                         vm.toggleArtistLike(name, cover)
                     }
                 }
+                Text(
+                    "Hold play to shuffle", fontSize = 11.sp, color = Color(0x88FFFFFF),
+                    textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                )
             }
             // the artist's top album (glass card)
             if (album != null) {
@@ -303,10 +335,25 @@ fun ArtistScreen(vm: MainViewModel) {
             }
             // top songs: pages of 4 rows, swipe sideways for the next page
             item {
-                Text(
-                    "Top songs", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color.White,
-                    modifier = Modifier.padding(start = 16.dp, top = 28.dp, bottom = 8.dp)
-                )
+                Row(
+                    Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 28.dp, bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Top Songs", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Box(
+                        Modifier.size(44.dp).clip(CircleShape).clickable { sortAz = !sortAz },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Filled.SwapVert, null,
+                            tint = if (sortAz) ShowAllColor else Color(0xCCFFFFFF),
+                            modifier = Modifier.size(26.dp)
+                        )
+                    }
+                }
             }
             if (vm.artistLoading && songs.isEmpty()) {
                 item {
@@ -444,7 +491,7 @@ fun ArtistScreen(vm: MainViewModel) {
                 Modifier
                     .size(46.dp)
                     .clip(CircleShape)
-                    .background(Color(0x66000000))
+                    .background(Color(0x55000000))
                     .border(1.dp, Color(0x33FFFFFF), CircleShape)
                     .clickable { vm.closeArtist() },
                 contentAlignment = Alignment.Center
@@ -493,13 +540,6 @@ fun ArtistScreen(vm: MainViewModel) {
                 }
             }
         }
-        MiniPlayer(
-            vm,
-            Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 10.dp)
-        )
     }
 }
 
@@ -544,12 +584,12 @@ fun LikedScreen(vm: MainViewModel) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { vm.closeLiked() }) {
-                    Icon(Icons.Filled.ArrowBack, null, tint = Color.White)
+                    Icon(Icons.Filled.ArrowBack, null, tint = Pal.fg)
                 }
                 Column(Modifier.weight(1f)) {
                     Text(
                         "Liked songs", fontSize = 24.sp, fontWeight = FontWeight.SemiBold,
-                        color = Color.White
+                        color = Pal.fg
                     )
                     Text(
                         songs.size.toString() + " songs" + (if (likedMins > 0) "  -  " + likedMins.toString() + " min" else ""), fontSize = 12.sp,
@@ -579,7 +619,7 @@ fun LikedScreen(vm: MainViewModel) {
                 }
                 Spacer(Modifier.width(8.dp))
             }
-            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0x22FFFFFF)))
+            Box(Modifier.fillMaxWidth().height(1.dp).background(Stroke))
             if (songs.isEmpty()) {
                 Box(
                     Modifier.weight(1f).fillMaxWidth().padding(32.dp),
@@ -594,19 +634,12 @@ fun LikedScreen(vm: MainViewModel) {
                 LazyColumn(
                     Modifier.weight(1f),
                     state = listState,
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 170.dp)
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 200.dp)
                 ) {
                     items(songs) { s -> SongRow(s, vm, songs) }
                 }
             }
         }
-        ScrollTopButton(listState, Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 100.dp))
-        MiniPlayer(
-            vm,
-            Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 10.dp)
-        )
+        ScrollTopButton(listState, Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 200.dp))
     }
 }

@@ -94,7 +94,7 @@ private fun TrackRow(n: Int, s: Song, vm: MainViewModel, list: List<Song>, fallb
         Cover(s.cover ?: fallback, Modifier.size(48.dp), RoundedCornerShape(8.dp))
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Text(s.title, fontSize = 16.sp, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(s.title, fontSize = 16.sp, color = Pal.fg, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
                 artistName(s.artist), fontSize = 13.sp, color = Pal.muted,
                 maxLines = 1, overflow = TextOverflow.Ellipsis
@@ -113,7 +113,7 @@ private fun AlbumHead(album: Album, songs: List<Song>, vm: MainViewModel, modifi
         Column(Modifier.weight(1f)) {
             Text(
                 album.title, fontSize = 26.sp, fontWeight = FontWeight.SemiBold,
-                color = Color.White, maxLines = 3, overflow = TextOverflow.Ellipsis
+                color = Pal.fg, maxLines = 3, overflow = TextOverflow.Ellipsis
             )
             Text(
                 if (album.artist.isNotBlank()) album.artist
@@ -129,7 +129,7 @@ private fun AlbumHead(album: Album, songs: List<Song>, vm: MainViewModel, modifi
             }
         }
         IconButton(onClick = { vm.playAlbum(true) }) {
-            Icon(Icons.Filled.Shuffle, null, tint = Color.White)
+            Icon(Icons.Filled.Shuffle, null, tint = Pal.fg)
         }
         Box(
             Modifier
@@ -167,7 +167,7 @@ fun AlbumScreen(vm: MainViewModel) {
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    listOf(lerp(tint, Color.Black, 0.35f), Pal.bgMid, Pal.bgBot)
+                    listOf(if (Pal.light) lerp(tint, Pal.bgMid, 0.5f) else lerp(tint, Color.Black, 0.35f), Pal.bgMid, Pal.bgBot)
                 )
             )
             .blockTaps()
@@ -179,13 +179,13 @@ fun AlbumScreen(vm: MainViewModel) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { vm.closeAlbum() }) {
-                    Icon(Icons.Filled.ArrowBack, null, tint = Color.White)
+                    Icon(Icons.Filled.ArrowBack, null, tint = Pal.fg)
                 }
                 Spacer(Modifier.weight(1f))
                 if (album.url.startsWith("yt:")) {
                     if (songs.isNotEmpty()) {
                         IconButton(onClick = { vm.saveYtAsPlaylist() }) {
-                            Icon(Icons.Filled.LibraryAdd, null, tint = Color.White)
+                            Icon(Icons.Filled.LibraryAdd, null, tint = Pal.fg)
                         }
                     }
                 } else {
@@ -193,7 +193,7 @@ fun AlbumScreen(vm: MainViewModel) {
                     IconButton(onClick = { vm.toggleSaveAlbum(album) }) {
                         Icon(
                             if (saved) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
-                            null, tint = Color.White
+                            null, tint = Pal.fg
                         )
                     }
                 }
@@ -201,12 +201,12 @@ fun AlbumScreen(vm: MainViewModel) {
                     IconButton(onClick = {
                         vm.downloadAll(songs)
                     }) {
-                        Icon(Icons.Filled.Download, null, tint = Color.White)
+                        Icon(Icons.Filled.Download, null, tint = Pal.fg)
                     }
                 }
                 if (songs.isNotEmpty()) {
                     IconButton(onClick = { menuOpen = true }) {
-                        Icon(Icons.Filled.MoreVert, null, tint = Color.White)
+                        Icon(Icons.Filled.MoreVert, null, tint = Pal.fg)
                     }
                 }
             }
@@ -214,7 +214,7 @@ fun AlbumScreen(vm: MainViewModel) {
             LazyColumn(
                 Modifier.weight(1f),
                 state = listState,
-                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 170.dp)
+                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 200.dp)
             ) {
                 item {
                     if (wide) {
@@ -252,7 +252,7 @@ fun AlbumScreen(vm: MainViewModel) {
                 itemsIndexed(shown) { i, s -> TrackRow(i + 1, s, vm, shown, album.cover) }
             }
         }
-        ScrollTopButton(listState, Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 190.dp))
+        ScrollTopButton(listState, Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 210.dp))
         DetailBottomBar(vm, Modifier.align(Alignment.BottomCenter))
         if (menuOpen) {
             PlaylistMenuSheet(
@@ -290,12 +290,12 @@ fun DownloadsScreen(vm: MainViewModel) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { vm.downloadsOpen = false }) {
-                    Icon(Icons.Filled.ArrowBack, null, tint = Color.White)
+                    Icon(Icons.Filled.ArrowBack, null, tint = Pal.fg)
                 }
                 Column(Modifier.weight(1f)) {
                     Text(
                         "Downloads", fontSize = 24.sp, fontWeight = FontWeight.SemiBold,
-                        color = Color.White
+                        color = Pal.fg
                     )
                     Text(
                         songs.size.toString() + " songs - " + mb, fontSize = 12.sp,
@@ -303,11 +303,11 @@ fun DownloadsScreen(vm: MainViewModel) {
                     )
                 }
                 Row(
-                    Modifier.clip(RoundedCornerShape(50)).background(Color(0xFF5A1A1A)),
+                    Modifier.clip(RoundedCornerShape(50)).background(if (Pal.light) Pal.surface2 else Color(0xFF5A1A1A)),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = { vm.playDownloads(true) }) {
-                        Icon(Icons.Filled.Shuffle, null, tint = Color.White)
+                        Icon(Icons.Filled.Shuffle, null, tint = Pal.fg)
                     }
                     Box(
                         Modifier
@@ -325,10 +325,10 @@ fun DownloadsScreen(vm: MainViewModel) {
                 }
                 Spacer(Modifier.width(8.dp))
             }
-            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0x22FFFFFF)))
+            Box(Modifier.fillMaxWidth().height(1.dp).background(Stroke))
             LazyColumn(
                 Modifier.weight(1f),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 170.dp)
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 200.dp)
             ) {
                 val active = vm.downloadingSongs.values.toList()
                 if (active.isNotEmpty()) {
@@ -344,7 +344,7 @@ fun DownloadsScreen(vm: MainViewModel) {
                                 .padding(12.dp)
                         ) {
                             Text(
-                                s.title, fontSize = 15.sp, color = Color.White,
+                                s.title, fontSize = 15.sp, color = Pal.fg,
                                 maxLines = 1, overflow = TextOverflow.Ellipsis
                             )
                             Spacer(Modifier.height(8.dp))
@@ -387,7 +387,7 @@ fun DownloadsScreen(vm: MainViewModel) {
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
                             Text(
-                                s.title, fontSize = 16.sp, color = Color.White,
+                                s.title, fontSize = 16.sp, color = Pal.fg,
                                 maxLines = 1, overflow = TextOverflow.Ellipsis
                             )
                             Text(
@@ -435,7 +435,7 @@ fun ImportDialog(vm: MainViewModel) {
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp)
         ) {
-            Text("Import playlist", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text("Import playlist", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Pal.fg)
             Text(
                 "Paste a YouTube Music, YouTube or Spotify playlist / album link " +
                     "(must be public). Spotify links bring the first ~100 songs. " +
@@ -455,8 +455,8 @@ fun ImportDialog(vm: MainViewModel) {
                     unfocusedContainerColor = ACard,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
+                    focusedTextColor = Pal.fg,
+                    unfocusedTextColor = Pal.fg,
                     cursorColor = APink
                 ),
                 modifier = Modifier.fillMaxWidth()
@@ -474,7 +474,7 @@ fun ImportDialog(vm: MainViewModel) {
             )
             if (vm.importStatus.isNotEmpty()) {
                 Text(
-                    vm.importStatus, fontSize = 14.sp, color = Color.White,
+                    vm.importStatus, fontSize = 14.sp, color = Pal.fg,
                     modifier = Modifier.padding(top = 10.dp)
                 )
             }
@@ -498,7 +498,7 @@ fun ImportDialog(vm: MainViewModel) {
                         .padding(vertical = 13.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Open playlist", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Open playlist", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Pal.fg)
                 }
             }
             Spacer(Modifier.height(16.dp))
@@ -512,7 +512,7 @@ fun ImportDialog(vm: MainViewModel) {
                         .padding(vertical = 15.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Close", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Close", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Pal.fg)
                 }
                 Box(
                     Modifier
@@ -525,7 +525,7 @@ fun ImportDialog(vm: MainViewModel) {
                 ) {
                     Text(
                         "Import", fontSize = 16.sp, fontWeight = FontWeight.Bold,
-                        color = Color(0xFF3A1014)
+                        color = Color.White
                     )
                 }
             }

@@ -103,7 +103,7 @@ fun OutputDialog(vm: MainViewModel) {
                 .glassPanel(RoundedCornerShape(32.dp))
                 .padding(20.dp)
         ) {
-            Text("Play audio on", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text("Play audio on", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Pal.fg)
             Spacer(Modifier.height(12.dp))
             Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
                 vm.outputs.forEach { d ->
@@ -131,7 +131,7 @@ fun OutputDialog(vm: MainViewModel) {
                         Spacer(Modifier.width(16.dp))
                         Text(
                             d.name, fontSize = 18.sp, fontWeight = FontWeight.Bold,
-                            color = if (on) OAccent else Color.White,
+                            color = if (on) OAccent else Pal.fg,
                             maxLines = 1, overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f)
                         )
@@ -170,7 +170,7 @@ fun OutputDialog(vm: MainViewModel) {
                         Spacer(Modifier.width(16.dp))
                         Text(
                             p.name, fontSize = 18.sp, fontWeight = FontWeight.Bold,
-                            color = if (onP) OAccent else Color.White,
+                            color = if (onP) OAccent else Pal.fg,
                             maxLines = 1, overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f)
                         )
@@ -206,7 +206,7 @@ fun OutputDialog(vm: MainViewModel) {
                 ) {
                     Icon(Icons.Filled.Settings, null, tint = OSub, modifier = Modifier.size(26.dp))
                     Spacer(Modifier.width(16.dp))
-                    Text("Bluetooth settings", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Bluetooth settings", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Pal.fg)
                 }
             }
         }
