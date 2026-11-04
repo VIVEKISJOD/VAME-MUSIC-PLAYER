@@ -51,7 +51,7 @@ fun AppearanceSection(label: Boolean = true) {
     if (label) SectionLabel("Appearance")
 
     // step64: light (default) or dark look; the Glass page tunes the dock, mini player and sheets
-    KitSwitch("Light look", "Soft grey pages with dark text. Off = the dark look below.", Pal.light) {
+    KitSwitch("Light look", "Soft grey pages with dark text. Off = dark look. Tap a dark look below to switch.", Pal.light) {
         Pal.light = it
         Pal.save(ctx)
     }
@@ -61,7 +61,8 @@ fun AppearanceSection(label: Boolean = true) {
 
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         listOf("Colour glass", "AMOLED", "AMOLED glass").forEachIndexed { i, name ->
-            val on = Pal.mode == i
+            // only marked while the dark look is really on (with the light look on, nothing here is active)
+            val on = !Pal.light && Pal.mode == i
             Column(
                 Modifier
                     .weight(1f)
@@ -73,7 +74,9 @@ fun AppearanceSection(label: Boolean = true) {
                         RoundedCornerShape(18.dp)
                     )
                     .padRing(RoundedCornerShape(18.dp)) {
+                        // picking a dark look turns the dark look on (before, the light look stayed on and nothing changed)
                         Pal.mode = i
+                        Pal.light = false
                         Pal.save(ctx)
                     }
                     .padding(10.dp),

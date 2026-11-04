@@ -1,4 +1,10 @@
-# VAME Music - full changelog (up to zip step64, v0.38.0, 4 Nov 2026)
+# VAME Music - full changelog (up to zip step65, v0.38.1, 4 Nov 2026)
+
+## step65 (v0.38.1) - includes everything up to step64
+- Fixed: dark look. Tapping Colour glass, AMOLED or AMOLED glass in Settings > Look now switches the light look off by itself, so the app turns dark at once. Before, the light look stayed on and the tap looked like it did nothing.
+- Fixed: those three tiles are only marked as chosen while the dark look is really on.
+- Changed: the Light look switch text says that tapping a dark look switches to it.
+- Not compiled here (small change, one file).
 
 ## step64 (v0.38.0) - includes everything up to step63
 - New: whole app look rebuilt from your screenshots. LIGHT look by default (soft grey pages, dark text, one orange accent). Settings > Look > "Light look" switch goes back to the dark look (TV always dark). The player, lyrics, artist page, standby and recap stay dark.
