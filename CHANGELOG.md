@@ -1,4 +1,10 @@
-# VAME Music - full changelog (up to zip step65, v0.38.1, 4 Nov 2026)
+# VAME Music - full changelog (up to zip step66, v0.38.2, 9 Nov 2026)
+
+## step66 (v0.38.2) - includes everything up to step65
+- Back: the bottom bar fold animation. Scroll down and the mini player pill slides down into the bar and both fold into one slim row: Home, the mini player (cover, song, play / pause) and Search. Scroll up, or tap Home or Search, and it opens again with a soft spring.
+- The hidden half cannot be tapped by mistake while it is folded. With no song playing the bar never folds. "Reduce motion" makes it switch without animation.
+- The player still opens out of the pill, also when the row is folded.
+- Not compiled here (one file: Components.kt).
 
 ## step65 (v0.38.1) - includes everything up to step64
 - Fixed: dark look. Tapping Colour glass, AMOLED or AMOLED glass in Settings > Look now switches the light look off by itself, so the app turns dark at once. Before, the light look stayed on and the tap looked like it did nothing.
@@ -8,7 +14,7 @@
 
 ## step64 (v0.38.0) - includes everything up to step63
 - New: whole app look rebuilt from your screenshots. LIGHT look by default (soft grey pages, dark text, one orange accent). Settings > Look > "Light look" switch goes back to the dark look (TV always dark). The player, lyrics, artist page, standby and recap stay dark.
-- New: floating glass dock with Home / New / Radio / Library / Search and the mini player as its own glass pill above it. It stays visible on album, artist and playlist pages. The old fold-on-scroll is gone.
+- New: floating glass dock with Home / New / Radio / Library / Search and the mini player as its own glass pill above it. It stays visible on album, artist and playlist pages. The old fold-on-scroll was gone here (it came back in step66).
 - New: Now Playing has 4 pages with a glass switch at the bottom: Cover, Lyrics, Effects, Info. Lyrics page uses your lyric styles (Soft, Dark, Rap, Romantic, Party, Retro, moving lines) plus translate, Aa style panel and provider buttons.
 - New: Effects page: Speed, Pitch (semitones), Reverb, presets (Original, Slowed + Reverb, Sped Up) and sleep timer chips. Uses Android audio effects; a phone that lacks reverb shows a note.
 - New: New tab (new release cards + New songs list), Radio tab (recommended stations, popular stations, your genre mixes; tap = endless radio). "Your type" tab is replaced by Radio.

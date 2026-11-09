@@ -24,6 +24,9 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.snap
+import androidx.compose.ui.graphics.TransformOrigin
+import kotlin.math.roundToInt
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
@@ -335,7 +338,8 @@ fun MiniPlayer(
     vm: MainViewModel,
     modifier: Modifier = Modifier,
     force: Boolean = false,
-    onOpen: (() -> Unit)? = null
+    onOpen: (() -> Unit)? = null,
+    track: Boolean = true
 ) {
     val song = vm.current ?: return
     // tablet held sideways: the side player and the small floating box replace the pill on every page
@@ -346,11 +350,22 @@ fun MiniPlayer(
     val ink = inkColor()
     val enter = remember { Animatable(0f) }
     LaunchedEffect(Unit) { enter.animateTo(1f, spring(dampingRatio = 0.8f, stiffness = 300f)) }
+    // last known spots; track = false while the dock is folded (the slim row owns PillPos then)
+    val last = remember { arrayOfNulls<androidx.compose.ui.geometry.Rect>(2) }
+    LaunchedEffect(track) {
+        if (track) {
+            last[0]?.let { PillPos.pill = it }
+            last[1]?.let { PillPos.rect = it }
+        }
+    }
     Row(
         modifier
             .fillMaxWidth()
             .height(64.dp)
-            .onGloballyPositioned { PillPos.pill = it.boundsInRoot() }
+            .onGloballyPositioned {
+                last[0] = it.boundsInRoot()
+                if (track) PillPos.pill = last[0]
+            }
             .graphicsLayer {
                 alpha = enter.value.coerceIn(0f, 1f)
                 translationY = (1f - enter.value) * 80f
@@ -371,7 +386,10 @@ fun MiniPlayer(
     ) {
         Cover(
             song.cover,
-            Modifier.size(46.dp).onGloballyPositioned { PillPos.rect = it.boundsInRoot() },
+            Modifier.size(46.dp).onGloballyPositioned {
+                last[1] = it.boundsInRoot()
+                if (track) PillPos.rect = last[1]
+            },
             RoundedCornerShape(12.dp)
         )
         Spacer(Modifier.width(12.dp))
@@ -502,19 +520,162 @@ fun DetailBottomBar(vm: MainViewModel, modifier: Modifier = Modifier) {
 }
 
 // Bottom dock: a floating glass mini player pill on top of a floating glass tab pill.
-// (The old fold-on-scroll is gone: both pills always stay, like the new design.)
+// Scroll down = the mini player slides down INTO the bar and both fold into one slim row
+// (Home, mini player, Search). Scroll up or tap Home / Search = it opens again.
+// To tune the feel: the spring below (dampingRatio / stiffness), 30.dp slide, 0.1f shrink.
 @Composable
 fun Dock(vm: MainViewModel, collapsed: Boolean, onExpand: () -> Unit, modifier: Modifier = Modifier) {
     // over the always-dark artist page the pills use white ink
     val dark = vm.artistOpen
+    val fold = collapsed && vm.current != null
+    // read only while drawing / measuring, so nothing is re-composed on every frame
+    val pState = animateFloatAsState(
+        if (fold) 1f else 0f,
+        if (UiOpts.reduceMotion) snap() else spring(dampingRatio = 0.82f, stiffness = 320f),
+        label = "dockFold"
+    )
+    val foldOn by remember { derivedStateOf { pState.value > 0.02f } }
     CompositionLocalProvider(LocalDark provides (dark || LocalDark.current)) {
-        Column(
-            modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+        Box(
+            modifier
+                .fillMaxWidth()
+                .layout { measurable, constraints ->
+                    val pl = measurable.measure(constraints.copy(minHeight = 0))
+                    val foldH = minOf(pl.height, 68.dp.roundToPx())
+                    val h = (pl.height + (foldH - pl.height) * pState.value).roundToInt()
+                    layout(pl.width, h) { pl.place(0, h - pl.height) }
+                },
+            contentAlignment = Alignment.BottomCenter
         ) {
-            if (vm.current != null) MiniPlayer(vm)
-            BottomBar(vm.tab, { goTab(vm, it); onExpand() })
+            // open: mini player pill above the tab bar
+            Box(
+                Modifier.graphicsLayer {
+                    val q = pState.value
+                    alpha = (1f - q * 1.6f).coerceIn(0f, 1f)
+                    translationY = q * 30.dp.toPx()
+                    scaleX = 1f - 0.1f * q
+                    scaleY = 1f - 0.1f * q
+                    transformOrigin = TransformOrigin(0.5f, 1f)
+                }
+            ) {
+                Column(
+                    Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    if (vm.current != null) MiniPlayer(vm, track = !fold)
+                    BottomBar(vm.tab, { goTab(vm, it); onExpand() })
+                }
+                // the hidden half cannot be tapped by mistake
+                if (fold) Box(Modifier.matchParentSize().blockTaps())
+            }
+            // folded: one slim row
+            if (foldOn || fold) {
+                Box(
+                    Modifier.graphicsLayer {
+                        val q = pState.value
+                        alpha = ((q - 0.35f) / 0.65f).coerceIn(0f, 1f)
+                        translationY = (1f - q) * -24.dp.toPx()
+                        scaleX = 0.92f + 0.08f * q
+                        scaleY = 0.92f + 0.08f * q
+                        transformOrigin = TransformOrigin(0.5f, 1f)
+                    }
+                ) {
+                    FoldedDock(vm, fold, onExpand)
+                    if (!fold) Box(Modifier.matchParentSize().blockTaps())
+                }
+            }
         }
+    }
+}
+
+@Composable
+private fun FoldedDock(vm: MainViewModel, active: Boolean, onExpand: () -> Unit) {
+    val song = vm.current ?: return
+    val tick = rememberTick()
+    val ink = inkColor()
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .height(68.dp)
+            .glassBar(RoundedCornerShape(34.dp))
+            .padding(6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        FoldTab(Icons.Filled.Home, vm.tab == 0, ink) {
+            tick()
+            goTab(vm, 0)
+            onExpand()
+        }
+        Row(
+            Modifier
+                .weight(1f)
+                .padding(horizontal = 6.dp)
+                .height(54.dp)
+                .onGloballyPositioned { if (active) PillPos.pill = it.boundsInRoot() }
+                .pressScale(0.97f)
+                .clip(RoundedCornerShape(27.dp))
+                .clickable {
+                    tick()
+                    vm.showPlayer = !vm.showPlayer
+                }
+                .padding(start = 7.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Cover(
+                song.cover,
+                Modifier.size(40.dp).onGloballyPositioned { if (active) PillPos.rect = it.boundsInRoot() },
+                RoundedCornerShape(10.dp)
+            )
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    song.title, fontSize = 14.sp, fontWeight = FontWeight.Medium,
+                    color = ink, maxLines = 1, overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    song.artist, fontSize = 11.sp, color = ink.copy(alpha = 0.6f),
+                    maxLines = 1, overflow = TextOverflow.Ellipsis
+                )
+            }
+            IconButton(onClick = {
+                tick()
+                vm.toggle()
+            }, modifier = Modifier.size(44.dp)) {
+                if (vm.loading) {
+                    CircularProgressIndicator(Modifier.size(20.dp), color = ink, strokeWidth = 2.dp)
+                } else {
+                    Crossfade(vm.isPlaying, animationSpec = tween(180), label = "ppFold") { pl ->
+                        Icon(
+                            if (pl) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                            null, tint = ink, modifier = Modifier.size(26.dp)
+                        )
+                    }
+                }
+            }
+        }
+        FoldTab(Icons.Filled.Search, vm.tab == 1, ink) {
+            tick()
+            goTab(vm, 1)
+            onExpand()
+        }
+    }
+}
+
+@Composable
+private fun FoldTab(icon: ImageVector, on: Boolean, ink: Color, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .size(54.dp)
+            .clip(CircleShape)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        if (on) Box(Modifier.matchParentSize().glassActiveTab(CircleShape))
+        Icon(
+            icon, null,
+            tint = if (on) ink else ink.copy(alpha = 0.78f),
+            modifier = Modifier.size(26.dp)
+        )
     }
 }
 
