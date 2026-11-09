@@ -54,7 +54,11 @@ object SoundFx {
     var crossfade by mutableIntStateOf(0)  // seconds, 0 = off
     var pitchSemis by mutableFloatStateOf(0f) // step64 Effects page: -12 .. +12 semitones
     var reverb by mutableIntStateOf(0)        // step64 Effects page: 0 .. 100 percent (0 = off)
+    var boost by mutableIntStateOf(0)         // step67: volume boost level 0 Off, 1 Medium, 2 High, 3 Max
+    var maxVol by mutableStateOf(false)       // step67: phone volume goes to max when a song starts
     var note by mutableStateOf("")
+    val boostNames = listOf("Off", "Medium +6 dB", "High +10 dB", "Max +15 dB")
+    private val boostMb = intArrayOf(0, 600, 1000, 1500)
 
     private var ctx: Context? = null
     private var eq: Equalizer? = null
@@ -95,6 +99,8 @@ object SoundFx {
         crossfade = p.getInt("crossfade", 0)
         pitchSemis = p.getFloat("pitchSemis", 0f).coerceIn(-12f, 12f)
         reverb = p.getInt("reverb", 0).coerceIn(0, 100)
+        boost = p.getInt("boost", 0).coerceIn(0, boostMb.size - 1)
+        maxVol = p.getBoolean("maxVol", false)
         val saved = (p.getString("levels", "") ?: "").split(",").mapNotNull { it.toFloatOrNull() }
         if (saved.isNotEmpty()) {
             levels.clear()
@@ -113,6 +119,8 @@ object SoundFx {
             .putInt("crossfade", crossfade)
             .putFloat("pitchSemis", pitchSemis)
             .putInt("reverb", reverb)
+            .putInt("boost", boost)
+            .putBoolean("maxVol", maxVol)
             .putString("levels", levels.joinToString(","))
             .apply()
     }
@@ -188,8 +196,9 @@ object SoundFx {
         try {
             val l = le
             if (l != null) {
-                l.setTargetGain(loud)
-                l.setEnabled(loud > 0)
+                val gain = maxOf(loud, boostMb[boost.coerceIn(0, boostMb.size - 1)])
+                l.setTargetGain(gain)
+                l.setEnabled(gain > 0)
             }
         } catch (e: Exception) {
         }
@@ -248,6 +257,34 @@ object SoundFx {
         } catch (e: Exception) {
         }
         applyReverb()
+    }
+
+    // step67: one tap volume boost (uses the loudness effect with a bigger gain than the Loudness slider)
+    fun pickBoost(i: Int) {
+        boost = i.coerceIn(0, boostMb.size - 1)
+        apply()
+        save()
+    }
+
+    fun chooseMaxVol(on: Boolean) {
+        maxVol = on
+        save()
+        if (on) maxPhoneVolume()
+    }
+
+    // sets the phone's music volume to the top step
+    fun maxPhoneVolume() {
+        val c = ctx ?: return
+        try {
+            val am = c.getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
+            am.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, am.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC), 0)
+        } catch (e: Exception) {
+        }
+    }
+
+    // called when a new song starts playing
+    fun onSongStart() {
+        if (maxVol) maxPhoneVolume()
     }
 
     fun pickPreset(i: Int) {
@@ -338,6 +375,15 @@ fun SoundSection() {
                 fx.setBand(i, it)
             }
         }
+    }
+    KitDivider()
+    KitLabel("Volume boost", "For songs that sound too quiet. Makes the sound louder than the phone's own volume.")
+    KitChips(fx.boost, fx.boostNames) {
+        fx.pickBoost(it)
+    }
+    KitNote("Max can sound harsh on very loud songs. If it crackles, pick High. While a boost is on it replaces the Loudness slider below.")
+    KitSwitch("Phone volume to max", "When a song starts, the phone's music volume goes to the top step. Careful with headphones.", fx.maxVol) {
+        fx.chooseMaxVol(it)
     }
     KitDivider()
     FxSlider("Bass boost", if (fx.bass == 0) "Off" else (fx.bass / 10).toString() + "%", fx.bass.toFloat(), 0f..1000f) {

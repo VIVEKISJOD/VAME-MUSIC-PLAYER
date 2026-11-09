@@ -350,7 +350,7 @@ fun SettingsScreen(vm: MainViewModel) {
             }
 
             // ---------------- sound ----------------
-            KitHeader(Icons.Filled.GraphicEq, "Sound", "Equalizer, bass, loudness, 3D sound, fade")
+            KitHeader(Icons.Filled.GraphicEq, "Sound", "Volume boost, equalizer, bass, 3D sound, fade")
             KitCard {
                 SoundSection()
             }

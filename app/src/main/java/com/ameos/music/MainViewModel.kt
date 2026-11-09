@@ -1103,6 +1103,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 player.prepare()
                 if (startMs > 0L) player.seekTo(startMs)
                 player.play()
+                SoundFx.onSongStart()
                 played.removeAll { it.url == song.url }
                 played.add(0, song)
                 while (played.size > 30) played.removeAt(played.size - 1)

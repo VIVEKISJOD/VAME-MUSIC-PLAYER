@@ -1,4 +1,11 @@
-# VAME Music - full changelog (up to zip step66, v0.38.2, 9 Nov 2026)
+# VAME Music - full changelog (up to zip step67, v0.38.3, 9 Nov 2026)
+
+## step67 (v0.38.3) - includes everything up to step66
+- New: Volume boost for songs that sound too quiet. Settings > Sound > Volume boost: Off, Medium +6 dB, High +10 dB, Max +15 dB. It makes the song louder than the phone's own volume. It is remembered.
+- New: the same Volume boost chips on the Effects page of Now Playing, so you can change it while a song plays.
+- New: Settings > Sound > "Phone volume to max". When a song starts, the phone's music volume goes to the top step. Off by default; be careful with headphones.
+- Note: a boost replaces the Loudness slider while it is on. Max can sound harsh on very loud songs; if it crackles, use High. Some phones do not support the loudness effect (Sound shows a line saying so).
+- Only 3 changes this time (below the 6 rule). Not compiled here (3 files: Sound.kt, NowPlaying.kt, MainViewModel.kt).
 
 ## step66 (v0.38.2) - includes everything up to step65
 - Back: the bottom bar fold animation. Scroll down and the mini player pill slides down into the bar and both fold into one slim row: Home, the mini player (cover, song, play / pause) and Search. Scroll up, or tap Home or Search, and it opens again with a soft spring.

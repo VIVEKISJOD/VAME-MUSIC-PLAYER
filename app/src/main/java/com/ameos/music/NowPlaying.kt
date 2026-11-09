@@ -463,6 +463,19 @@ private fun EffectsPage(vm: MainViewModel) {
         PillSlider(rev.toFloat(), 0f..100f, { SoundFx.setEffects(vm, speed, semis, it.roundToInt()) }) { SoundFx.save() }
 
         Text(
+            "VOLUME BOOST", fontSize = 13.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp,
+            color = Color(0x99FFFFFF), modifier = Modifier.padding(top = 18.dp)
+        )
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(top = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            SoundFx.boostNames.forEachIndexed { i, n ->
+                TextChip(n, SoundFx.boost == i) { SoundFx.pickBoost(i) }
+            }
+        }
+
+        Text(
             "Sleep timer" + (if (vm.sleepLeftSec > 0) "  •  stops in " + (vm.sleepLeftSec / 60) + ":" +
                 (vm.sleepLeftSec % 60).toString().padStart(2, '0') else if (vm.sleepAfterSong) "  •  after this song" else ""),
             fontSize = 14.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp,
