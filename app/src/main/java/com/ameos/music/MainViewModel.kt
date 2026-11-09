@@ -58,6 +58,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var query by mutableStateOf("")
     var results by mutableStateOf<List<Song>>(emptyList())
     var searched by mutableStateOf(false)
+    // recent searches (Search tab), newest first, saved
+    val recentSearches = mutableStateListOf<String>().apply {
+        addAll(
+            (app.getSharedPreferences("vame", android.content.Context.MODE_PRIVATE)
+                .getString("recentSearches", "") ?: "").split("\n").filter { it.isNotBlank() }
+        )
+    }
 
     var recommended by mutableStateOf<List<Song>>(emptyList())
     var discover by mutableStateOf<List<Song>>(emptyList())
@@ -140,6 +147,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     // settings
     var title by mutableStateOf(Prefs.title(app))
     var endless by mutableStateOf(Prefs.endless(app))
+    var sameStyle by mutableStateOf(app.getSharedPreferences("vame", android.content.Context.MODE_PRIVATE).getBoolean("sameStyle", true))
     var officialOnly by mutableStateOf(Prefs.officialOnly(app))
     var hinglish by mutableStateOf(Prefs.hinglish(app))
     var stopOnSwipe by mutableStateOf(Prefs.stopOnSwipe(app))
@@ -452,9 +460,44 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (i == 3 && ytSignedIn && ytPlaylists.isEmpty()) refreshYt()
     }
 
+    private fun saveRecent() {
+        getApplication<Application>().getSharedPreferences("vame", android.content.Context.MODE_PRIVATE)
+            .edit().putString("recentSearches", recentSearches.joinToString("\n")).apply()
+    }
+
+    private fun addRecent(q: String) {
+        recentSearches.remove(q)
+        recentSearches.add(0, q)
+        while (recentSearches.size > 8) recentSearches.removeAt(recentSearches.size - 1)
+        saveRecent()
+    }
+
+    fun removeRecent(q: String) {
+        recentSearches.remove(q)
+        saveRecent()
+    }
+
+    fun clearRecent() {
+        recentSearches.clear()
+        saveRecent()
+    }
+
     fun search() {
         val q = query.trim()
         if (q.isEmpty()) return
+        addRecent(q)
+        if (Net.on) {
+            // offline: search only inside downloads and playlists
+            val pool = (downloads.toList() + playlists.flatMap { it.songs }).distinctBy { it.url }
+            val lq = q.lowercase()
+            searched = true
+            error = null
+            artistResults = emptyList()
+            albumResults = emptyList()
+            results = pool.filter { it.title.lowercase().contains(lq) || it.artist.lowercase().contains(lq) }
+            if (results.isEmpty()) error = "Offline: nothing found in your downloads"
+            return
+        }
         viewModelScope.launch {
             loading = true
             error = null
@@ -503,6 +546,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun updateTitle(t: String) {
         title = t
         Prefs.setTitle(getApplication<Application>(), t)
+    }
+
+    fun chooseSameStyle(on: Boolean) {
+        sameStyle = on
+        getApplication<Application>().getSharedPreferences("vame", android.content.Context.MODE_PRIVATE)
+            .edit().putBoolean("sameStyle", on).apply()
     }
 
     fun setEndlessOn(on: Boolean) {
@@ -593,6 +642,18 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     // ---------- queue / playback ----------
 
     fun play(song: Song, list: List<Song> = listOf(song)) {
+        // offline mode: only downloaded songs can play, the queue keeps only those
+        if (Net.on) {
+            if (!isDownloaded(song)) {
+                toast("Offline: download this song first")
+                return
+            }
+            val only = list.filter { isDownloaded(it) }
+            queue = only
+            index = only.indexOf(song).coerceAtLeast(0)
+            start(song)
+            return
+        }
         queue = list
         index = list.indexOf(song).coerceAtLeast(0)
         start(song)
@@ -1055,7 +1116,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         startLocal(song, 0L)
     }
 
-    private fun applyRelated(song: Song, related: List<Song>) {
+    private fun applyRelated(song: Song, relatedRaw: List<Song>) {
+        val related = if (sameStyle) {
+            try {
+                StyleRank.rank(song, played.toList(), liked.toList(), relatedRaw)
+            } catch (e: Exception) {
+                relatedRaw
+            }
+        } else relatedRaw
         if (related.isNotEmpty()) suggestions = related.take(10)
         if (endless && queue.size - index < 8) {
             val have = queue.map { it.url }.toSet()

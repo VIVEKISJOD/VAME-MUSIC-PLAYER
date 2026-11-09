@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Tonality
 import androidx.compose.material.icons.filled.BlurOn
+import androidx.compose.material.icons.filled.BlurCircular
 import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PlayArrow
@@ -289,6 +290,23 @@ fun GlassSettingsScreen(vm: MainViewModel) {
                     Pal.glassFrost.roundToInt().toString() + " dp",
                     { Pal.glassFrost = it }, done
                 )
+                KitDivider()
+                KitSwitch(
+                    "Real blur",
+                    if (Frost.supported) "The dock and the mini player blur the page behind them like frosted glass. Material Fastest turns it off."
+                    else "Needs Android 12 or newer. On this phone the glass stays milky.",
+                    Pal.glassReal
+                ) {
+                    Pal.glassReal = it
+                    Pal.save(ctx)
+                }
+                if (Frost.supported && Pal.glassReal) {
+                    GlassSlider(
+                        Icons.Filled.BlurCircular, "Blur strength", Pal.glassBlur, 0f..30f,
+                        Pal.glassBlur.roundToInt().toString() + " dp",
+                        { Pal.glassBlur = it }, done
+                    )
+                }
             }
 
             GlassSection("COLOUR")
@@ -350,7 +368,7 @@ fun GlassSettingsScreen(vm: MainViewModel) {
                 Pal.save(ctx)
             }
             KitNote(
-                "Frost and Film make the bars milkier. The real blur only shows behind sheets and menus."
+                "Real blur shows on Android 12+ behind the dock and the mini player. Frost and Film add a milky layer on top; on older phones they are the whole glass look."
             )
             Spacer(Modifier.height(40.dp))
         }

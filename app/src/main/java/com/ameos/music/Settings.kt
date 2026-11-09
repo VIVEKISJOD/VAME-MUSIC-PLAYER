@@ -152,6 +152,13 @@ fun SettingsScreen(vm: MainViewModel) {
                 }
             }
 
+            val cat = androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(0) }
+            KitChips(cat.intValue, listOf("Look", "Player", "Home", "Sound", "Playback", "Account", "Storage and about")) {
+                cat.intValue = it
+            }
+            Spacer(Modifier.height(6.dp))
+
+            if (cat.intValue == 0) {
             // ---------------- look ----------------
             KitHeader(Icons.Filled.Palette, "Look", "Colours, glass, icon and size")
             KitCard {
@@ -214,7 +221,9 @@ fun SettingsScreen(vm: MainViewModel) {
                     UiOpts.save(ctx)
                 }
             }
+            }
 
+            if (cat.intValue == 1) {
             // ---------------- player ----------------
             KitHeader(Icons.Filled.MusicNote, "Player", "Small player, tablet and Standby")
             KitCard {
@@ -290,7 +299,9 @@ fun SettingsScreen(vm: MainViewModel) {
                     Connect.setAllow(ctx, it)
                 }
             }
+            }
 
+            if (cat.intValue == 2) {
             // ---------------- home ----------------
             KitHeader(Icons.Filled.Home, "Home and you", "What Home shows")
             KitCard {
@@ -348,13 +359,17 @@ fun SettingsScreen(vm: MainViewModel) {
                 KitLabel("Top songs shown")
                 KitChips(vm.artistTop, listOf("10", "25", "All")) { vm.updateArtistTop(it) }
             }
+            }
 
+            if (cat.intValue == 3) {
             // ---------------- sound ----------------
             KitHeader(Icons.Filled.GraphicEq, "Sound", "Volume boost, equalizer, bass, 3D sound, fade")
             KitCard {
                 SoundSection()
             }
+            }
 
+            if (cat.intValue == 4) {
             // ---------------- playback ----------------
             KitHeader(Icons.Filled.PlayArrow, "Playback")
             KitCard {
@@ -362,6 +377,14 @@ fun SettingsScreen(vm: MainViewModel) {
                     "Endless queue", "When the queue ends, keep adding similar songs.",
                     vm.endless
                 ) { vm.setEndlessOn(it) }
+                KitSwitch(
+                    "Stay in the same style", "Songs that play next match what you listen to (artist, language, style). Off lets any similar song in.",
+                    vm.sameStyle
+                ) { vm.chooseSameStyle(it) }
+                KitSwitch(
+                    "Auto offline mode", "No internet: Home, Search and playlists show only your downloads, and it switches back by itself.",
+                    Net.auto
+                ) { Net.chooseAuto(ctx, it) }
                 KitSwitch(
                     "Stop when removed from recents", "Swipe the app away and the music stops completely.",
                     vm.stopOnSwipe
@@ -452,7 +475,9 @@ fun SettingsScreen(vm: MainViewModel) {
                 KitLabel("Download quality", "Applies to new downloads.")
                 KitChips(vm.downloadQuality, listOf("High", "Normal", "Data saver")) { vm.updateDownloadQuality(it) }
             }
+            }
 
+            if (cat.intValue == 5) {
             // ---------------- accounts and moving ----------------
             KitHeader(Icons.Filled.Cloud, "Accounts", "Optional. VAME works fully without them")
             KitCard {
@@ -465,7 +490,9 @@ fun SettingsScreen(vm: MainViewModel) {
                     "Listen to your Spotify inside VAME and bring your Spotify playlists into VAME."
                 ) { SpotifyHub.open = true }
             }
+            }
 
+            if (cat.intValue == 6) {
             KitHeader(Icons.Filled.Storage, "Storage")
             KitCard {
                 KitAction(
@@ -517,6 +544,8 @@ fun SettingsScreen(vm: MainViewModel) {
                     fontSize = 12.sp, color = Pal.textDim
                 )
             }
+            }
+
             // room so the mini player on top of Settings never covers the last row
             Spacer(Modifier.height(if (vm.current != null) 110.dp else 40.dp))
         }

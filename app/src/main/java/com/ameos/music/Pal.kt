@@ -25,6 +25,8 @@ object Pal {
     var glassTint by mutableFloatStateOf(-1f)     // tint hue 0..360, -1 = none
     var glassFilm by mutableFloatStateOf(0.50f)   // white film over the glass (0..1)
     var glassActive by mutableFloatStateOf(0.26f) // strength of the selected tab highlight (0..1)
+    var glassBlur by mutableFloatStateOf(14f)     // real blur in dp behind the dock / mini player (Android 12+)
+    var glassReal by mutableStateOf(true)         // real blur on / off
 
     val amoled: Boolean get() = !light && mode != 0
     val glassy: Boolean get() = light || mode != 1
@@ -89,6 +91,8 @@ object Pal {
         glassTint = sp.getFloat("glassTint", -1f)
         glassFilm = sp.getFloat("glassFilm", 0.50f).coerceIn(0f, 1f)
         glassActive = sp.getFloat("glassActive", 0.26f).coerceIn(0f, 1f)
+        glassBlur = sp.getFloat("glassBlur", 14f).coerceIn(0f, 30f)
+        glassReal = sp.getBoolean("glassReal", true)
     }
 
     fun save(c: Context) {
@@ -98,6 +102,7 @@ object Pal {
             .putInt("glassMat", glassMat).putFloat("glassColour", glassColour)
             .putFloat("glassFrost", glassFrost).putFloat("glassTint", glassTint)
             .putFloat("glassFilm", glassFilm).putFloat("glassActive", glassActive)
+            .putFloat("glassBlur", glassBlur).putBoolean("glassReal", glassReal)
             .apply()
     }
 
@@ -108,5 +113,7 @@ object Pal {
         glassTint = -1f
         glassFilm = 0.50f
         glassActive = 0.26f
+        glassBlur = 14f
+        glassReal = true
     }
 }

@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -70,6 +71,17 @@ fun ProfileButton(vm: MainViewModel, size: androidx.compose.ui.unit.Dp, tappable
         Cover(photo, mod, CircleShape)
     } else {
         Icon(Icons.Filled.AccountCircle, null, tint = Pal.fg, modifier = mod)
+    }
+}
+
+// Gear button: opens Settings (the profile picture is only a picture now)
+@Composable
+fun GearButton(vm: MainViewModel, size: androidx.compose.ui.unit.Dp = 44.dp) {
+    Box(
+        Modifier.size(size).clip(CircleShape).glassFill().clickable { vm.showSettings = true },
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(Icons.Filled.Settings, "Settings", tint = Pal.fg, modifier = Modifier.size(size * 0.55f))
     }
 }
 
@@ -167,13 +179,17 @@ private fun JumpBackIn(vm: MainViewModel) {
 
 @Composable
 private fun HomeList(vm: MainViewModel) {
+    if (Net.on) {
+        OfflineHome(vm)
+        return
+    }
     val big = LocalConfiguration.current.screenWidthDp >= 600
     val cw = shelfW()
     val cols = if (big) 5 else 2
     val ytShelves = if (UiOpts.homeYt) vm.ytHome else emptyList()
 
     // chips: 0 Everything, 1 For you, 2 Discover, 3 Artists (vm.homeFilter keeps the choice)
-    val f = vm.homeFilter
+    val f = 0 // the chip row is gone (Dashboard Home); everything is shown
     val all = f == 0
     val forYou = f == 0 || f == 1
     val discover = f == 0 || f == 2
@@ -196,7 +212,7 @@ private fun HomeList(vm: MainViewModel) {
                         Modifier.size(58.dp).clip(CircleShape).glassFill(),
                         contentAlignment = Alignment.Center
                     ) {
-                        ProfileButton(vm, 58.dp, true)
+                        ProfileButton(vm, 58.dp, false)
                     }
                     Spacer(Modifier.width(14.dp))
                     Text(
@@ -204,39 +220,15 @@ private fun HomeList(vm: MainViewModel) {
                         color = Pal.fg, letterSpacing = (-1).sp, maxLines = 1,
                         overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f)
                     )
+                    GearButton(vm)
                 }
             }
         }
-        item {
-            val tick = rememberTick()
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(listOf("Everything", "For you", "Discover", "Artists").withIndex().toList()) { iv ->
-                    val i = iv.index
-                    val t = iv.value
-                    val sel = i == vm.homeFilter
-                    val chipBg by animateColorAsState(
-                        if (sel) Pal.fg else if (Pal.light) Color.White else Color(0x1AFFFFFF), label = "chip"
-                    )
-                    val chipFg by animateColorAsState(if (sel) Pal.onFg else Pal.fg, label = "chipFg")
-                    val cs = RoundedCornerShape(50)
-                    Text(
-                        t, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = chipFg,
-                        modifier = Modifier
-                            .clip(cs)
-                            .background(chipBg)
-                            .then(if (sel) Modifier else Modifier.border(1.dp, Stroke, cs))
-                            .clickable {
-                                tick()
-                                vm.homeFilter = i
-                            }
-                            .padding(horizontal = 18.dp, vertical = 9.dp)
-                    )
-                }
-            }
-        }
-        if (forYou && vm.played.isNotEmpty()) {
-            item { JumpBackIn(vm) }
-        }
+        // ---- Dashboard: tiles you use most, now playing strip, quick picks, mixes ----
+        item { DashGrid(vm) }
+        item { DashNowPlaying(vm) }
+        item { DashQuickPicks(vm) }
+        item { DashMixes(vm) }
         if (forYou && vm.dials.isNotEmpty()) {
             item { SpeedDialShelf(vm) }
         }
@@ -385,6 +377,243 @@ private fun HomeList(vm: MainViewModel) {
     }
 }
 
+// ---------------- DASHBOARD HOME ----------------
+
+private class DashT(
+    val cover: String?,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector?,
+    val title: String,
+    val go: () -> Unit
+)
+
+@Composable
+private fun DashTile(t: DashT, modifier: Modifier) {
+    val tick = rememberTick()
+    val shape = RoundedCornerShape(16.dp)
+    Row(
+        modifier
+            .height(60.dp)
+            .pressScale(0.97f)
+            .clip(shape)
+            .glassFill()
+            .border(1.dp, Stroke, shape)
+            .clickable {
+                tick()
+                t.go()
+            },
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            Modifier.size(60.dp).background(Pal.accent.copy(alpha = 0.16f)),
+            contentAlignment = Alignment.Center
+        ) {
+            if (t.cover != null) {
+                Cover(t.cover, Modifier.fillMaxSize(), RoundedCornerShape(0.dp))
+            } else if (t.icon != null) {
+                Icon(t.icon, null, tint = Pal.accent, modifier = Modifier.size(26.dp))
+            }
+        }
+        Text(
+            t.title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Pal.fg,
+            maxLines = 2, overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f).padding(horizontal = 10.dp)
+        )
+    }
+}
+
+// 2 columns, up to 8 tiles: everything you use is one tap away
+@Composable
+private fun DashGrid(vm: MainViewModel) {
+    val tiles = ArrayList<DashT>()
+    tiles.add(DashT(null, Icons.Filled.Favorite, "Liked songs") { vm.likedOpen = true })
+    val last = vm.played.firstOrNull()
+    if (last != null) {
+        tiles.add(DashT(last.cover, null, "Last played") { vm.play(last, vm.played.toList()) })
+    }
+    tiles.add(DashT(null, Icons.Filled.FileDownload, "Downloads") { vm.downloadsOpen = true })
+    tiles.add(DashT(null, Icons.Filled.Sensors, "Radio") { vm.tab = 2 })
+    for (pl in vm.playlists.take(4)) {
+        tiles.add(DashT(pl.shownCover(), Icons.Filled.QueueMusic, pl.name) { vm.openPlaylist(pl.id) })
+    }
+    Column(
+        Modifier.fillMaxWidth().padding(top = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        tiles.take(8).chunked(2).forEach { row ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                row.forEach { t -> DashTile(t, Modifier.weight(1f)) }
+                if (row.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+// slim glowing card, only while a song is loaded
+@Composable
+private fun DashNowPlaying(vm: MainViewModel) {
+    val s = vm.current ?: return
+    val tint = rememberCoverTint(s.cover)
+    val shape = RoundedCornerShape(18.dp)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 14.dp)
+            .pressScale(0.98f)
+            .clip(shape)
+            .background(
+                Brush.horizontalGradient(
+                    listOf(tint.copy(alpha = if (Pal.light) 0.5f else 0.9f), if (Pal.light) Color(0x99FFFFFF) else Color(0x22FFFFFF))
+                )
+            )
+            .border(1.dp, Stroke, shape)
+            .clickable { vm.showPlayer = true }
+            .padding(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Cover(s.cover, Modifier.size(48.dp), RoundedCornerShape(12.dp))
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                "NOW PLAYING", fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp,
+                color = Pal.textDim
+            )
+            Text(
+                s.title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Pal.fg,
+                maxLines = 1, overflow = TextOverflow.Ellipsis
+            )
+        }
+        Box(
+            Modifier.size(40.dp).clip(CircleShape).background(Pal.fg).clickable { vm.toggle() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                if (vm.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                null, tint = Pal.onFg, modifier = Modifier.size(24.dp)
+            )
+        }
+    }
+}
+
+// songs for you in swipeable columns of 4
+@Composable
+private fun DashQuickPicks(vm: MainViewModel) {
+    val qp = vm.recommended.take(16)
+    if (qp.isEmpty()) return
+    val w = (LocalConfiguration.current.screenWidthDp * 0.84f).coerceAtMost(380f).dp
+    ShelfTitle("Quick picks")
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        items(qp.chunked(4)) { col ->
+            Column(Modifier.width(w)) {
+                col.forEach { s ->
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { vm.play(s, qp) }
+                            .padding(vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Cover(s.cover, Modifier.size(50.dp), RoundedCornerShape(10.dp))
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                s.title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Pal.fg,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                artistName(s.artist), fontSize = 12.sp, color = Pal.textDim,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// stacked-cover mix cards from your genre shelves
+@Composable
+private fun DashMixes(vm: MainViewModel) {
+    val mixes = vm.genreShelves.filter { it.songs.size >= 3 }.take(8)
+    if (mixes.isEmpty()) return
+    ShelfTitle("Your mixes")
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        items(mixes) { m ->
+            Column(
+                Modifier
+                    .width(150.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .clickable { vm.play(m.songs.first(), m.songs) }
+            ) {
+                Box(Modifier.size(150.dp, 176.dp)) {
+                    Cover(
+                        m.songs[2].cover,
+                        Modifier.align(Alignment.TopCenter).size(112.dp).graphicsLayer { alpha = 0.55f },
+                        RoundedCornerShape(14.dp)
+                    )
+                    Cover(
+                        m.songs[1].cover,
+                        Modifier.align(Alignment.TopCenter).padding(top = 12.dp).size(130.dp).graphicsLayer { alpha = 0.8f },
+                        RoundedCornerShape(14.dp)
+                    )
+                    Cover(
+                        m.songs[0].cover,
+                        Modifier.align(Alignment.BottomCenter).size(150.dp),
+                        RoundedCornerShape(16.dp)
+                    )
+                }
+                Text(
+                    m.name + " mix", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Pal.fg,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp)
+                )
+            }
+        }
+    }
+}
+
+// shown instead of Home while there is no internet (Net.kt): only what works offline
+@Composable
+private fun OfflineHome(vm: MainViewModel) {
+    LazyColumn(contentPadding = ScreenPad) {
+        item {
+            Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Offline", fontSize = 40.sp, fontWeight = FontWeight.Bold, color = Pal.fg, letterSpacing = (-1).sp)
+                    Text("No internet. Your downloads and playlists still work.", fontSize = 13.sp, color = Pal.textDim)
+                }
+                GearButton(vm)
+            }
+        }
+        if (vm.playlists.isNotEmpty()) {
+            item { ShelfTitle("Your playlists") }
+            item {
+                CardShelf(
+                    vm.playlists.map { pl ->
+                        ShelfItem(
+                            pl.shownCover(), pl.name,
+                            pl.songs.count { vm.isDownloaded(it) }.toString() + " of " + pl.songs.size + " downloaded"
+                        ) { vm.openPlaylist(pl.id) }
+                    },
+                    shelfW()
+                )
+            }
+        }
+        item { ShelfTitle("Downloaded songs") }
+        if (vm.downloads.isEmpty()) {
+            item {
+                EmptyState(
+                    Icons.Filled.CloudOff, "No downloads yet",
+                    "Download songs when you have internet and they play here without it."
+                )
+            }
+        } else {
+            val list = vm.downloads.toList()
+            items(list.size) { i -> SongRow(list[i], vm, list) }
+        }
+    }
+}
+
 // ---------------- SEARCH ----------------
 
 private val TileColors = listOf(
@@ -519,18 +748,19 @@ fun ExploreScreen(vm: MainViewModel) {
     val cols = if (LocalConfiguration.current.screenWidthDp >= 600) 3 else 2
     val pool = (vm.recommended + vm.discover + vm.played.toList() + vm.liked.toList())
         .mapNotNull { it.cover }.distinct()
+    val flt = remember { androidx.compose.runtime.mutableIntStateOf(0) }
     LazyColumn(contentPadding = ScreenPad) {
         item {
             ScreenTitle("Search") {
-                ProfileButton(vm, 34.dp, true)
+                GearButton(vm, 40.dp)
             }
         }
         item {
             TextField(
                 value = vm.query,
                 onValueChange = { vm.query = it },
-                placeholder = { Text("Search for Music...") },
-                leadingIcon = { Icon(Icons.Filled.Search, null) },
+                placeholder = { Text("Songs, artists, albums...", fontSize = 16.sp) },
+                leadingIcon = { Icon(Icons.Filled.Search, null, modifier = Modifier.size(26.dp)) },
                 trailingIcon = {
                     if (vm.searched) {
                         IconButton(onClick = { vm.clearSearch() }) {
@@ -548,8 +778,15 @@ fun ExploreScreen(vm: MainViewModel) {
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
                 ),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().heightIn(min = 58.dp)
             )
+        }
+        if (vm.searched) {
+            // filter row: All / Songs / Artists / Albums
+            item {
+                Spacer(Modifier.height(4.dp))
+                KitChips(flt.intValue, listOf("All", "Songs", "Artists", "Albums")) { flt.intValue = it }
+            }
         }
         if (vm.loading) {
             item {
@@ -557,7 +794,39 @@ fun ExploreScreen(vm: MainViewModel) {
             }
         }
         if (!vm.searched) {
-            item { Spacer(Modifier.height(10.dp)) }
+            if (vm.recentSearches.isNotEmpty()) {
+                item {
+                    Row(Modifier.fillMaxWidth().padding(top = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("Recent searches", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Pal.fg, modifier = Modifier.weight(1f))
+                        Text(
+                            "Clear", fontSize = 13.sp, color = Pal.textDim,
+                            modifier = Modifier.clip(RoundedCornerShape(50)).clickable { vm.clearRecent() }
+                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+                items(vm.recentSearches.toList()) { r ->
+                    Row(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { vm.searchFor(r) }
+                            .padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Filled.History, null, tint = Pal.textDim, modifier = Modifier.size(22.dp))
+                        Spacer(Modifier.width(14.dp))
+                        Text(r, fontSize = 16.sp, color = Pal.fg, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                        Icon(
+                            Icons.Filled.Close, "Remove", tint = Pal.textDim,
+                            modifier = Modifier.size(32.dp).clip(CircleShape).clickable { vm.removeRecent(r) }.padding(6.dp)
+                        )
+                    }
+                }
+            }
+            item {
+                Text(
+                    "Browse by mood", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Pal.fg,
+                    modifier = Modifier.padding(top = 22.dp, bottom = 12.dp)
+                )
+            }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Moods.chunked(cols).forEachIndexed { r, row ->
@@ -590,7 +859,44 @@ fun ExploreScreen(vm: MainViewModel) {
                 }
             }
         } else {
-            if (vm.artistResults.isNotEmpty()) {
+            val fa = flt.intValue
+            // top result: the first song as one big card
+            val top = vm.results.firstOrNull()
+            if (fa == 0 && top != null) {
+                item {
+                    val shape = RoundedCornerShape(22.dp)
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp)
+                            .pressScale(0.98f)
+                            .clip(shape)
+                            .glassFill()
+                            .border(1.dp, Stroke, shape)
+                            .clickable { vm.play(top, vm.results) }
+                            .padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Cover(top.cover, Modifier.size(92.dp), RoundedCornerShape(16.dp), hiRes = true)
+                        Spacer(Modifier.width(14.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text("TOP RESULT", fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp, color = Pal.textDim)
+                            Text(
+                                top.title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Pal.fg,
+                                maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 3.dp)
+                            )
+                            Text("Song \u2022 " + artistName(top.artist), fontSize = 13.sp, color = Pal.textDim, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                        Box(
+                            Modifier.size(48.dp).clip(CircleShape).background(Pal.fg),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Filled.PlayArrow, null, tint = Pal.onFg, modifier = Modifier.size(28.dp))
+                        }
+                    }
+                }
+            }
+            if ((fa == 0 || fa == 2) && vm.artistResults.isNotEmpty()) {
                 item { SectionLabel("Artists") }
                 item {
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -598,7 +904,7 @@ fun ExploreScreen(vm: MainViewModel) {
                     }
                 }
             }
-            if (vm.albumResults.isNotEmpty()) {
+            if ((fa == 0 || fa == 3) && vm.albumResults.isNotEmpty()) {
                 item { SectionLabel("Albums") }
                 item {
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -606,10 +912,12 @@ fun ExploreScreen(vm: MainViewModel) {
                     }
                 }
             }
-            if (vm.artistResults.isNotEmpty() || vm.albumResults.isNotEmpty()) {
+            if ((fa == 0 || fa == 1) && vm.results.isNotEmpty()) {
                 item { SectionLabel("Songs") }
             }
-            items(vm.results) { s -> SongRow(s, vm, vm.results) }
+            if (fa == 0 || fa == 1) {
+                items(vm.results) { s -> SongRow(s, vm, vm.results) }
+            }
         }
     }
 }
@@ -945,7 +1253,7 @@ fun LibraryScreen(vm: MainViewModel) {
                         Icon(Icons.Filled.History, null, tint = Pal.fg)
                     }
                     IconButton(onClick = { vm.showSettings = true }) {
-                        ProfileButton(vm, 30.dp, false)
+                        Icon(Icons.Filled.Settings, "Settings", tint = Pal.fg)
                     }
                 }
             }

@@ -1,4 +1,17 @@
-# VAME Music - full changelog (up to zip step67, v0.38.3, 9 Nov 2026)
+# VAME Music - full changelog (up to zip step68, v0.39.0, 10 Nov 2026)
+
+## step68 (v0.39.0) - includes everything up to step67
+- Fixed: the double cover when the player opens. The player now slides up from the bottom and becomes solid at once. The squashing into the pill and the second flying cover are gone, so nothing shows twice and Home no longer shows through. Closing uses the same motion.
+- New: real frosted glass. On Android 12 and newer the dock and the mini player blur the page behind them. Older phones keep the milky look.
+- New: Settings > Look > Glass: "Real blur" switch and "Blur strength" slider. Material Fastest turns the real blur off.
+- New: gear icon on Home and Search (and in Library) that opens Settings. The profile picture on Home is only a picture now.
+- New: Settings in category tabs: Look, Player, Home, Sound, Playback, Account, Storage and about. One tab at a time, so it is not crowded.
+- New: auto offline mode. When there is no internet, a small banner shows, Home becomes an Offline page with your playlists and downloads, Search looks only in your downloads and playlists, songs that are not downloaded are greyed out and the queue keeps only downloaded songs. It switches back by itself. Settings > Playback > Auto offline mode turns it off.
+- New: Search tab redone: bigger search bar, filter chips (All, Songs, Artists, Albums), recent searches (tap, remove, clear), Browse by mood tiles and a Top result card.
+- New: Home is a Dashboard: tiles (Liked songs, Last played, Downloads, Radio and your top playlists), a slim Now playing card, Quick picks in swipeable columns of 4, stacked-cover Mixes, then the shelves you had. The chip row is gone.
+- New: better related songs ("Stay in the same style", on by default). Songs that play next are ranked by your artists, your likes, the language / script and "feat." names, and outliers are dropped. Settings > Playback turns it off.
+- Not added: lossless (YouTube has no lossless) and a local player (you said no).
+- Not compiled here. Files changed: Morph.kt, Frost.kt (new), Net.kt (new), StyleRank.kt (new), Pal.kt, Components.kt, GlassSettings.kt, MainActivity.kt, MainViewModel.kt, Screens.kt, Settings.kt, PlaylistScreens.kt, VameApp.kt.
 
 ## step67 (v0.38.3) - includes everything up to step66
 - New: Volume boost for songs that sound too quiet. Settings > Sound > Volume boost: Off, Medium +6 dB, High +10 dB, Max +15 dB. It makes the song louder than the phone's own volume. It is remembered.

@@ -169,17 +169,21 @@ fun Modifier.glassPanel(shape: Shape): Modifier =
 
 // The floating glass bars (dock, mini player, player pills). Follows Settings > Glass:
 // material (fastest = flat, balanced = + sheen, quality = + shine), colour, frost, tint, film.
-fun Modifier.glassBar(shape: Shape, base: Color? = null): Modifier = composed {
+fun Modifier.glassBar(shape: Shape, base: Color? = null, blur: Boolean = false): Modifier = composed {
     val dark = LocalDark.current || !Pal.light
     val film = Pal.glassFilm
+    val frost0 = blur
     val frost = (Pal.glassFrost / 24f).coerceIn(0f, 1f)
-    val milk = if (dark) 0.05f + 0.20f * film + 0.10f * frost else 0.16f + 0.50f * film + 0.20f * frost
+    val real = frost0 && Frost.active && Frost.layer != null
+    val milk0 = if (dark) 0.05f + 0.20f * film + 0.10f * frost else 0.16f + 0.50f * film + 0.20f * frost
+    val milk = if (real) milk0 * 0.55f else milk0
     val tint = Pal.tintColor ?: base
     val tintA = if (tint == null) 0f else (0.06f + 0.42f * Pal.glassColour) * (if (dark) 0.8f else 1f)
     val edge = if (dark) Brush.linearGradient(
         listOf(Color(0xAAFFFFFF), Color(0x22FFFFFF), Color(0x11FFFFFF), Color(0x66FFFFFF))
     ) else GlassEdge
-    var m = this.clip(shape).background(Color.White.copy(alpha = milk.coerceIn(0f, 0.92f)))
+    var m = this.clip(shape).then(if (real) Modifier.frostBehind() else Modifier)
+        .background(Color.White.copy(alpha = milk.coerceIn(0f, 0.92f)))
     if (tint != null) m = m.background(tint.copy(alpha = tintA.coerceIn(0f, 0.6f)))
     if (Pal.glassMat >= 1) m = m.background(GlassSheen)
     if (Pal.glassMat >= 2) {
@@ -288,6 +292,7 @@ fun SongRow(song: Song, vm: MainViewModel, list: List<Song>) {
             .fillMaxWidth()
             .appear()
             .padding(vertical = 4.dp)
+            .then(if (Net.on && !vm.isDownloaded(song)) Modifier.graphicsLayer { alpha = 0.38f } else Modifier)
             .pressScale()
             .clip(RoundedCornerShape(16.dp))
             .glassFill()
@@ -371,7 +376,7 @@ fun MiniPlayer(
                 translationY = (1f - enter.value) * 80f
             }
             .pressScale(0.97f)
-            .glassBar(shape)
+            .glassBar(shape, blur = true)
             .clickable {
                 tick()
                 val go = onOpen
@@ -455,7 +460,7 @@ fun BottomBar(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modif
         modifier
             .fillMaxWidth()
             .height(68.dp)
-            .glassBar(shape)
+            .glassBar(shape, blur = true)
             .padding(horizontal = 4.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -597,7 +602,7 @@ private fun FoldedDock(vm: MainViewModel, active: Boolean, onExpand: () -> Unit)
         Modifier
             .fillMaxWidth()
             .height(68.dp)
-            .glassBar(RoundedCornerShape(34.dp))
+            .glassBar(RoundedCornerShape(34.dp), blur = true)
             .padding(6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

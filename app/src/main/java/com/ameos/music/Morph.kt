@@ -39,11 +39,11 @@ val MorphEase = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)
 private fun morphSpec(visible: Boolean): AnimationSpec<Float> =
     if (UiOpts.reduceMotion) snap() else tween(if (visible) 600 else 520, easing = MorphEase)
 
-// Phone: Now Playing melts into the mini player pill when it closes and grows out of it when it
-// opens. The whole screen is mapped onto the pill rectangle (so at the end it IS the pill),
-// while the big cover leaves the screen as a flying picture and lands on the pill cover.
-// To tune: durations in morphSpec(), the 0.08f / 0.5f in alpha (when the screen fades),
-// the 10f / 14f in the flying cover fade.
+// Phone: Now Playing slides up from the bottom (where the mini player pill is) and slides back
+// down when it closes. ONE cover only: the old "flying cover" and the squash into the pill were
+// the cause of the double cover glitch, so both are gone. The screen is fully opaque almost at
+// once (no half-faded player showing Home through it).
+// To tune: durations in morphSpec(), the 0.18f (how fast it becomes opaque), the 0.10f travel.
 @Composable
 fun PlayerMorph(
     visible: Boolean,
@@ -53,67 +53,20 @@ fun PlayerMorph(
 ) {
     val p by animateFloatAsState(if (visible) 1f else 0f, morphSpec(visible), label = "playerMorph")
     if (!(visible || p > 0.002f)) return
-    val density = LocalDensity.current
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        val wPx = with(density) { maxWidth.toPx() }
-        val hPx = with(density) { maxHeight.toPx() }
-        // the pill (fallback: a bar at the bottom) and its cover
-        val pillR = PillPos.pill
-        val pl = pillR?.left ?: with(density) { 16.dp.toPx() }
-        val pt = pillR?.top ?: (hPx - with(density) { 170.dp.toPx() })
-        val pw = pillR?.width ?: (wPx - with(density) { 32.dp.toPx() })
-        val ph = pillR?.height ?: with(density) { 64.dp.toPx() }
-        val coverR = PillPos.rect
-        val fallback = with(density) { 44.dp.toPx() }
-        val ex = coverR?.left ?: (pl + with(density) { 10.dp.toPx() })
-        val ey = coverR?.top ?: (pt + (ph - fallback) / 2f)
-        val ew = coverR?.width ?: fallback
-        val eh = coverR?.height ?: fallback
-        // the screen shrinks onto the pill rectangle
-        val s0x = (pw / wPx).coerceIn(0.05f, 1f)
-        val s0y = (ph / hPx).coerceIn(0.03f, 1f)
-        val ox = if (s0x < 0.999f) (pl / (wPx * (1f - s0x))).coerceIn(0f, 1f) else 0.5f
-        val oy = if (s0y < 0.999f) (pt / (hPx * (1f - s0y))).coerceIn(0f, 1f) else 0.5f
-        // where the big artwork sits in Now Playing (same maths as NowPlayingScreen)
-        val colW = minOf(wPx, with(density) { 520.dp.toPx() })
-        val artH = minOf(colW, hPx * 0.56f)
-        val sx = (wPx - colW) / 2f
-        val q = p.coerceIn(0f, 1f)
-
+        val hPx = with(LocalDensity.current) { maxHeight.toPx() }
         Box(
             Modifier
                 .fillMaxSize()
                 .graphicsLayer {
-                    transformOrigin = TransformOrigin(ox, oy)
-                    scaleX = s0x + (1f - s0x) * q
-                    scaleY = s0y + (1f - s0y) * q
-                    alpha = ((q - 0.08f) / 0.5f).coerceIn(0f, 1f)
-                    shape = RoundedCornerShape(160.dp * (1f - q) * (1f - q))
+                    val q = p.coerceIn(0f, 1f)
+                    translationY = (1f - q) * hPx * 0.94f
+                    alpha = (q / 0.18f).coerceIn(0f, 1f)
+                    shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
                     clip = q < 0.999f
-                    // draw the screen once into a texture, then only move that texture (smooth)
-                    compositingStrategy =
-                        if (q < 0.999f) CompositingStrategy.Offscreen else CompositingStrategy.Auto
                 }
         ) {
             content()
-        }
-
-        // the flying cover: big artwork <-> pill cover
-        val f = 1f - q
-        val fa = minOf(1f, f * 10f) * minOf(1f, q * 14f)
-        if (fly && cover != null && fa > 0.01f) {
-            val x = sx + (ex - sx) * f
-            val y = ey * f
-            val w = colW + (ew - colW) * f
-            val h = artH + (eh - artH) * f
-            Box(
-                Modifier
-                    .offset { IntOffset(x.roundToInt(), y.roundToInt()) }
-                    .size(with(density) { w.toDp() }, with(density) { h.toDp() })
-                    .graphicsLayer { alpha = fa }
-            ) {
-                Cover(cover, Modifier.fillMaxSize(), RoundedCornerShape((12f * f).dp))
-            }
         }
     }
 }

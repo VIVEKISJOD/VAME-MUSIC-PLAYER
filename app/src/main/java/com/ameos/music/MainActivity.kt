@@ -39,6 +39,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -321,6 +325,27 @@ fun VameRoot(vm: MainViewModel) {
             ) {
                 GlassSettingsScreen(vm)
             }
+            // offline mode banner (Net.kt)
+            AnimatedVisibility(
+                visible = Net.on,
+                modifier = Modifier.align(Alignment.TopCenter).zIndex(8f),
+                enter = slideInVertically(tween(260)) { -it } + fadeIn(tween(200)),
+                exit = slideOutVertically(tween(220)) { -it } + fadeOut(tween(160))
+            ) {
+                Row(
+                    Modifier
+                        .statusBarsPadding()
+                        .padding(top = 6.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(Color(0xE6222226))
+                        .padding(horizontal = 14.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Filled.CloudOff, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Offline mode - downloads only", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                }
+            }
             // the music stays on top of Settings (pill or box), so it can be stopped from there
             if (UiOpts.tv) {
                 // TV: no pill. The song that is playing is shown in the left bar (TvRail in Tv.kt).
@@ -405,6 +430,8 @@ fun MainPages(vm: MainViewModel, tablet: Boolean, dockFolded: Boolean, onExpand:
         if (covered) 1f else 0f, tween(380, easing = FastOutSlowInEasing), label = "pageDepth"
     )
     Box(Modifier.fillMaxSize()) {
+        // everything except the dock is recorded, so the dock / mini player can blur it (Frost.kt)
+        Box(Modifier.fillMaxSize().frostSource()) {
         Box(
             Modifier
                 .fillMaxSize()
@@ -475,6 +502,7 @@ fun MainPages(vm: MainViewModel, tablet: Boolean, dockFolded: Boolean, onExpand:
             exit = detailOut()
         ) {
             ArtistScreen(vm)
+        }
         }
         Column(
             Modifier

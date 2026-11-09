@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -201,7 +202,10 @@ private fun PlaylistSongRow(vm: MainViewModel, pl: Playlist, s: Song, number: In
     val haptic = LocalHapticFeedback.current
     val playing = vm.current?.url == s.url
     val mins = if (s.durationSec > 0L) (s.durationSec / 60).toString() + ":" + (s.durationSec % 60).toString().padStart(2, '0') else ""
-    Column(Modifier.fillMaxWidth().appear()) {
+    Column(
+        Modifier.fillMaxWidth().appear()
+            .then(if (Net.on && !vm.isDownloaded(s)) Modifier.graphicsLayer { alpha = 0.38f } else Modifier)
+    ) {
         Row(
             Modifier
                 .fillMaxWidth()

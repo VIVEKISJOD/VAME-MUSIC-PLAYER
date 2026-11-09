@@ -7,5 +7,6 @@ class VameApp : Application() {
     override fun onCreate() {
         super.onCreate()
         NewPipe.init(DownloaderImpl())
+        Net.start(this)
     }
 }
