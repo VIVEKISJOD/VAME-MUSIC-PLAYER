@@ -177,12 +177,15 @@ fun Modifier.glassBar(shape: Shape, base: Color? = null, blur: Boolean = false):
     val real = frost0 && Frost.active && Frost.layer != null
     val milk0 = if (dark) 0.05f + 0.20f * film + 0.10f * frost else 0.16f + 0.50f * film + 0.20f * frost
     val milk = if (real) milk0 * 0.55f else milk0
+    // dock + mini player: a solid frosted backing so text behind them never shows through
+    val back = if (!frost0) 0f else if (real) 0.58f else 0.84f
     val tint = Pal.tintColor ?: base
     val tintA = if (tint == null) 0f else (0.06f + 0.42f * Pal.glassColour) * (if (dark) 0.8f else 1f)
     val edge = if (dark) Brush.linearGradient(
         listOf(Color(0xAAFFFFFF), Color(0x22FFFFFF), Color(0x11FFFFFF), Color(0x66FFFFFF))
     ) else GlassEdge
     var m = this.clip(shape).then(if (real) Modifier.frostBehind() else Modifier)
+        .then(if (back > 0f) Modifier.background((if (dark) Color(0xFF17171B) else Color(0xFFF4F4F6)).copy(alpha = back)) else Modifier)
         .background(Color.White.copy(alpha = milk.coerceIn(0f, 0.92f)))
     if (tint != null) m = m.background(tint.copy(alpha = tintA.coerceIn(0f, 0.6f)))
     if (Pal.glassMat >= 1) m = m.background(GlassSheen)

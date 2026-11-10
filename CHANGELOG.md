@@ -1,4 +1,15 @@
-# VAME Music - full changelog (up to zip step68, v0.39.0, 10 Nov 2026)
+# VAME Music - full changelog (up to zip step69, v0.40.0, 10 Nov 2026)
+
+## step69 (v0.40.0) - includes everything up to step68
+- Faster songs: audio links are worked out ahead of time for your last 3 songs and the first Quick picks when Home opens, and for the next 2 songs of the queue (it was 1).
+- Faster songs: audio links are saved on the phone for about 90 minutes, so the first tap after opening the app starts at once. If a saved link is too old, the song restarts by itself with a fresh link.
+- Faster songs: played songs are kept on the phone (up to 300 MB, oldest dropped). A song you already played replays with no wait. Settings > Storage > Clear cache also clears it.
+- New: update notification. Every 3 hours (with internet) VAME checks GitHub; when a newer version is out you get one notification, tap opens the app and the update dialog. Settings > Storage and about > Updates > Update notifications turns it off.
+- Changed: Settings is a list of categories (icon, name, short line, arrow). Tap one to open its page, back arrow / back button returns to the list. The tab bar on top is gone.
+- Fixed: the dock and mini player are more solid now, so text behind them is not visible (solid frosted backing, lighter when real blur works).
+- Fixed: the Library error for no internet now says "no internet right now" instead of "Unable to resolve host".
+- Files changed: Settings.kt, MainViewModel.kt, PlayerHolder.kt, Components.kt, Screens.kt, VameApp.kt, UpdateWorker.kt (new), app/build.gradle.kts (media3-datasource, media3-database, work-runtime-ktx, version 0.40.0 / code 72).
+- Not compiled here.
 
 ## step68 (v0.39.0) - includes everything up to step67
 - Fixed: the double cover when the player opens. The player now slides up from the bottom and becomes solid at once. The squashing into the pill and the second flying cover are gone, so nothing shows twice and Home no longer shows through. Closing uses the same motion.

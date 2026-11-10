@@ -179,6 +179,7 @@ private fun JumpBackIn(vm: MainViewModel) {
 
 @Composable
 private fun HomeList(vm: MainViewModel) {
+    LaunchedEffect(vm.recommended.size, vm.played.size) { vm.warmUp() }
     if (Net.on) {
         OfflineHome(vm)
         return

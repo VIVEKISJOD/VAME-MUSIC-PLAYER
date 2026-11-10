@@ -8,5 +8,6 @@ class VameApp : Application() {
         super.onCreate()
         NewPipe.init(DownloaderImpl())
         Net.start(this)
+        UpdateWorker.schedule(this)
     }
 }

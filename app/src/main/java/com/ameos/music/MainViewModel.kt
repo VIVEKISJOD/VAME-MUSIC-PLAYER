@@ -211,6 +211,54 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val cache = HashMap<String, Resolved>()
     // audio links worked out ahead of time (only the last few are kept)
     private val fastCache = LinkedHashMap<String, FastAudio>()
+    // audio links are also saved on the phone (valid about 90 minutes), so the first tap after
+    // opening the app does not wait for YouTube
+    private val linkPrefs = app.getSharedPreferences("vame_links", android.content.Context.MODE_PRIVATE)
+    private var savedUsedFor: String? = null
+    private var warmed = false
+
+    private fun linkKey(url: String): String = url + "#" + MusicRepo.quality
+
+    private fun savedLink(url: String): String? {
+        val v = linkPrefs.getString(linkKey(url), null) ?: return null
+        val i = v.indexOf('|')
+        val t = if (i > 0) v.substring(0, i).toLongOrNull() else null
+        if (t == null || System.currentTimeMillis() - t > 90L * 60L * 1000L) {
+            linkPrefs.edit().remove(linkKey(url)).apply()
+            return null
+        }
+        return v.substring(i + 1)
+    }
+
+    private fun saveLink(url: String, audio: String) {
+        val ed = linkPrefs.edit().putString(linkKey(url), System.currentTimeMillis().toString() + "|" + audio)
+        val all = linkPrefs.all
+        if (all.size > 60) {
+            // drop the oldest ones
+            val old = all.entries.sortedBy { (it.value as? String)?.substringBefore('|')?.toLongOrNull() ?: 0L }
+            for (e in old.take(all.size - 50)) ed.remove(e.key)
+        }
+        ed.apply()
+    }
+
+    // works out the audio links of the songs you are most likely to tap, before you tap them
+    fun warmUp() {
+        if (warmed || Net.on) return
+        val list = (played.take(3) + recommended.take(4)).distinctBy { it.url }
+        if (list.isEmpty()) return
+        warmed = true
+        viewModelScope.launch {
+            for (s in list) {
+                if (fastCache.containsKey(s.url) || savedLink(s.url) != null) continue
+                try {
+                    resolveAudioFor(s)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                }
+            }
+        }
+    }
     private var startJob: Job? = null
     private var lyricsJob: Job? = null
     private var sleepJob: Job? = null
@@ -249,6 +297,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }
 
             override fun onPlayerError(e: PlaybackException) {
+                val cur = current
+                // a saved link can be too old: forget it and start the song again with a fresh one
+                if (cur != null && savedUsedFor == cur.url) {
+                    savedUsedFor = null
+                    linkPrefs.edit().remove(linkKey(cur.url)).apply()
+                    fastCache.remove(cur.url)
+                    start(cur)
+                    return
+                }
                 error = "Play nahi hua: " + (e.message ?: e.errorCodeName)
             }
         })
@@ -605,8 +662,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun clearCache() {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                getApplication<Application>().cacheDir.listFiles()?.forEach { it.deleteRecursively() }
+                PlayerHolder.clearAudioCache()
+                getApplication<Application>().cacheDir.listFiles()?.forEach {
+                    if (it.name != "audio") it.deleteRecursively()
+                }
             }
+            linkPrefs.edit().clear().apply()
             cache.clear()
             refreshCacheSize()
         }
@@ -936,18 +997,32 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (hit != null) return hit
         val fresh = MusicRepo.resolveAudio(song.url, MusicRepo.quality)
         fastCache[song.url] = fresh
-        while (fastCache.size > 6) fastCache.remove(fastCache.keys.first())
+        while (fastCache.size > 10) fastCache.remove(fastCache.keys.first())
+        saveLink(song.url, fresh.audio)
         return fresh
     }
 
+    // the next 2 songs are made ready while the current one plays
     private fun prefetchNext() {
         if (queue.size < 2) return
-        val n = queue[(index + 1) % queue.size]
-        if (fastCache.containsKey(n.url) || cache.containsKey(n.url)) return
+        val todo = ArrayList<Song>()
+        for (k in 1..2) {
+            if (k >= queue.size) break
+            val n = queue[(index + k) % queue.size]
+            if (n.url == current?.url) continue
+            if (fastCache.containsKey(n.url) || cache.containsKey(n.url)) continue
+            if (Downloads.file(getApplication<Application>(), n) != null) continue
+            todo.add(n)
+        }
+        if (todo.isEmpty()) return
         viewModelScope.launch {
-            try {
-                resolveAudioFor(n)
-            } catch (e: Exception) {
+            for (n in todo) {
+                try {
+                    resolveAudioFor(n)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                }
             }
         }
     }
@@ -1148,9 +1223,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     Uri.fromFile(local).toString()
                 } else {
                     val cachedFull = cache[song.url]
+                    val saved = if (cachedFull == null && fastCache[song.url] == null) savedLink(song.url) else null
                     if (cachedFull != null) {
                         cachedFull.audio
+                    } else if (saved != null) {
+                        savedUsedFor = song.url
+                        saved
                     } else {
+                        savedUsedFor = null
                         val f = resolveAudioFor(song)
                         fast = f
                         f.audio
@@ -1166,6 +1246,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 val item = MediaItem.Builder()
                     .setUri(audioUrl)
                     .setMediaMetadata(meta)
+                    .apply {
+                        // the same song keeps the same cache name even when YouTube gives a new link
+                        if (local == null) setCustomCacheKey(linkKey(song.url))
+                    }
                     .build()
                 player.setMediaItem(item)
                 player.prepare()
@@ -1182,6 +1266,19 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 val cachedRelated = cache[song.url]?.related
                 if (cachedRelated != null) {
                     applyRelated(song, cachedRelated)
+                } else if (fast == null && local == null) {
+                    // started from a saved link: get the info for similar songs in the background
+                    viewModelScope.launch {
+                        try {
+                            val f2 = resolveAudioFor(song)
+                            val rel = MusicRepo.relatedFor(f2.info, song.url, song.artist)
+                            cache[song.url] = Resolved(f2.audio, rel)
+                            if (current?.url == song.url) applyRelated(song, rel)
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                        }
+                    }
                 } else if (fast != null) {
                     val info = fast.info
                     viewModelScope.launch {
@@ -2247,7 +2344,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                ytStatus = "Library load fail: " + (e.message ?: e.javaClass.simpleName)
+                val m = e.message ?: e.javaClass.simpleName
+                ytStatus = if (Net.offline || m.contains("resolve host") || m.contains("hostname") || m.contains("Unable to resolve")) {
+                    "Library load fail: no internet right now. Tap Refresh when you are back online."
+                } else {
+                    "Library load fail: " + m
+                }
             }
             ytBusy = false
         }

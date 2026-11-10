@@ -12,8 +12,8 @@ android {
         applicationId = "com.ameos.music"
         minSdk = 26
         targetSdk = 34
-        versionCode = 71
-        versionName = "0.39.0"
+        versionCode = 72
+        versionName = "0.40.0"
     }
 
     // Same signing key for every update (stored as GitHub secrets), so the app can update itself.
@@ -88,6 +88,9 @@ dependencies {
 
     implementation("androidx.media3:media3-exoplayer:1.5.1")
     implementation("androidx.media3:media3-session:1.5.1")
+    implementation("androidx.media3:media3-datasource:1.5.1")
+    implementation("androidx.media3:media3-database:1.5.1")
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
 
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")

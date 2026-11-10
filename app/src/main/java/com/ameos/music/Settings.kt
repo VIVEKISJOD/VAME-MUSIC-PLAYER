@@ -101,9 +101,24 @@ private fun SettingsField(value: String, onChange: (String) -> Unit) {
     )
 }
 
+private class SettingsCat(val title: String, val sub: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
+
+private val SettingsCats = listOf(
+    SettingsCat("Look", "Colours, glass, app icon, size", Icons.Filled.Palette),
+    SettingsCat("Player", "Now Playing, small player, tablet", Icons.Filled.MusicNote),
+    SettingsCat("Home and artist", "What Home and artist pages show", Icons.Filled.Home),
+    SettingsCat("Sound", "Volume boost, equalizer, fade", Icons.Filled.GraphicEq),
+    SettingsCat("Playback", "Queue, offline mode, lyrics, downloads", Icons.Filled.PlayArrow),
+    SettingsCat("Account", "Google, YouTube Music, moving data", Icons.Filled.Cloud),
+    SettingsCat("Storage and about", "Cache, updates, about", Icons.Filled.Info)
+)
+
 @Composable
 fun SettingsScreen(vm: MainViewModel) {
-    BackHandler { vm.showSettings = false }
+    // -1 = the list of categories, 0..6 = one category page
+    val cat = remember { androidx.compose.runtime.mutableIntStateOf(-1) }
+    BackHandler(enabled = cat.intValue >= 0) { cat.intValue = -1 }
+    BackHandler(enabled = cat.intValue < 0) { vm.showSettings = false }
     val ctx = LocalContext.current
     LaunchedEffect(Unit) {
         vm.refreshCacheSize()
@@ -138,10 +153,13 @@ fun SettingsScreen(vm: MainViewModel) {
                 Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                BackBtn(Modifier.focusRequester(firstFocus)) { vm.showSettings = false }
+                BackBtn(Modifier.focusRequester(firstFocus)) {
+                    if (cat.intValue >= 0) cat.intValue = -1 else vm.showSettings = false
+                }
                 Column {
                     Text(
-                        "Settings", fontSize = 34.sp, fontWeight = FontWeight.SemiBold,
+                        if (cat.intValue < 0) "Settings" else SettingsCats[cat.intValue].title,
+                        fontSize = 34.sp, fontWeight = FontWeight.SemiBold,
                         color = Pal.fg
                     )
                     Text(
@@ -152,11 +170,37 @@ fun SettingsScreen(vm: MainViewModel) {
                 }
             }
 
-            val cat = androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(0) }
-            KitChips(cat.intValue, listOf("Look", "Player", "Home", "Sound", "Playback", "Account", "Storage and about")) {
-                cat.intValue = it
+            if (cat.intValue < 0) {
+                Spacer(Modifier.height(10.dp))
+                SettingsCats.forEachIndexed { i, c ->
+                    val shape = RoundedCornerShape(20.dp)
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 5.dp)
+                            .pressScale(0.98f)
+                            .clip(shape)
+                            .glassFill()
+                            .padRing(shape) { cat.intValue = i }
+                            .padding(horizontal = 16.dp, vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(Pal.accent.copy(alpha = 0.16f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(c.icon, null, tint = Pal.accent, modifier = Modifier.size(24.dp))
+                        }
+                        Spacer(Modifier.width(14.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(c.title, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = Pal.fg)
+                            Text(c.sub, fontSize = 12.sp, color = Pal.muted, modifier = Modifier.padding(top = 2.dp))
+                        }
+                        Icon(Icons.Filled.ChevronRight, null, tint = Pal.muted)
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
             }
-            Spacer(Modifier.height(6.dp))
 
             if (cat.intValue == 0) {
             // ---------------- look ----------------
@@ -508,6 +552,10 @@ fun SettingsScreen(vm: MainViewModel) {
 
             KitHeader(Icons.Filled.Update, "Updates")
             KitCard {
+                KitSwitch(
+                    "Update notifications", "VAME checks GitHub every few hours and tells you when a new version is out.",
+                    UpdateWorker.enabled(ctx)
+                ) { UpdateWorker.setEnabled(ctx, it) }
                 KitAction(
                     "Check for updates",
                     if (vm.updateStatus.isEmpty()) "Looks for a newer VAME on GitHub" else vm.updateStatus
