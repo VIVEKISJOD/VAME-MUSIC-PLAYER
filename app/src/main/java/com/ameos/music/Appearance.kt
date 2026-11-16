@@ -50,19 +50,80 @@ fun AppearanceSection(label: Boolean = true) {
     val ctx = LocalContext.current
     if (label) SectionLabel("Appearance")
 
-    // step64: light (default) or dark look; the Glass page tunes the dock, mini player and sheets
-    KitSwitch("Light look", "Soft grey pages with dark text. Off = dark look. Tap a dark look below to switch.", Pal.light) {
-        Pal.light = it
-        Pal.save(ctx)
+    // step71: pick a look. Lime and Nova come from the design pictures; Custom keeps the old colour options.
+    val looks = listOf(
+        Triple("Lime", Color(0xFFC6F135), Color(0xFF0B0B0C)),
+        Triple("Nova", Color(0xFF8E6BFF), Color(0xFF1D1245)),
+        Triple("Light", Color(0xFFE8590C), Color(0xFFF0F0F5)),
+        Triple("Custom", Color.hsv(Pal.hue.coerceIn(0f, 359f), 0.7f, 1f), Color(0xFF1A1214))
+    )
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        looks.forEachIndexed { i, (name, acc, bg) ->
+            val on = Pal.look == i
+            Column(
+                Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(18.dp))
+                    .glassFill()
+                    .border(
+                        if (on) 2.dp else 1.dp,
+                        if (on) Pal.accent else Pal.fg.copy(alpha = 0.12f),
+                        RoundedCornerShape(18.dp)
+                    )
+                    .padRing(RoundedCornerShape(18.dp)) {
+                        Pal.look = i
+                        Pal.save(ctx)
+                    }
+                    .padding(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(64.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(bg)
+                        .border(1.dp, Stroke, RoundedCornerShape(12.dp)),
+                    contentAlignment = Alignment.BottomCenter
+                ) {
+                    Box(
+                        Modifier
+                            .align(Alignment.TopStart)
+                            .padding(8.dp)
+                            .size(width = 22.dp, height = 8.dp)
+                            .clip(RoundedCornerShape(50))
+                            .background(acc)
+                    )
+                    Box(
+                        Modifier
+                            .padding(bottom = 6.dp)
+                            .fillMaxWidth(0.76f)
+                            .height(12.dp)
+                            .clip(RoundedCornerShape(50))
+                            .background(Color.White.copy(alpha = if (i == 2) 0.9f else 0.14f))
+                    )
+                }
+                Text(
+                    name, fontSize = 12.sp, color = Pal.fg,
+                    fontWeight = if (on) FontWeight.Bold else FontWeight.Normal,
+                    modifier = Modifier.padding(top = 6.dp)
+                )
+            }
+        }
     }
+    Text(
+        "Lime: black pages with a lime accent. Nova: purple glass. Light: soft grey. Custom: your own colour.",
+        fontSize = 12.sp, color = Pal.muted, modifier = Modifier.padding(top = 6.dp, bottom = 10.dp)
+    )
     KitAction("Glass", "Material, colour, frost, tint, film and active tab of the dock and mini player") {
         GlassUi.open = true
     }
+    if (Pal.look != 3) return
 
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         listOf("Colour glass", "AMOLED", "AMOLED glass").forEachIndexed { i, name ->
             // only marked while the dark look is really on (with the light look on, nothing here is active)
-            val on = !Pal.light && Pal.mode == i
+            val on = Pal.look == 3 && Pal.mode == i
             Column(
                 Modifier
                     .weight(1f)
@@ -76,7 +137,7 @@ fun AppearanceSection(label: Boolean = true) {
                     .padRing(RoundedCornerShape(18.dp)) {
                         // picking a dark look turns the dark look on (before, the light look stayed on and nothing changed)
                         Pal.mode = i
-                        Pal.light = false
+                        Pal.look = 3
                         Pal.save(ctx)
                     }
                     .padding(10.dp),

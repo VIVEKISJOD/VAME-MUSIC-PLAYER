@@ -13,6 +13,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -225,13 +226,13 @@ internal fun Scrubber(
                 .fillMaxWidth()
                 .height(h)
                 .clip(CircleShape)
-                .background(Color(0x55FFFFFF))
+                .background(Color(0x33FFFFFF))
         ) {
             Box(
                 Modifier
                     .fillMaxWidth(fraction.coerceIn(0f, 1f))
                     .fillMaxHeight()
-                    .background(SoftWhite)
+                    .background(Pal.accent)
             )
         }
     }
@@ -624,7 +625,11 @@ fun NowPlayingScreen(vm: MainViewModel) {
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    listOf(
+                    if (Pal.lime) listOf(
+                        lerp(tint, Color.Black, 0.78f), Color(0xFF0B0B0C), Color(0xFF080808)
+                    ) else if (Pal.nova) listOf(
+                        lerp(tint, Color(0xFF1D1245), 0.62f), Color(0xFF120B2E), Color(0xFF0A0719)
+                    ) else listOf(
                         lerp(tint, Color(0xFF8E8780), 0.45f),
                         lerp(tint, Color(0xFF5E5852), 0.5f),
                         lerp(tint, Color(0xFF3A3632), 0.6f)
@@ -638,7 +643,7 @@ fun NowPlayingScreen(vm: MainViewModel) {
         // soft blurred cover behind everything (fills wide screens too)
         Cover(
             song.cover,
-            Modifier.fillMaxSize().alpha(0.30f).blur(80.dp),
+            Modifier.fillMaxSize().alpha(if (Pal.lime) 0.16f else 0.30f).blur(80.dp),
             RoundedCornerShape(0.dp),
             hiRes = true
         )
@@ -741,7 +746,8 @@ fun NowPlayingScreen(vm: MainViewModel) {
                                         scaleX = sc
                                         scaleY = sc
                                     }
-                                    .clip(RoundedCornerShape(26.dp))
+                                    .clip(RoundedCornerShape(30.dp))
+                                    .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(30.dp))
                             ) {
                                 Cover(
                                     song.cover,
@@ -766,14 +772,12 @@ fun NowPlayingScreen(vm: MainViewModel) {
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .padding(top = 10.dp)
-                    .glassBar(pillShape)
-                    .padding(start = 20.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+                    .padding(top = 12.dp, start = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(Modifier.weight(1f)) {
                     Text(
-                        song.title, fontSize = 21.sp, fontWeight = FontWeight.Bold,
+                        song.title, fontSize = 24.sp, fontWeight = FontWeight.Bold,
                         color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis
                     )
                     Text(
@@ -849,13 +853,21 @@ fun NowPlayingScreen(vm: MainViewModel) {
                 GlassCircle(68.dp, { vm.prev() }) {
                     Icon(Icons.Filled.SkipPrevious, null, tint = Color.White, modifier = Modifier.size(36.dp))
                 }
-                GlassCircle(84.dp, { vm.toggle() }) {
+                Box(
+                    Modifier
+                        .size(84.dp)
+                        .pressScale(0.94f)
+                        .clip(CircleShape)
+                        .background(Pal.accent)
+                        .clickable { vm.toggle() },
+                    contentAlignment = Alignment.Center
+                ) {
                     if (vm.loading) {
-                        CircularProgressIndicator(Modifier.size(34.dp), color = Color.White, strokeWidth = 3.dp)
+                        CircularProgressIndicator(Modifier.size(34.dp), color = Pal.onAccent, strokeWidth = 3.dp)
                     } else {
                         Icon(
                             if (vm.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                            null, tint = Color.White, modifier = Modifier.size(46.dp)
+                            null, tint = Pal.onAccent, modifier = Modifier.size(46.dp)
                         )
                     }
                 }
@@ -890,13 +902,13 @@ fun NowPlayingScreen(vm: MainViewModel) {
                             .width(70.dp)
                             .height(44.dp)
                             .clip(segShape)
-                            .then(if (on) Modifier.glassActiveTab(segShape) else Modifier)
+                            .then(if (on) (if (Pal.flat) Modifier.background(Pal.accent) else Modifier.glassActiveTab(segShape)) else Modifier)
                             .clickable { PlayerUi.page = i },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             ic, null,
-                            tint = if (on) Color.White else Color(0xB3FFFFFF),
+                            tint = if (on) (if (Pal.flat) Pal.onAccent else Color.White) else Color(0xB3FFFFFF),
                             modifier = Modifier.size(24.dp)
                         )
                     }

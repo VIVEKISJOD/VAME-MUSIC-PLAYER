@@ -1,4 +1,14 @@
-# VAME Music - full changelog (up to zip step70, v0.41.0, 16 Nov 2026)
+# VAME Music - full changelog (up to zip step71, v0.42.0, 17 Nov 2026)
+
+## step71 (v0.42.0) - includes everything up to step70
+- New: whole app look rebuilt from your two pictures. LIME (default): near-black pages, solid dark cards, one lime accent, soft lime glow in the bottom corner. NOVA: deep purple glass with a purple accent. Settings > Look > pick Lime, Nova, Light or Custom (Custom keeps the old hue / strength / AMOLED options).
+- New: Home like the picture: "Hey there," + your name with the gear button, a big "Feel the Vibe" hero card (changes by itself between your mix, your last song and your likes, with a round play button and dots), Made for You mix cards ("Mix . 50 songs"), Recently Played covers, then Jump in tiles and Quick picks.
+- New: dock and mini player: solid dark bar, selected tab in the accent colour; tab order Home, Search, New, Radio, Library; the mini player is a rounded card.
+- New: Search: rounded search bar, "Browse Categories" photo tiles with the name bottom left, and a "Trending Now" list with round play buttons.
+- New: Library: chips Playlists / Albums / Artists / Downloads, wide New Playlist button, list rows with big covers and three dots (Liked Songs, Spotify and Import inside Playlists).
+- New: Now Playing: bigger rounded cover, plain title with artist and like, thin accent progress bar, big accent play button, accent page switch.
+- Files changed: Pal.kt, Theme.kt, Components.kt, Screens.kt, HomeNew.kt (new), NowPlaying.kt, Appearance.kt, SettingsKit.kt, AccountUi.kt, MainActivity.kt, app/build.gradle.kts (version 0.42.0 / code 74).
+- Not compiled here. Old Look setting is reset to Lime once.
 
 ## step70 (v0.41.0) - includes everything up to step69
 - Fixed: the volume going to the top by itself on every device (phone speaker, Bluetooth, headphones). It came from the step67 switch "Phone volume to max", which pushed the phone volume to the maximum each time a song started. The switch is removed, the saved setting is cleared, and VAME never changes your phone volume by itself now. You control the volume with the buttons or the volume bar.

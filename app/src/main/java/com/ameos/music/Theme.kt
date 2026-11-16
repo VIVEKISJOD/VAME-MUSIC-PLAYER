@@ -42,7 +42,7 @@ val LocalDark = compositionLocalOf { false }
 fun DarkScope(content: @Composable () -> Unit) {
     val colors = darkColorScheme(
         primary = Pal.accentSoft,
-        onPrimary = Color(0xFF1B1315),
+        onPrimary = Pal.onAccent,
         background = Color(0xFF1C1B1B),
         onBackground = Color.White,
         surface = Color(0xFF1C1B1B),
@@ -80,19 +80,19 @@ fun VameTheme(content: @Composable () -> Unit) {
         error = Color(0xFFB3261E)
     ) else darkColorScheme(
         primary = Pal.accent,
-        onPrimary = Color(0xFF1B1315),
+        onPrimary = Pal.onAccent,
         primaryContainer = Pal.accentDeep,
         onPrimaryContainer = Color(0xFFFFFFFF),
         secondary = Pal.textDim,
         onSecondary = Color(0xFF1B1315),
         background = Pal.bgMid,
-        onBackground = Color(0xFFF3DEDF),
+        onBackground = if (Pal.look == 3) Color(0xFFF3DEDF) else Color.White,
         surface = Pal.bgMid,
-        onSurface = Color(0xFFF3DEDF),
+        onSurface = if (Pal.look == 3) Color(0xFFF3DEDF) else Color.White,
         surfaceVariant = Pal.surface2,
         onSurfaceVariant = Pal.textDim,
-        surfaceContainer = Pal.surface.copy(alpha = if (Pal.mode == 1) 1f else 0.88f),
-        surfaceContainerHigh = Pal.surface2.copy(alpha = if (Pal.mode == 1) 1f else 0.9f),
+        surfaceContainer = Pal.surface.copy(alpha = if (Pal.flat) 1f else 0.88f),
+        surfaceContainerHigh = Pal.surface2.copy(alpha = if (Pal.flat) 1f else 0.9f),
         outline = Pal.muted,
         error = Color(0xFFFFB4AB)
     )

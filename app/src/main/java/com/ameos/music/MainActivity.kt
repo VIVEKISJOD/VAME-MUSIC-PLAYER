@@ -57,6 +57,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -240,6 +241,19 @@ fun VameRoot(vm: MainViewModel) {
                     endY = 1500f
                 )
             )
+            .drawBehind {
+                // soft glow in the bottom corner (Lime: lime, Nova: purple)
+                val g = Pal.glow
+                if (g.alpha > 0f) {
+                    drawRect(
+                        Brush.radialGradient(
+                            listOf(g, Color.Transparent),
+                            center = Offset(size.width * 0.95f, size.height * 0.98f),
+                            radius = size.width * 1.1f
+                        )
+                    )
+                }
+            }
     ) {
         // the colour of the playing cover tints the top of every page
         if (UiOpts.pageTint && vm.current != null) {
@@ -247,7 +261,7 @@ fun VameRoot(vm: MainViewModel) {
             Box(
                 Modifier.fillMaxSize().background(
                     Brush.verticalGradient(
-                        listOf(pageTint.copy(alpha = if (Pal.light) 0.22f else if (Pal.amoled) 0.30f else 0.42f), Color.Transparent),
+                        listOf(pageTint.copy(alpha = if (Pal.light) 0.22f else if (Pal.lime) 0.16f else if (Pal.amoled) 0.30f else 0.42f), Color.Transparent),
                         endY = 1100f
                     )
                 )
@@ -446,7 +460,7 @@ fun MainPages(vm: MainViewModel, tablet: Boolean, dockFolded: Boolean, onExpand:
             if (!(UiOpts.tv && covered)) AnimatedContent(
                 targetState = vm.tab,
                 transitionSpec = {
-                    val order = listOf(0, 4, 2, 3, 1)
+                    val order = listOf(0, 1, 4, 2, 3)
                     val dir = if (order.indexOf(targetState) > order.indexOf(initialState)) 1 else -1
                     (fadeIn(tween(260, delayMillis = 70)) +
                         slideInHorizontally(tween(340, easing = FastOutSlowInEasing)) { dir * (it / 12) } +

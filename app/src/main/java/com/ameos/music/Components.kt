@@ -84,7 +84,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 
 val CardDark = Color(0xFF141010)
-val Stroke: Color get() = if (Pal.light) Color(0x1F000000) else Color(0x33FFFFFF)
+val Stroke: Color get() = if (Pal.light) Color(0x1F000000) else if (Pal.lime) Color(0x1AFFFFFF) else Color(0x33FFFFFF)
 
 data class GenreTile(val name: String, val covers: List<String>, val artists: String)
 
@@ -117,7 +117,7 @@ fun Modifier.pressScale(target: Float = 0.96f): Modifier = composed {
 val GlassEdge: Brush
     get() = if (Pal.light) Brush.linearGradient(
         listOf(Color(0xF5FFFFFF), Color(0x40FFFFFF), Color(0x1A000000), Color(0xAAFFFFFF))
-    ) else if (Pal.mode == 1) SolidColor(Color(0x2AFFFFFF)) else Brush.linearGradient(
+    ) else if (Pal.flat) SolidColor(Color(0x1AFFFFFF)) else Brush.linearGradient(
         listOf(Color(0xAAFFFFFF), Color(0x22FFFFFF), Color(0x11FFFFFF), Color(0x55FFFFFF))
     )
 private val GlassSheen: Brush = Brush.linearGradient(
@@ -138,7 +138,7 @@ fun Modifier.glass(shape: Shape, top: Color = Pal.glassTop, bottom: Color = Pal.
 // light glass fill for cards, rows, round buttons (put .clip(shape) before it, add a border if wanted)
 fun Modifier.glassFill(): Modifier = composed {
     val darkHere = LocalDark.current || !Pal.light
-    if (!Pal.light && Pal.mode == 1) {
+    if (Pal.flat) {
         this.background(Pal.surface)
     } else {
         // Settings > Glass strength: soft / normal / strong
@@ -171,6 +171,12 @@ fun Modifier.glassPanel(shape: Shape): Modifier =
 // material (fastest = flat, balanced = + sheen, quality = + shine), colour, frost, tint, film.
 fun Modifier.glassBar(shape: Shape, base: Color? = null, blur: Boolean = false): Modifier = composed {
     val dark = LocalDark.current || !Pal.light
+    if (Pal.flat) {
+        // Lime: solid dark bars with a thin light edge, lime only where `base` asks for it
+        val lit = if (base != null) base.copy(alpha = 0.22f) else Color.Transparent
+        return@composed this.clip(shape).background(Color(0xFF18181B)).background(lit)
+            .border(1.dp, Color(0x22FFFFFF), shape)
+    }
     val film = Pal.glassFilm
     val frost0 = blur
     val frost = (Pal.glassFrost / 24f).coerceIn(0f, 1f)
@@ -179,7 +185,7 @@ fun Modifier.glassBar(shape: Shape, base: Color? = null, blur: Boolean = false):
     val milk = if (real) milk0 * 0.55f else milk0
     // dock + mini player: a solid frosted backing so text behind them never shows through
     val back = if (!frost0) 0f else if (real) 0.58f else 0.84f
-    val tint = Pal.tintColor ?: base
+    val tint = Pal.tintColor ?: base ?: (if (Pal.nova) Pal.accent else null)
     val tintA = if (tint == null) 0f else (0.06f + 0.42f * Pal.glassColour) * (if (dark) 0.8f else 1f)
     val edge = if (dark) Brush.linearGradient(
         listOf(Color(0xAAFFFFFF), Color(0x22FFFFFF), Color(0x11FFFFFF), Color(0x66FFFFFF))
@@ -297,9 +303,9 @@ fun SongRow(song: Song, vm: MainViewModel, list: List<Song>) {
             .padding(vertical = 4.dp)
             .then(if (Net.on && !vm.isDownloaded(song)) Modifier.graphicsLayer { alpha = 0.38f } else Modifier)
             .pressScale()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(if (Pal.flat) 14.dp else 16.dp))
             .glassFill()
-            .border(1.dp, Stroke, RoundedCornerShape(16.dp))
+            .border(1.dp, Stroke, RoundedCornerShape(if (Pal.flat) 14.dp else 16.dp))
             .combinedClickable(
                 onClick = { vm.play(song, list) },
                 onLongClick = {
@@ -353,7 +359,7 @@ fun MiniPlayer(
     // tablet held sideways: the side player and the small floating box replace the pill on every page
     // (force = true is used by the tablet pill and by the pill on top of Settings)
     if (!force && isTabletLandscape()) return
-    val shape = RoundedCornerShape(32.dp)
+    val shape = RoundedCornerShape(if (Pal.flat) 22.dp else 32.dp)
     val tick = rememberTick()
     val ink = inkColor()
     val enter = remember { Animatable(0f) }
@@ -438,10 +444,10 @@ data class NavTab(val id: Int, val label: String, val icon: ImageVector)
 
 val NavTabs: List<NavTab> = listOf(
     NavTab(0, "Home", Icons.Filled.Home),
+    NavTab(1, "Search", Icons.Filled.Search),
     NavTab(4, "New", Icons.Filled.GridView),
     NavTab(2, "Radio", Icons.Filled.Sensors),
-    NavTab(3, "Library", Icons.Filled.LibraryMusic),
-    NavTab(1, "Search", Icons.Filled.Search)
+    NavTab(3, "Library", Icons.Filled.LibraryMusic)
 )
 
 // go to a tab and close every detail page that covers it
@@ -469,7 +475,7 @@ fun BottomBar(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modif
     ) {
         NavTabs.forEach { item ->
             val on = item.id == selected
-            val col = if (on) ink else ink.copy(alpha = 0.78f)
+            val col = if (on) (if (Pal.light) ink else Pal.accent) else ink.copy(alpha = if (Pal.flat) 0.55f else 0.78f)
             Box(
                 Modifier
                     .weight(1f)
@@ -481,11 +487,11 @@ fun BottomBar(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modif
                     },
                 contentAlignment = Alignment.Center
             ) {
-                if (on) Box(Modifier.matchParentSize().glassActiveTab(RoundedCornerShape(28.dp)))
+                if (on && !Pal.flat) Box(Modifier.matchParentSize().glassActiveTab(RoundedCornerShape(28.dp)))
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(item.icon, null, tint = col, modifier = Modifier.size(if (UiOpts.tabLabels) 26.dp else 28.dp))
                     if (UiOpts.tabLabels) {
-                        Text(item.label, fontSize = 11.sp, color = col, fontWeight = FontWeight.Bold)
+                        Text(item.label, fontSize = 11.sp, color = col, fontWeight = if (on) FontWeight.Bold else FontWeight.Medium)
                     }
                 }
             }
@@ -678,10 +684,10 @@ private fun FoldTab(icon: ImageVector, on: Boolean, ink: Color, onClick: () -> U
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
-        if (on) Box(Modifier.matchParentSize().glassActiveTab(CircleShape))
+        if (on && !Pal.flat) Box(Modifier.matchParentSize().glassActiveTab(CircleShape))
         Icon(
             icon, null,
-            tint = if (on) ink else ink.copy(alpha = 0.78f),
+            tint = if (on) (if (Pal.light) ink else Pal.accent) else ink.copy(alpha = 0.78f),
             modifier = Modifier.size(26.dp)
         )
     }

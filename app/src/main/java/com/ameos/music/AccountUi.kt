@@ -189,7 +189,7 @@ fun LoginScreen(vm: MainViewModel) {
                             .padding(horizontal = 22.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Next", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Pal.bgTop)
+                        Text("Next", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Pal.onAccent)
                     }
                 }
             }

@@ -154,7 +154,7 @@ fun KitChips(selected: Int, names: List<String>, onPick: (Int) -> Unit) {
             ) {
                 Text(
                     n, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-                    color = if (on) Pal.bgTop else Pal.fg
+                    color = if (on) Pal.onAccent else Pal.fg
                 )
             }
         }
@@ -180,7 +180,7 @@ fun KitButton(text: String, primary: Boolean = false, enabled: Boolean = true, o
     ) {
         Text(
             text, fontSize = 15.sp, fontWeight = FontWeight.Bold,
-            color = if (primary) Pal.bgTop else Pal.fg,
+            color = if (primary) Pal.onAccent else Pal.fg,
             textAlign = TextAlign.Center
         )
     }

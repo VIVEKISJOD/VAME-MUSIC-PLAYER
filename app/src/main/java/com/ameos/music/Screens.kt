@@ -112,7 +112,7 @@ fun HomeScreen(vm: MainViewModel) {
                 .height(380.dp)
                 .background(
                     Brush.verticalGradient(
-                        listOf(tint.copy(alpha = if (Pal.light) 0.38f else if (Pal.amoled) 0.30f else 0.55f), Color.Transparent)
+                        listOf(tint.copy(alpha = if (Pal.light) 0.38f else if (Pal.lime) 0.14f else if (Pal.amoled) 0.30f else 0.55f), Color.Transparent)
                     )
                 )
         )
@@ -203,33 +203,39 @@ private fun HomeList(vm: MainViewModel) {
             val hi = if (hour < 5) "Late night" else if (hour < 12) "Good morning"
             else if (hour < 17) "Good afternoon" else if (hour < 22) "Good evening" else "Late night"
             val nm = vm.userName.ifBlank { vm.ytName }
-            Column(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 16.dp)) {
-                Text(
-                    if (nm.isBlank()) hi else hi + " \u00B7 " + nm,
-                    fontSize = 14.sp, color = Pal.textDim, maxLines = 1, overflow = TextOverflow.Ellipsis
-                )
-                Row(Modifier.padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        Modifier.size(58.dp).clip(CircleShape).glassFill(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        ProfileButton(vm, 58.dp, false)
-                    }
-                    Spacer(Modifier.width(14.dp))
-                    Text(
-                        vm.title.ifBlank { "VAME" }, fontSize = 40.sp, fontWeight = FontWeight.Bold,
-                        color = Pal.fg, letterSpacing = (-1).sp, maxLines = 1,
-                        overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f)
-                    )
-                    GearButton(vm)
+            Row(
+                Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 18.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    Modifier.size(50.dp).clip(CircleShape).glassFill(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    ProfileButton(vm, 50.dp, false)
                 }
+                Spacer(Modifier.width(14.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        "Hey there,",
+                        fontSize = 15.sp, color = Pal.textDim, maxLines = 1, overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        if (nm.isBlank()) vm.title.ifBlank { "Music Lover" } else nm,
+                        fontSize = 26.sp, fontWeight = FontWeight.Bold,
+                        color = Pal.fg, letterSpacing = (-0.5).sp, maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                GearButton(vm)
             }
         }
         // ---- Dashboard: tiles you use most, now playing strip, quick picks, mixes ----
+        item { HeroCarousel(vm) }
+        item { MadeForYou(vm) }
+        item { RecentStrip(vm) }
+        item { ShelfTitle("Jump in") }
         item { DashGrid(vm) }
-        item { DashNowPlaying(vm) }
         item { DashQuickPicks(vm) }
-        item { DashMixes(vm) }
         if (forYou && vm.dials.isNotEmpty()) {
             item { SpeedDialShelf(vm) }
         }
@@ -701,40 +707,28 @@ private val Moods = listOf(
     Mood("Sleep", "Classical for sleeping", "calm piano sleep music", Color(0xFF6A3FC4))
 )
 
-// colourful mood tile: solid colour strip on the left, tinted cover on the right
+// mood tile: cover with a colour wash and the name at the bottom left (like the design)
 @Composable
 private fun MoodTile(m: Mood, cover: String?, modifier: Modifier, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(28.dp)
+    val shape = RoundedCornerShape(20.dp)
     Box(
         modifier
-            .height(150.dp)
+            .height(96.dp)
             .appear()
             .pressScale(0.97f)
             .clip(shape)
             .clickable { onClick() }
     ) {
-        Row(Modifier.fillMaxSize()) {
-            Box(
-                Modifier.weight(0.28f).fillMaxHeight().background(
-                    Brush.verticalGradient(
-                        listOf(m.color, androidx.compose.ui.graphics.lerp(m.color, Color.White, 0.32f))
-                    )
-                )
+        Cover(cover, Modifier.fillMaxSize(), RoundedCornerShape(0.dp))
+        Box(Modifier.fillMaxSize().background(m.color.copy(alpha = 0.42f)))
+        Box(
+            Modifier.fillMaxSize().background(
+                Brush.verticalGradient(0.3f to Color.Transparent, 1f to Color(0xCC000000))
             )
-            Box(Modifier.weight(0.72f).fillMaxHeight()) {
-                Cover(cover, Modifier.fillMaxSize(), RoundedCornerShape(0.dp))
-                Box(Modifier.fillMaxSize().background(m.color.copy(alpha = 0.58f)))
-                Text(
-                    m.sub, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
-                    color = Color.White.copy(alpha = 0.95f), textAlign = TextAlign.Center,
-                    maxLines = 2, overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(start = 8.dp, end = 8.dp, bottom = 14.dp)
-                )
-            }
-        }
+        )
         Text(
-            m.name, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White,
-            modifier = Modifier.align(Alignment.TopStart).padding(start = 16.dp, top = 14.dp)
+            m.name, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color.White,
+            modifier = Modifier.align(Alignment.BottomStart).padding(start = 14.dp, bottom = 11.dp)
         )
         Box(Modifier.fillMaxSize().border(1.dp, GlassEdge, shape))
     }
@@ -770,12 +764,12 @@ fun ExploreScreen(vm: MainViewModel) {
                     }
                 },
                 singleLine = true,
-                shape = RoundedCornerShape(28.dp),
+                shape = RoundedCornerShape(20.dp),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { vm.search() }),
                 colors = TextFieldDefaults.colors(
-                    focusedContainerColor = if (Pal.light) Color(0xCCFFFFFF) else Color(0x33FFFFFF),
-                    unfocusedContainerColor = if (Pal.light) Color(0xCCFFFFFF) else Color(0x33FFFFFF),
+                    focusedContainerColor = if (Pal.light) Color(0xCCFFFFFF) else if (Pal.flat) Pal.surface else Color(0x33FFFFFF),
+                    unfocusedContainerColor = if (Pal.light) Color(0xCCFFFFFF) else if (Pal.flat) Pal.surface else Color(0x33FFFFFF),
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
                 ),
@@ -824,7 +818,7 @@ fun ExploreScreen(vm: MainViewModel) {
             }
             item {
                 Text(
-                    "Browse by mood", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Pal.fg,
+                    "Browse Categories", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Pal.fg,
                     modifier = Modifier.padding(top = 22.dp, bottom = 12.dp)
                 )
             }
@@ -842,6 +836,7 @@ fun ExploreScreen(vm: MainViewModel) {
                     }
                 }
             }
+            item { TrendingList(vm) }
             if (vm.tiles.isNotEmpty()) {
                 item { SectionLabel("Your genres") }
                 item {
@@ -889,10 +884,10 @@ fun ExploreScreen(vm: MainViewModel) {
                             Text("Song \u2022 " + artistName(top.artist), fontSize = 13.sp, color = Pal.textDim, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                         Box(
-                            Modifier.size(48.dp).clip(CircleShape).background(Pal.fg),
+                            Modifier.size(48.dp).clip(CircleShape).background(Pal.accent),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Filled.PlayArrow, null, tint = Pal.onFg, modifier = Modifier.size(28.dp))
+                            Icon(Icons.Filled.PlayArrow, null, tint = Pal.onAccent, modifier = Modifier.size(28.dp))
                         }
                     }
                 }
@@ -1211,6 +1206,7 @@ fun LibraryScreen(vm: MainViewModel) {
     val topArtist = rec.topArtists.firstOrNull()
     val topSong = rec.topSongs.firstOrNull()
     val openRecap = { vm.recapOpen = true }
+    val libTab = androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(0) }
 
     // artists: the ones you liked first, then the ones you listen to most
     val artistTiles = ArrayList<ArtistItem>()
@@ -1281,6 +1277,54 @@ fun LibraryScreen(vm: MainViewModel) {
                         null, null, openRecap
                     )
                 }
+            }
+        }
+        // step71: chips + a list like the design (Playlists / Albums / Artists / Downloads)
+        item {
+            KitChips(libTab.intValue, listOf("Playlists", "Albums", "Artists", "Downloads")) {
+                if (it == 3) {
+                    vm.refreshDownloadBytes()
+                    vm.downloadsOpen = true
+                } else {
+                    libTab.intValue = it
+                }
+            }
+        }
+        if (libTab.intValue == 0) {
+            item {
+                LibWideButton("New Playlist", Icons.Filled.Add) {
+                    vm.editPlaylistId = null
+                    vm.pendingSong = null
+                    vm.showPlaylistDialog = true
+                }
+            }
+            item {
+                LibListRow(null, "Liked Songs", vm.liked.size.toString() + " songs") { vm.likedOpen = true }
+            }
+            items(vm.playlists.toList()) { p ->
+                LibListRow(p.shownCover(), p.name, p.songs.size.toString() + " songs") { vm.openPlaylist(p.id) }
+            }
+            item {
+                LibWideButton("Import playlist", Icons.Filled.FileDownload) {
+                    vm.importStatus = ""
+                    vm.importedId = null
+                    vm.showImportDialog = true
+                }
+            }
+            item { LibWideButton("Spotify", Icons.Filled.Cloud) { SpotifyHub.open = true } }
+        } else if (libTab.intValue == 1) {
+            if (vm.savedAlbums.isEmpty()) {
+                item { Text("Albums you save show up here", fontSize = 13.sp, color = Pal.muted, modifier = Modifier.padding(vertical = 16.dp)) }
+            }
+            items(vm.savedAlbums.toList()) { al ->
+                LibListRow(al.cover, al.title, al.artist.ifBlank { "Album" }) { vm.openAlbum(al) }
+            }
+        } else if (libTab.intValue == 2) {
+            if (artistTiles.isEmpty()) {
+                item { Text("Artists you like or listen to a lot show up here", fontSize = 13.sp, color = Pal.muted, modifier = Modifier.padding(vertical = 16.dp)) }
+            }
+            items(artistTiles.take(40)) { a ->
+                LibListRow(a.cover, a.name, "Artist", circle = true) { vm.openArtist(a.name) }
             }
         }
         item { Spacer(Modifier.height(10.dp)) }
@@ -1359,45 +1403,6 @@ fun LibraryScreen(vm: MainViewModel) {
             }
         }
 
-        item {
-            Row(
-                Modifier.fillMaxWidth().padding(top = 26.dp, bottom = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Playlists", fontSize = 26.sp, fontWeight = FontWeight.SemiBold, color = Pal.fg)
-                Text(
-                    if (showAll) "Show less" else "Show all", fontSize = 16.sp, color = Pal.fg,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(50))
-                        .clickable { showAll = !showAll }
-                        .padding(horizontal = 10.dp, vertical = 4.dp)
-                )
-            }
-        }
-        item {
-            androidx.compose.animation.AnimatedContent(
-                targetState = showAll,
-                transitionSpec = { fadeIn(androidx.compose.animation.core.tween(240)) togetherWith fadeOut(androidx.compose.animation.core.tween(160)) },
-                label = "plShow"
-            ) { all ->
-                if (all) {
-                    val cols = if (big) 4 else 2
-                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        tiles.chunked(cols).forEach { row ->
-                            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                                row.forEach { t -> PlTile(t, Modifier.weight(1f)) }
-                                repeat(cols - row.size) { Spacer(Modifier.weight(1f)) }
-                            }
-                        }
-                    }
-                } else {
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                        items(tiles) { t -> PlTile(t, Modifier.width(tileSize)) }
-                    }
-                }
-            }
-        }
         if (vm.played.isNotEmpty()) {
             item {
                 Text(
@@ -1411,46 +1416,6 @@ fun LibraryScreen(vm: MainViewModel) {
                     items(list) { s ->
                         PlTile(LibTile(s.title, s.artist, s.cover, Icons.Filled.MusicNote, null) {
                             vm.play(s, list)
-                        }, Modifier.width(tileSize))
-                    }
-                }
-            }
-        }
-        if (vm.savedAlbums.isNotEmpty()) {
-            item {
-                Text(
-                    "Saved albums", fontSize = 26.sp, fontWeight = FontWeight.SemiBold, color = Pal.fg,
-                    modifier = Modifier.padding(top = 28.dp, bottom = 12.dp)
-                )
-            }
-            item {
-                val albums = vm.savedAlbums.toList()
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    items(albums) { al ->
-                        PlTile(LibTile(al.title, al.artist.ifBlank { "Album" }, al.cover, Icons.Filled.Album, null) {
-                            vm.openAlbum(al)
-                        }, Modifier.width(tileSize))
-                    }
-                }
-            }
-        }
-        item {
-            Text(
-                "Artists", fontSize = 26.sp, fontWeight = FontWeight.SemiBold, color = Pal.fg,
-                modifier = Modifier.padding(top = 28.dp, bottom = 12.dp)
-            )
-        }
-        item {
-            if (artistTiles.isEmpty()) {
-                Text(
-                    "Artists you like or listen to a lot show up here",
-                    fontSize = 13.sp, color = Pal.muted
-                )
-            } else {
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    items(artistTiles.take(14)) { a ->
-                        PlTile(LibTile(a.name, "Artist", a.cover, Icons.Filled.Person, null) {
-                            vm.openArtist(a.name)
                         }, Modifier.width(tileSize))
                     }
                 }

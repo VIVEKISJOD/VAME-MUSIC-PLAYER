@@ -12,8 +12,8 @@ android {
         applicationId = "com.ameos.music"
         minSdk = 26
         targetSdk = 34
-        versionCode = 73
-        versionName = "0.41.0"
+        versionCode = 74
+        versionName = "0.42.0"
     }
 
     // Same signing key for every update (stored as GitHub secrets), so the app can update itself.
