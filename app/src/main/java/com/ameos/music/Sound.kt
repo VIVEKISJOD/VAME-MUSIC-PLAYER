@@ -55,7 +55,11 @@ object SoundFx {
     var pitchSemis by mutableFloatStateOf(0f) // step64 Effects page: -12 .. +12 semitones
     var reverb by mutableIntStateOf(0)        // step64 Effects page: 0 .. 100 percent (0 = off)
     var boost by mutableIntStateOf(0)         // step67: volume boost level 0 Off, 1 Medium, 2 High, 3 Max
-    var maxVol by mutableStateOf(false)       // step67: phone volume goes to max when a song starts
+    var onHeadphones by mutableStateOf(false) // step70: sound goes to Bluetooth / wired headphones right now
+    var sleepFadeOn by mutableStateOf(true)   // step70: sleep timer fades the volume out
+    var sleepFade = 1f                        // step70: 1 = normal, goes to 0 in the last seconds of the sleep timer
+    private var boostSpk = 0                  // step70: boost chosen for the phone speaker
+    private var boostHp = 0                   // step70: boost chosen for headphones / Bluetooth
     var note by mutableStateOf("")
     val boostNames = listOf("Off", "Medium +6 dB", "High +10 dB", "Max +15 dB")
     private val boostMb = intArrayOf(0, 600, 1000, 1500)
@@ -99,8 +103,12 @@ object SoundFx {
         crossfade = p.getInt("crossfade", 0)
         pitchSemis = p.getFloat("pitchSemis", 0f).coerceIn(-12f, 12f)
         reverb = p.getInt("reverb", 0).coerceIn(0, 100)
-        boost = p.getInt("boost", 0).coerceIn(0, boostMb.size - 1)
-        maxVol = p.getBoolean("maxVol", false)
+        boostSpk = p.getInt("boostSpk", p.getInt("boost", 0)).coerceIn(0, boostMb.size - 1)
+        boostHp = p.getInt("boostHp", 0).coerceIn(0, boostMb.size - 1)
+        boost = if (onHeadphones) boostHp else boostSpk
+        sleepFadeOn = p.getBoolean("sleepFadeOn", true)
+        // step70: the old "phone volume to max" switch is gone; clear what it saved
+        if (p.contains("maxVol")) p.edit().remove("maxVol").apply()
         val saved = (p.getString("levels", "") ?: "").split(",").mapNotNull { it.toFloatOrNull() }
         if (saved.isNotEmpty()) {
             levels.clear()
@@ -119,8 +127,9 @@ object SoundFx {
             .putInt("crossfade", crossfade)
             .putFloat("pitchSemis", pitchSemis)
             .putInt("reverb", reverb)
-            .putInt("boost", boost)
-            .putBoolean("maxVol", maxVol)
+            .putInt("boostSpk", boostSpk)
+            .putInt("boostHp", boostHp)
+            .putBoolean("sleepFadeOn", sleepFadeOn)
             .putString("levels", levels.joinToString(","))
             .apply()
     }
@@ -260,31 +269,39 @@ object SoundFx {
     }
 
     // step67: one tap volume boost (uses the loudness effect with a bigger gain than the Loudness slider)
+    // step70: the choice is kept separately for the phone speaker and for headphones / Bluetooth
     fun pickBoost(i: Int) {
         boost = i.coerceIn(0, boostMb.size - 1)
+        if (onHeadphones) boostHp = boost else boostSpk = boost
         apply()
         save()
     }
 
-    fun chooseMaxVol(on: Boolean) {
-        maxVol = on
+    // called when the sound moves between the phone speaker and headphones / Bluetooth
+    fun routeChanged(headphones: Boolean) {
+        if (headphones == onHeadphones) return
+        onHeadphones = headphones
+        boost = if (headphones) boostHp else boostSpk
+        apply()
+    }
+
+    // back to the normal sound: every effect off
+    fun resetAll() {
+        eqOn = false
+        preset = 0
+        for (i in levels.indices) levels[i] = 0f
+        bass = 0
+        loud = 0
+        spatial = 0
+        crossfade = 0
+        boost = 0
+        boostSpk = 0
+        boostHp = 0
+        pitchSemis = 0f
+        reverb = 0
+        applyPitch()
+        apply()
         save()
-        if (on) maxPhoneVolume()
-    }
-
-    // sets the phone's music volume to the top step
-    fun maxPhoneVolume() {
-        val c = ctx ?: return
-        try {
-            val am = c.getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
-            am.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, am.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC), 0)
-        } catch (e: Exception) {
-        }
-    }
-
-    // called when a new song starts playing
-    fun onSongStart() {
-        if (maxVol) maxPhoneVolume()
     }
 
     fun pickPreset(i: Int) {
@@ -308,9 +325,13 @@ object SoundFx {
 
     // fade out at the end of a song and fade in at the start of the next one (called about 5 times a second)
     fun tickFade(p: ExoPlayer) {
+        val sf = sleepFade.coerceIn(0f, 1f)
         val ms = crossfade * 1000L
         if (ms <= 0L) {
-            if (fading) {
+            if (sf < 1f) {
+                p.volume = sf
+                fading = true
+            } else if (fading) {
                 p.volume = 1f
                 fading = false
             }
@@ -325,7 +346,7 @@ object SoundFx {
             if (left in 0 until ms) v = minOf(v, left / ms.toFloat())
         }
         if (pos in 0 until ms) v = minOf(v, pos / ms.toFloat())
-        p.volume = v.coerceIn(0f, 1f)
+        p.volume = (v * sf).coerceIn(0f, 1f)
         fading = true
     }
 }
@@ -377,14 +398,16 @@ fun SoundSection() {
         }
     }
     KitDivider()
-    KitLabel("Volume boost", "For songs that sound too quiet. Makes the sound louder than the phone's own volume.")
+    KitLabel(
+        "Volume boost",
+        "For songs that sound too quiet. Kept separately for the phone speaker and for headphones / Bluetooth. Now: " +
+            (if (fx.onHeadphones) "headphones / Bluetooth." else "phone speaker.")
+    )
     KitChips(fx.boost, fx.boostNames) {
         fx.pickBoost(it)
     }
-    KitNote("Max can sound harsh on very loud songs. If it crackles, pick High. While a boost is on it replaces the Loudness slider below.")
-    KitSwitch("Phone volume to max", "When a song starts, the phone's music volume goes to the top step. Careful with headphones.", fx.maxVol) {
-        fx.chooseMaxVol(it)
-    }
+    KitNote("Max can sound harsh on very loud songs. If it crackles, pick High. VAME never changes your phone volume by itself. While a boost is on it replaces the Loudness slider below.")
+    if (fx.onHeadphones && fx.boost >= 2) KitNote("Careful: a strong boost on headphones can be too loud for your ears.")
     KitDivider()
     FxSlider("Bass boost", if (fx.bass == 0) "Off" else (fx.bass / 10).toString() + "%", fx.bass.toFloat(), 0f..1000f) {
         fx.bass = it.toInt()
@@ -408,5 +431,12 @@ fun SoundSection() {
         fx.crossfade = fx.crossfadeSeconds[it]
         fx.save()
     }
+    KitDivider()
+    KitSwitch("Fade out with sleep timer", "The sound slowly gets quiet in the last 15 seconds before the sleep timer stops the music.", fx.sleepFadeOn) {
+        fx.sleepFadeOn = it
+        fx.save()
+    }
+    KitButton("Reset sound") { fx.resetAll() }
+    KitNote("Reset sound switches every effect off: equalizer, bass, loudness, 3D, boost, fade, pitch and reverb.")
     if (fx.note.isNotBlank()) KitNote(fx.note)
 }

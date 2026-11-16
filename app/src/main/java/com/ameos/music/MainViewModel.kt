@@ -323,6 +323,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             while (true) {
                 delay(200)
                 try {
+                    // step70: boost follows the output (speaker / headphones); the sleep timer fades the sound
+                    val k = currentOutput?.kind ?: AudioOutput.PHONE
+                    SoundFx.routeChanged(k != AudioOutput.PHONE)
+                    SoundFx.sleepFade =
+                        if (SoundFx.sleepFadeOn && !finishSong && sleepLeftSec in 1..15) sleepLeftSec / 15f else 1f
                     SoundFx.tickFade(player)
                 } catch (e: Exception) {
                 }
@@ -1255,7 +1260,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 player.prepare()
                 if (startMs > 0L) player.seekTo(startMs)
                 player.play()
-                SoundFx.onSongStart()
                 played.removeAll { it.url == song.url }
                 played.add(0, song)
                 while (played.size > 30) played.removeAt(played.size - 1)

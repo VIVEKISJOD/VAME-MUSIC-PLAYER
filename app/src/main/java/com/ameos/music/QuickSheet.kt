@@ -302,6 +302,13 @@ fun QuickSheet(vm: MainViewModel) {
                             vm.cycleSpeed()
                         }
                         SheetRow(
+                            Icons.Filled.VolumeUp,
+                            "Volume boost: " + SoundFx.boostNames[SoundFx.boost.coerceIn(0, SoundFx.boostNames.size - 1)],
+                            if (SoundFx.onHeadphones) "For headphones / Bluetooth. Tap to change" else "For the phone speaker. Tap to change"
+                        ) {
+                            SoundFx.pickBoost((SoundFx.boost + 1) % SoundFx.boostNames.size)
+                        }
+                        SheetRow(
                             Icons.Filled.FastForward,
                             if (vm.skipSilence) "Skip silence: On" else "Skip silence: Off",
                             "Skips quiet gaps inside songs"

@@ -1,4 +1,15 @@
-# VAME Music - full changelog (up to zip step69, v0.40.0, 10 Nov 2026)
+# VAME Music - full changelog (up to zip step70, v0.41.0, 16 Nov 2026)
+
+## step70 (v0.41.0) - includes everything up to step69
+- Fixed: the volume going to the top by itself on every device (phone speaker, Bluetooth, headphones). It came from the step67 switch "Phone volume to max", which pushed the phone volume to the maximum each time a song started. The switch is removed, the saved setting is cleared, and VAME never changes your phone volume by itself now. You control the volume with the buttons or the volume bar.
+- New: Volume boost is kept separately for the phone speaker and for headphones / Bluetooth. The boost switches by itself when the sound moves to another device. Headphones start with the boost Off. Settings > Sound and the Effects page say which one you are editing.
+- New: the sleep timer fades the sound out slowly in the last 15 seconds, then stops (Settings > Sound > Fade out with sleep timer, on by default; not used with "let the song finish").
+- New: Settings > Sound > Reset sound: switches every effect off (equalizer, bass, loudness, 3D, boost, song fade, pitch, reverb).
+- New: Volume boost row in the player's three dots menu: tap to step through Off, Medium, High, Max for the current device.
+- New: a warning line in Settings > Sound when a strong boost (High or Max) is on while headphones or Bluetooth are in use.
+- Note: if the phone volume was already at the top, VAME did not cause that: lower it once with the volume bar or buttons and it will stay.
+- Files changed: Sound.kt, MainViewModel.kt, NowPlaying.kt, QuickSheet.kt, app/build.gradle.kts (version 0.41.0 / code 73).
+- Not compiled here.
 
 ## step69 (v0.40.0) - includes everything up to step68
 - Faster songs: audio links are worked out ahead of time for your last 3 songs and the first Quick picks when Home opens, and for the next 2 songs of the queue (it was 1).

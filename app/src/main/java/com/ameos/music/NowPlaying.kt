@@ -40,8 +40,6 @@ import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Shuffle
-import androidx.compose.material.icons.filled.SkipNext
-import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Subject
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.outlined.FavoriteBorder
@@ -463,7 +461,7 @@ private fun EffectsPage(vm: MainViewModel) {
         PillSlider(rev.toFloat(), 0f..100f, { SoundFx.setEffects(vm, speed, semis, it.roundToInt()) }) { SoundFx.save() }
 
         Text(
-            "VOLUME BOOST", fontSize = 13.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp,
+            "VOLUME BOOST" + (if (SoundFx.onHeadphones) "  •  HEADPHONES" else "  •  PHONE"), fontSize = 13.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp,
             color = Color(0x99FFFFFF), modifier = Modifier.padding(top = 18.dp)
         )
         Row(
