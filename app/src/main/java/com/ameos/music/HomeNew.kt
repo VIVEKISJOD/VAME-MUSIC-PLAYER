@@ -212,7 +212,7 @@ fun RecentStrip(vm: MainViewModel) {
                     .size(84.dp)
                     .pressScale(0.95f)
                     .border(if (on) 2.dp else 1.dp, if (on) Pal.accent else Stroke, shape)
-                    .clickable { vm.play(s, list) },
+                    .clickable { vm.playOne(s, list) },
                 shape
             )
         }
@@ -231,7 +231,7 @@ fun TrendingList(vm: MainViewModel) {
                 Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(14.dp))
-                    .clickable { vm.play(s, list) }
+                    .clickable { vm.playOne(s, list) }
                     .padding(vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {

@@ -707,7 +707,78 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     // ---------- queue / playback ----------
 
+    // ---------- YouTube radio queue (step72) ----------
+    // A lone song (from Search, Home, Quick picks...) starts with the queue YouTube Music builds for it.
+    // The list is fetched ONCE and only ever added at the END (continuation); the songs you can already
+    // see never change, and songs from your own lists (playlist, album, liked, downloads) get no radio.
+    private var radioGen = 0
+    private var radioToken: String? = null
+    private var radioBusy = false
+    private var radioOn = false
+    private var radioFailed = false
+
+    fun playOne(song: Song, list: List<Song> = listOf(song)) {
+        if (Net.on || !endless) {
+            play(song, list)
+            return
+        }
+        radioGen++
+        radioOn = true
+        radioFailed = false
+        radioToken = null
+        radioBusy = false
+        queue = listOf(song)
+        index = 0
+        start(song)
+        loadRadio(song, true)
+    }
+
+    private fun loadRadio(seed: Song?, first: Boolean) {
+        if (radioBusy) return
+        val gen = radioGen
+        val vid = if (first && seed != null) Account.videoId(seed.url) else null
+        val tok = if (first) null else radioToken
+        if (first && vid == null) {
+            radioFailed = true
+            return
+        }
+        if (!first && tok == null) return
+        radioBusy = true
+        viewModelScope.launch {
+            try {
+                val res = YtRadio.fetch(getApplication<Application>(), vid, tok)
+                if (gen != radioGen) return@launch
+                val have = queue.map { it.url }.toHashSet()
+                val add = res.songs.filter { it.url !in have }.take(40)
+                radioToken = res.token
+                if (add.isNotEmpty()) queue = queue + add
+                if (add.isEmpty() && first) radioFailed = true
+                if (res.token == null) radioFailed = true
+                if (radioFailed) {
+                    val cur = current
+                    val rel = if (cur != null) cache[cur.url]?.related else null
+                    if (cur != null && rel != null) applyRelated(cur, rel)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                if (gen == radioGen) radioFailed = true
+            } finally {
+                radioBusy = false
+            }
+        }
+    }
+
+    // when the queue is nearly empty, add the next page of the same radio at the end
+    private fun radioTopUp() {
+        if (radioOn && endless && !radioBusy && !radioFailed && radioToken != null && queue.size - index < 7) {
+            loadRadio(null, false)
+        }
+    }
+
     fun play(song: Song, list: List<Song> = listOf(song)) {
+        radioOn = false
+        radioGen++
         // offline mode: only downloaded songs can play, the queue keeps only those
         if (Net.on) {
             if (!isDownloaded(song)) {
@@ -816,18 +887,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun startRadio() {
         val cur = current ?: return
-        viewModelScope.launch {
-            try {
-                val r = resolveFor(cur)
-                val more = r.related.filter { it.url != cur.url }.take(25)
-                if (more.isNotEmpty()) {
-                    queue = listOf(cur) + more
-                    index = 0
-                    prefetchNext()
-                }
-            } catch (e: Exception) {
-            }
-        }
+        radioGen++
+        radioOn = true
+        radioFailed = false
+        radioToken = null
+        radioBusy = false
+        queue = listOf(cur)
+        index = 0
+        loadRadio(cur, true)
     }
 
     // ---------- playlists ----------
@@ -1205,7 +1272,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }
         } else relatedRaw
         if (related.isNotEmpty()) suggestions = related.take(10)
-        if (endless && queue.size - index < 8) {
+        // own lists never get extra songs; a radio start only falls back to this when YouTube gave nothing
+        if (endless && radioOn && radioFailed && queue.size - index < 8) {
             val have = queue.map { it.url }.toSet()
             val more = related.filter { it.url !in have }.take(10)
             if (more.isNotEmpty()) queue = queue + more
@@ -1300,6 +1368,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 val ctx = getApplication<Application>()
                 ctx.startService(Intent(ctx, PlaybackService::class.java))
                 prefetchNext()
+                radioTopUp()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -2211,7 +2280,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 val songs = shelf.filter { it.kind == "song" }
                     .map { Song(it.title, it.artist, it.id, it.cover, 0L) }
                 val me = songs.firstOrNull { it.url == card.id } ?: return
-                play(me, songs)
+                playOne(me, songs)
             }
             "artist" -> openArtist(card.title)
             else -> openYtPlaylist(YtPlaylist(card.id, card.title, card.sub, card.cover))

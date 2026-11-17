@@ -87,7 +87,7 @@ fun GearButton(vm: MainViewModel, size: androidx.compose.ui.unit.Dp = 44.dp) {
 
 internal fun songItem(vm: MainViewModel, s: Song, list: List<Song>): ShelfItem =
     ShelfItem(s.cover, s.title, "Song \u2022 " + artistName(s.artist), false, vm.current?.url == s.url) {
-        vm.play(s, list)
+        vm.playOne(s, list)
     }
 
 internal fun ytItems(vm: MainViewModel, sh: YtShelf): List<ShelfItem> = sh.cards.map { c ->
@@ -516,7 +516,7 @@ private fun DashQuickPicks(vm: MainViewModel) {
                         Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .clickable { vm.play(s, qp) }
+                            .clickable { vm.playOne(s, qp) }
                             .padding(vertical = 5.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -869,7 +869,7 @@ fun ExploreScreen(vm: MainViewModel) {
                             .clip(shape)
                             .glassFill()
                             .border(1.dp, Stroke, shape)
-                            .clickable { vm.play(top, vm.results) }
+                            .clickable { vm.playOne(top, vm.results) }
                             .padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -912,7 +912,7 @@ fun ExploreScreen(vm: MainViewModel) {
                 item { SectionLabel("Songs") }
             }
             if (fa == 0 || fa == 1) {
-                items(vm.results) { s -> SongRow(s, vm, vm.results) }
+                items(vm.results) { s -> SongRow(s, vm, vm.results, true) }
             }
         }
     }
@@ -998,7 +998,7 @@ fun YourTypeScreen(vm: MainViewModel) {
                 }
             }
         } else {
-            items(vm.discover) { s -> SongRow(s, vm, vm.discover) }
+            items(vm.discover) { s -> SongRow(s, vm, vm.discover, true) }
         }
     }
 }

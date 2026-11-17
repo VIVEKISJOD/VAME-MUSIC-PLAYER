@@ -1,4 +1,14 @@
-# VAME Music - full changelog (up to zip step71, v0.42.0, 17 Nov 2026)
+# VAME Music - full changelog (up to zip step72, v0.43.0, 17 Nov 2026)
+
+## step72 (v0.43.0) - includes everything up to step71
+- New: YouTube queue. When you tap a lone song (Search results, top result, Trending, Quick picks, Recently Played, Home song cards, YouTube Music shelves) it starts with the queue YouTube Music builds for that song. The list is fetched ONCE; later pages are added only at the END when the queue is nearly empty. The songs you can already see never change, and a song starting by itself never brings its own queue.
+- New: songs from your own lists (playlist, album, liked songs, downloads, mixes) get no extra songs; the queue is exactly that list. Play next, Add to queue, reorder and shuffle stay as you left them. Songs already in the queue are not added again.
+- Changed: the radio button on Now Playing uses the same YouTube queue. If YouTube gives nothing (offline, format change) VAME falls back to its own similar songs. With Endless off or no internet the old behaviour stays.
+- New: Spotify-style playlist page (your playlists, imported Spotify / YouTube playlists and albums): big cover on a colour taken from the cover, name, songs and minutes, a row with edit / find / menu (albums: save / download / find / menu), shuffle and a big accent play button.
+- New: scrolling up shrinks and fades the big cover, a solid bar fades in with a small cover, the name and a small play button.
+- Changed: with Endless on, a playlist that reaches its end now goes back to its start instead of getting extra songs added.
+- Files changed: YtRadio.kt (new), SpotifyPage.kt (new), Account.kt, MainViewModel.kt, Components.kt, Screens.kt, HomeNew.kt, PlaylistScreens.kt, AlbumScreens.kt, app/build.gradle.kts (version 0.43.0 / code 75).
+- Not compiled here.
 
 ## step71 (v0.42.0) - includes everything up to step70
 - New: whole app look rebuilt from your two pictures. LIME (default): near-black pages, solid dark cards, one lime accent, soft lime glow in the bottom corner. NOVA: deep purple glass with a purple accent. Settings > Look > pick Lime, Nova, Light or Custom (Custom keeps the old hue / strength / AMOLED options).

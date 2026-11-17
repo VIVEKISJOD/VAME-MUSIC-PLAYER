@@ -294,7 +294,7 @@ fun SectionLabel(text: String, badge: String? = null) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun SongRow(song: Song, vm: MainViewModel, list: List<Song>) {
+fun SongRow(song: Song, vm: MainViewModel, list: List<Song>, radio: Boolean = false) {
     val haptic = LocalHapticFeedback.current
     Row(
         Modifier
@@ -307,7 +307,7 @@ fun SongRow(song: Song, vm: MainViewModel, list: List<Song>) {
             .glassFill()
             .border(1.dp, Stroke, RoundedCornerShape(if (Pal.flat) 14.dp else 16.dp))
             .combinedClickable(
-                onClick = { vm.play(song, list) },
+                onClick = { if (radio) vm.playOne(song, list) else vm.play(song, list) },
                 onLongClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     vm.songMenu = song

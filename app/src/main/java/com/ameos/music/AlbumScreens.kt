@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.LibraryAdd
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -153,8 +154,7 @@ fun AlbumScreen(vm: MainViewModel) {
     BackHandler(enabled = vm.albumOpen) { vm.closeAlbum() }
     val album = vm.albumInfo ?: return
     val songs = vm.albumSongs
-    val tint = rememberCoverTint(album.cover)
-    val wide = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= 600
+    val mins = (songs.sumOf { it.durationSec } / 60).toInt()
     var menuOpen by remember { mutableStateOf(false) }
     var sortMode by remember { mutableStateOf(0) }
     var findOn by remember { mutableStateOf(false) }
@@ -162,26 +162,20 @@ fun AlbumScreen(vm: MainViewModel) {
     val shown = sortFind(songs, sortMode, if (findOn) findQ else "")
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
 
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(if (Pal.light) lerp(tint, Pal.bgMid, 0.5f) else lerp(tint, Color.Black, 0.35f), Pal.bgMid, Pal.bgBot)
-                )
-            )
-            .blockTaps()
-    ) {
+    Box(Modifier.fillMaxSize().blockTaps()) {
         val pageBlur by androidx.compose.animation.core.animateDpAsState(if (menuOpen) 14.dp else 0.dp, label = "albBlur")
-        Column(Modifier.fillMaxSize().statusBarsPadding().then(if (pageBlur > 0.dp) Modifier.blur(pageBlur) else Modifier)) {
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = { vm.closeAlbum() }) {
-                    Icon(Icons.Filled.ArrowBack, null, tint = Pal.fg)
-                }
-                Spacer(Modifier.weight(1f))
+        SpotifyPage(
+            cover = album.cover,
+            title = album.title,
+            line1 = if (album.artist.isNotBlank()) album.artist
+            else songs.firstOrNull()?.artist?.let { artistName(it) } ?: "",
+            line2 = if (songs.isNotEmpty()) songs.size.toString() + " songs" + (if (mins > 0) "  \u2022  " + mins.toString() + " min" else "") else "",
+            onBack = { vm.closeAlbum() },
+            onPlay = { vm.playAlbum(false) },
+            onShuffle = { vm.playAlbum(true) },
+            listState = listState,
+            modifier = if (pageBlur > 0.dp) Modifier.blur(pageBlur) else Modifier,
+            leftActions = {
                 if (album.url.startsWith("yt:")) {
                     if (songs.isNotEmpty()) {
                         IconButton(onClick = { vm.saveYtAsPlaylist() }) {
@@ -193,64 +187,32 @@ fun AlbumScreen(vm: MainViewModel) {
                     IconButton(onClick = { vm.toggleSaveAlbum(album) }) {
                         Icon(
                             if (saved) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
-                            null, tint = Pal.fg
+                            null, tint = if (saved) Pal.accent else Pal.fg
                         )
                     }
                 }
                 if (songs.isNotEmpty()) {
-                    IconButton(onClick = {
-                        vm.downloadAll(songs)
-                    }) {
+                    IconButton(onClick = { vm.downloadAll(songs) }) {
                         Icon(Icons.Filled.Download, null, tint = Pal.fg)
                     }
-                }
-                if (songs.isNotEmpty()) {
+                    IconButton(onClick = { findOn = true }) {
+                        Icon(Icons.Filled.Search, null, tint = Pal.fg)
+                    }
                     IconButton(onClick = { menuOpen = true }) {
                         Icon(Icons.Filled.MoreVert, null, tint = Pal.fg)
                     }
                 }
             }
-            if (findOn) FindBar(findQ, { findQ = it }) { findOn = false; findQ = "" }
-            LazyColumn(
-                Modifier.weight(1f),
-                state = listState,
-                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 200.dp)
-            ) {
+        ) {
+            if (findOn) item { FindBar(findQ, { findQ = it }) { findOn = false; findQ = "" } }
+            if (vm.albumLoading && songs.isEmpty()) {
                 item {
-                    if (wide) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Cover(
-                                album.cover,
-                                Modifier.size(200.dp),
-                                RoundedCornerShape(20.dp),
-                                hiRes = true
-                            )
-                            Spacer(Modifier.width(22.dp))
-                            AlbumHead(album, songs, vm, Modifier.weight(1f))
-                        }
-                    } else {
-                        Cover(
-                            album.cover,
-                            Modifier.size(minOf(220f, androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp * 0.30f).dp),
-                            RoundedCornerShape(20.dp),
-                            hiRes = true
-                        )
-                        Spacer(Modifier.height(16.dp))
-                        AlbumHead(album, songs, vm, Modifier.fillMaxWidth())
-                    }
-                    Spacer(Modifier.height(14.dp))
-                }
-                if (vm.albumLoading && songs.isEmpty()) {
-                    item {
-                        Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(
-                                Modifier.size(28.dp), color = APink, strokeWidth = 3.dp
-                            )
-                        }
+                    Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(Modifier.size(28.dp), color = Pal.accent, strokeWidth = 3.dp)
                     }
                 }
-                itemsIndexed(shown) { i, s -> TrackRow(i + 1, s, vm, shown, album.cover) }
             }
+            itemsIndexed(shown) { i, s -> TrackRow(i + 1, s, vm, shown, album.cover) }
         }
         ScrollTopButton(listState, Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 210.dp))
         DetailBottomBar(vm, Modifier.align(Alignment.BottomCenter))

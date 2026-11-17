@@ -211,6 +211,28 @@ object Account {
         return if (signedIn(c)) post(c, "browse", b) else postAnon("browse", b)
     }
 
+    // step72: YouTube's own radio queue for a song ("next" call). First call: videoId (radio playlist
+    // RDAMVM + id). Later calls: the continuation token from the answer. Signed in first, anonymous as backup.
+    internal fun nextCall(c: Context, videoId: String?, token: String?): JSONObject {
+        val b = JSONObject()
+        b.put("context", context())
+        if (token != null) {
+            b.put("continuation", token)
+        } else {
+            b.put("videoId", videoId ?: "")
+            b.put("playlistId", "RDAMVM" + (videoId ?: ""))
+            b.put("params", "wAEB")
+            b.put("isAudioOnly", true)
+        }
+        if (signedIn(c)) {
+            try {
+                return post(c, "next", b)
+            } catch (e: Exception) {
+            }
+        }
+        return postAnon("next", b)
+    }
+
     // YouTube Music search / browse without a login (artist pages)
     internal fun searchAnon(query: String): JSONObject {
         val b = JSONObject()

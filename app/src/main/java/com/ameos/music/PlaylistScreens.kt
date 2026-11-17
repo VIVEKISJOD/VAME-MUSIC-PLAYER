@@ -68,29 +68,19 @@ fun PlaylistScreen(vm: MainViewModel) {
     val shown = sortFind(pl.songs, sortMode, if (findOn) findQ else "")
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
 
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(Pal.bgTop, Pal.bgMid, Pal.bgBot)
-                )
-            )
-            .blockTaps()
-    ) {
+    Box(Modifier.fillMaxSize().blockTaps()) {
         val pageBlur by androidx.compose.animation.core.animateDpAsState(if (menuOpen) 14.dp else 0.dp, label = "plBlur")
-        Column(Modifier.fillMaxSize().statusBarsPadding().then(if (pageBlur > 0.dp) Modifier.blur(pageBlur) else Modifier)) {
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = { vm.closePlaylist() }) {
-                    Icon(Icons.Filled.ArrowBack, null, tint = Pal.fg)
-                }
-                Spacer(Modifier.weight(1f))
-                IconButton(onClick = { menuOpen = true }) {
-                    Icon(Icons.Filled.MoreVert, null, tint = Pal.fg)
-                }
+        SpotifyPage(
+            cover = pl.shownCover(),
+            title = pl.name,
+            line1 = pl.songs.size.toString() + " songs",
+            line2 = "By you" + (if (mins > 0) "  \u2022  " + mins.toString() + " min" else ""),
+            onBack = { vm.closePlaylist() },
+            onPlay = { vm.playPlaylist(pl.id, false) },
+            onShuffle = { vm.playPlaylist(pl.id, true) },
+            listState = listState,
+            modifier = if (pageBlur > 0.dp) Modifier.blur(pageBlur) else Modifier,
+            leftActions = {
                 IconButton(onClick = {
                     vm.editPlaylistId = pl.id
                     vm.pendingSong = null
@@ -98,81 +88,26 @@ fun PlaylistScreen(vm: MainViewModel) {
                 }) {
                     Icon(Icons.Filled.Edit, null, tint = Pal.fg)
                 }
-            }
-
-            // big cover with the name under it
-            Column(
-                Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // fixed square size: on a tablet the old "55% of the width" made the cover huge and pushed the song list off the screen
-                val coverSize = minOf(220f, androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp * 0.30f).dp
-                Cover(
-                    pl.shownCover(),
-                    Modifier.size(coverSize),
-                    RoundedCornerShape(22.dp),
-                    hiRes = true
-                )
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    pl.name, fontSize = 24.sp, fontWeight = FontWeight.Bold,
-                    color = Pal.fg, maxLines = 2, overflow = TextOverflow.Ellipsis,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                )
-                Text(pl.songs.size.toString() + " songs", fontSize = 13.sp, color = PDim)
-            }
-
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text("CREATED BY", fontSize = 11.sp, color = Pal.muted)
-                    Text("You", fontSize = 15.sp, color = Pal.fg)
+                IconButton(onClick = { findOn = true }) {
+                    Icon(Icons.Filled.Search, null, tint = Pal.fg)
                 }
-                Spacer(Modifier.width(24.dp))
-                Column {
-                    Text("LASTS", fontSize = 11.sp, color = Pal.muted)
-                    Text(mins.toString() + " Mins", fontSize = 15.sp, color = Pal.fg)
-                }
-                Spacer(Modifier.weight(1f))
-                Row(
-                    Modifier.clip(RoundedCornerShape(50)).background(if (Pal.light) Pal.surface2 else Color(0xFF5A1A1A)),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = { vm.playPlaylist(pl.id, true) }) {
-                        Icon(Icons.Filled.Shuffle, null, tint = Pal.fg)
-                    }
-                    Box(
-                        Modifier
-                            .size(52.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFFD9381E))
-                            .clickable { vm.playPlaylist(pl.id, false) },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Filled.PlayArrow, null, tint = Color.White, modifier = Modifier.size(30.dp))
-                    }
+                IconButton(onClick = { menuOpen = true }) {
+                    Icon(Icons.Filled.MoreVert, null, tint = Pal.fg)
                 }
             }
-            Box(Modifier.fillMaxWidth().height(1.dp).background(Stroke))
-            if (findOn) FindBar(findQ, { findQ = it }) { findOn = false; findQ = "" }
-
+        ) {
+            if (findOn) item { FindBar(findQ, { findQ = it }) { findOn = false; findQ = "" } }
             if (pl.songs.isEmpty()) {
-                Box(Modifier.weight(1f).fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                    EmptyState(
-                        Icons.Filled.LibraryMusic, "No songs yet",
-                        "Open the \"...\" menu on any song and tap Add to playlist."
-                    )
+                item {
+                    Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                        EmptyState(
+                            Icons.Filled.LibraryMusic, "No songs yet",
+                            "Open the \"...\" menu on any song and tap Add to playlist."
+                        )
+                    }
                 }
             } else {
-                LazyColumn(
-                    Modifier.weight(1f),
-                    state = listState,
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 200.dp)
-                ) {
-                    itemsIndexed(shown) { i, s -> PlaylistSongRow(vm, pl, s, i + 1) }
-                }
+                itemsIndexed(shown) { i, s -> PlaylistSongRow(vm, pl, s, i + 1) }
             }
         }
         ScrollTopButton(listState, Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 210.dp))
