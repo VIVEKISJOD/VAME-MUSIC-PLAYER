@@ -50,6 +50,14 @@ fun AppearanceSection(label: Boolean = true) {
     val ctx = LocalContext.current
     if (label) SectionLabel("Appearance")
 
+    // step73: App style (layout and shapes). It is separate from the colour look below.
+    KitLabel("App style", "Layout, shapes and the player. Material, Apple or Spotify. It combines with any look.")
+    KitChips(Pal.style, St.names) {
+        Pal.style = it
+        Pal.save(ctx)
+    }
+    Spacer(Modifier.height(14.dp))
+
     // step71: pick a look. Lime and Nova come from the design pictures; Custom keeps the old colour options.
     val looks = listOf(
         Triple("Lime", Color(0xFFC6F135), Color(0xFF0B0B0C)),

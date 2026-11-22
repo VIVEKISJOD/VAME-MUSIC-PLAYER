@@ -75,7 +75,7 @@ fun HeroCarousel(vm: MainViewModel) {
         }
     }
     val big = LocalConfiguration.current.screenWidthDp >= 600
-    val shape = RoundedCornerShape(28.dp)
+    val shape = RoundedCornerShape(St.cardR + 4.dp)
     val h = if (big) 300.dp else 232.dp
     if (slides.isEmpty()) {
         Box(Modifier.fillMaxWidth().height(h).clip(shape).background(shimmerBrush()))
@@ -164,7 +164,7 @@ fun MadeForYou(vm: MainViewModel) {
     ShelfTitle("Made for You")
     LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         items(mixes) { m ->
-            val shape = RoundedCornerShape(20.dp)
+            val shape = RoundedCornerShape(St.cardR)
             Box(
                 Modifier
                     .width(w)
@@ -205,7 +205,7 @@ fun RecentStrip(vm: MainViewModel) {
     LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         items(list) { s ->
             val on = vm.current?.url == s.url
-            val shape = RoundedCornerShape(18.dp)
+            val shape = RoundedCornerShape(St.cardR)
             Cover(
                 s.cover,
                 Modifier
@@ -270,7 +270,7 @@ fun LibListRow(cover: String?, title: String, sub: String, circle: Boolean = fal
             .padding(vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Cover(cover, Modifier.size(62.dp), if (circle) CircleShape else RoundedCornerShape(16.dp))
+        Cover(cover, Modifier.size(62.dp), if (circle) CircleShape else RoundedCornerShape(St.coverR))
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Text(
@@ -286,7 +286,7 @@ fun LibListRow(cover: String?, title: String, sub: String, circle: Boolean = fal
 // wide outlined "+ New Playlist" button
 @Composable
 fun LibWideButton(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(18.dp)
+    val shape = RoundedCornerShape(St.cardR)
     Row(
         Modifier
             .fillMaxWidth()

@@ -80,6 +80,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         Pal.load(applicationContext)
         UiOpts.load(applicationContext)
+        CanvasPrefs.load(applicationContext)
         UiOpts.applyTv(applicationContext)
         if (UiOpts.tv) Pal.light = false
         enableEdgeToEdge(

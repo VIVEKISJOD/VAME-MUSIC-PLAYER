@@ -174,7 +174,8 @@ internal fun Scrubber(
     onStart: () -> Unit,
     onChange: (Float) -> Unit,
     onEnd: (Float) -> Unit,
-    thin: Boolean = false
+    thin: Boolean = false,
+    fill: Color = Pal.accent
 ) {
     var active by remember { mutableStateOf(false) }
     var last by remember { mutableFloatStateOf(0f) }
@@ -232,7 +233,7 @@ internal fun Scrubber(
                 Modifier
                     .fillMaxWidth(fraction.coerceIn(0f, 1f))
                     .fillMaxHeight()
-                    .background(Pal.accent)
+                    .background(fill)
             )
         }
     }
@@ -585,13 +586,6 @@ fun NowPlayingScreen(vm: MainViewModel) {
     val tint = rememberCoverTint(song.cover)
     var moving by remember { mutableStateOf(false) } // "Animate cover": slow zoom + drift
     val ctx = LocalContext.current
-    val kb = rememberInfiniteTransition(label = "kb")
-    val kbScale by kb.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.12f,
-        animationSpec = infiniteRepeatable(tween(16000, easing = LinearEasing), RepeatMode.Reverse),
-        label = "kbScale"
-    )
     val page = PlayerUi.page
     DisposableEffect(Unit) {
         onDispose { PlayerUi.page = 0 }
@@ -647,6 +641,11 @@ fun NowPlayingScreen(vm: MainViewModel) {
             RoundedCornerShape(0.dp),
             hiRes = true
         )
+
+        // step73: Apple style = colour waves behind everything
+        if (Pal.style == 1 && CanvasPrefs.on) {
+            CanvasBackdrop(tint, vm.isPlaying, Modifier.fillMaxSize().alpha(0.85f))
+        }
 
         Column(
             Modifier
@@ -734,86 +733,20 @@ fun NowPlayingScreen(vm: MainViewModel) {
                                 ) { moving = !moving },
                             contentAlignment = Alignment.Center
                         ) {
-                            val side = minOf(maxWidth, maxHeight)
-                            val sc by animateFloatAsState(
-                                if (vm.isPlaying) 1f else 0.92f,
-                                spring(dampingRatio = 0.7f, stiffness = 300f), label = "coverScale"
-                            )
-                            Box(
-                                Modifier
-                                    .size(side)
-                                    .graphicsLayer {
-                                        scaleX = sc
-                                        scaleY = sc
-                                    }
-                                    .clip(RoundedCornerShape(30.dp))
-                                    .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(30.dp))
-                            ) {
-                                Cover(
-                                    song.cover,
-                                    Modifier
-                                        .fillMaxSize()
-                                        .graphicsLayer {
-                                            val k = if (moving) kbScale else 1f
-                                            scaleX = k
-                                            scaleY = k
-                                        },
-                                    RoundedCornerShape(0.dp),
-                                    hiRes = true
-                                )
-                            }
+                            PlayerCoverArt(vm, song, maxWidth, maxHeight)
                         }
                     }
                 }
             }
 
-            // title + artist pill with radio | queue | like
-            val pillShape = RoundedCornerShape(36.dp)
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp, start = 6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        song.title, fontSize = 24.sp, fontWeight = FontWeight.Bold,
-                        color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        artistName(song.artist), fontSize = 16.sp, color = Color(0xB3FFFFFF),
-                        maxLines = 1, overflow = TextOverflow.Ellipsis
-                    )
-                }
-                Spacer(Modifier.width(8.dp))
-                GlassCircle(46.dp, {
-                    vm.startRadio()
-                    Toast.makeText(ctx, "Starting radio", Toast.LENGTH_SHORT).show()
-                }) {
-                    Icon(Icons.Filled.Sensors, null, tint = Color.White, modifier = Modifier.size(22.dp))
-                }
-                Spacer(Modifier.width(6.dp))
-                GlassCircle(46.dp, { showQueue = true }) {
-                    Icon(Icons.Filled.QueueMusic, null, tint = Color.White, modifier = Modifier.size(22.dp))
-                }
-                Spacer(Modifier.width(6.dp))
-                GlassCircle(46.dp, { vm.toggleLike(song) }) {
-                    Icon(
-                        if (vm.isLiked(song)) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                        null,
-                        tint = if (vm.isLiked(song)) Pink else Color.White,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-            }
+            // step73: title row, progress, controls and bottom row follow the app style (PlayerKit.kt)
+            PlayerTitleRow(vm, song)
 
-            // progress (thin) + times
             val max = dur.coerceAtLeast(1L)
             val frac = if (dragging) dragFrac else (pos.toFloat() / max.toFloat()).coerceIn(0f, 1f)
             val shownMs = (frac * max.toFloat()).toLong()
-            Spacer(Modifier.height(10.dp))
-            Scrubber(
-                fraction = frac,
+            PlayerProgress(
+                vm, frac, shownMs, max, quality,
                 onStart = { dragging = true },
                 onChange = { dragFrac = it },
                 onEnd = { f ->
@@ -821,99 +754,10 @@ fun NowPlayingScreen(vm: MainViewModel) {
                     vm.seekTo(t)
                     pos = t
                     dragging = false
-                },
-                thin = true
+                }
             )
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(fmtShort(shownMs), fontSize = 15.sp, color = Color(0xB3FFFFFF))
-                Spacer(Modifier.weight(1f))
-                if (quality.isNotEmpty()) {
-                    Text(quality, fontSize = 13.sp, color = Color(0x99FFFFFF), maxLines = 1)
-                }
-                Spacer(Modifier.weight(1f))
-                Text(fmtShort(max), fontSize = 15.sp, color = Color(0xB3FFFFFF))
-            }
-
-            // controls: shuffle | previous | play | next | repeat
-            Row(
-                Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = {
-                    val ok = vm.shuffleUpNext()
-                    Toast.makeText(
-                        ctx,
-                        if (ok) "Up next shuffled" else "Not enough songs to shuffle",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }) {
-                    Icon(Icons.Filled.Shuffle, null, tint = Color.White, modifier = Modifier.size(26.dp))
-                }
-                GlassCircle(68.dp, { vm.prev() }) {
-                    Icon(Icons.Filled.SkipPrevious, null, tint = Color.White, modifier = Modifier.size(36.dp))
-                }
-                Box(
-                    Modifier
-                        .size(84.dp)
-                        .pressScale(0.94f)
-                        .clip(CircleShape)
-                        .background(Pal.accent)
-                        .clickable { vm.toggle() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (vm.loading) {
-                        CircularProgressIndicator(Modifier.size(34.dp), color = Pal.onAccent, strokeWidth = 3.dp)
-                    } else {
-                        Icon(
-                            if (vm.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                            null, tint = Pal.onAccent, modifier = Modifier.size(46.dp)
-                        )
-                    }
-                }
-                GlassCircle(68.dp, { vm.next() }) {
-                    Icon(Icons.Filled.SkipNext, null, tint = Color.White, modifier = Modifier.size(36.dp))
-                }
-                IconButton(onClick = { vm.cycleRepeat() }) {
-                    Icon(
-                        if (vm.repeat == 2) Icons.Filled.RepeatOne else Icons.Filled.Repeat,
-                        null,
-                        tint = if (vm.repeat != 0) Pink else Color.White,
-                        modifier = Modifier.size(26.dp)
-                    )
-                }
-            }
-
-            // bottom: segmented pill (cover | lyrics | effects | info)
-            val segShape = RoundedCornerShape(50)
-            val segIcons = listOf(Icons.Filled.Album, Icons.Filled.Subject, Icons.Filled.Tune, Icons.Filled.Info)
-            Row(
-                Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(top = 4.dp, bottom = 10.dp)
-                    .glassBar(segShape)
-                    .padding(4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                segIcons.forEachIndexed { i, ic ->
-                    val on = page == i
-                    Box(
-                        Modifier
-                            .width(70.dp)
-                            .height(44.dp)
-                            .clip(segShape)
-                            .then(if (on) (if (Pal.flat) Modifier.background(Pal.accent) else Modifier.glassActiveTab(segShape)) else Modifier)
-                            .clickable { PlayerUi.page = i },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            ic, null,
-                            tint = if (on) (if (Pal.flat) Pal.onAccent else Color.White) else Color(0xB3FFFFFF),
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                }
-            }
+            PlayerControls(vm)
+            PlayerBottomRow(vm, song, page) { showQueue = true }
         }
 
         AnimatedVisibility(

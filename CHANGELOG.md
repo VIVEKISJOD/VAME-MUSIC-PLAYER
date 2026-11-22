@@ -1,4 +1,16 @@
-# VAME Music - full changelog (up to zip step72, v0.43.0, 17 Nov 2026)
+# VAME Music - full changelog (up to zip step73, v0.44.0, 22 Nov 2026)
+
+## step73 (v0.44.0) - includes everything up to step72
+- New: App style. Settings > Look > App style: Material, Apple or Spotify. It changes the layout and shapes and combines with any colour look (Lime, Nova, Light, Custom). Default: Spotify.
+- New: Now Playing in three styles. Material: big rounded cover, wavy progress bar that moves while playing, tonal buttons and a play button that changes shape. Apple: big cover with a shadow that shrinks when paused, star and three dots, thin bar with time left, plain big buttons, volume bar, colour waves behind. Spotify: square cover, heart, thin white bar, white round play button.
+- New: bottom row of the player follows the style (lyrics, effects, info, output, queue, share, radio).
+- New: dock in three styles (Material pill indicator, Apple frosted bar with accent label, Spotify plain dark bar with white selected tab).
+- New: mini player in three styles with a thin progress line (Material tonal card, Apple frosted bar, Spotify bar in the cover colour with a heart).
+- New: Canvas. Settings > Player > Canvas: the cover zooms, drifts and gets a light sweep while a song plays (stops when paused), or colour waves drift behind it. Optional Audio pulse (the bass makes it beat a little, asks for the microphone permission).
+- Changed: corners of Home cards, hero, Made for You, Recently Played, Library rows, song rows and Search tiles follow the style; Spotify Home starts with quick-play tiles.
+- Not done yet: the short video loop level of Canvas, the style on every other page (artist, lyrics, standby, settings, sheets, widgets), Apple / Material versions of the playlist page.
+- Files changed: StyleKit.kt, Canvas.kt, PlayerKit.kt (new), Pal.kt, Components.kt, NowPlaying.kt, Screens.kt, HomeNew.kt, Appearance.kt, Settings.kt, MainActivity.kt, AndroidManifest.xml (RECORD_AUDIO), app/build.gradle.kts (0.44.0 / code 76).
+- Not compiled here.
 
 ## step72 (v0.43.0) - includes everything up to step71
 - New: YouTube queue. When you tap a lone song (Search results, top result, Trending, Quick picks, Recently Played, Home song cards, YouTube Music shelves) it starts with the queue YouTube Music builds for that song. The list is fetched ONCE; later pages are added only at the END when the queue is nearly empty. The songs you can already see never change, and a song starting by itself never brings its own queue.

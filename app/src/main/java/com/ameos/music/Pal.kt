@@ -20,6 +20,9 @@ object Pal {
     // (the old dark looks: `mode` 0 colour glass, 1 AMOLED, 2 AMOLED glass, with `hue` / `sat`).
     var look by mutableIntStateOf(0)
 
+    // step73: the app style (layout, shapes, spacing): 0 Material, 1 Apple, 2 Spotify. Separate from the look.
+    var style by mutableIntStateOf(2)
+
     // old name: true = the light look. Setting it to false leaves the light look (to Lime).
     var light: Boolean
         get() = look == 2
@@ -169,6 +172,7 @@ object Pal {
         sat = sp.getFloat("themeSat", 1f)
         mode = sp.getInt("themeMode", 0).coerceIn(0, 2)
         look = sp.getInt("themeLook", 0).coerceIn(0, 3)
+        style = sp.getInt("appStyle", 2).coerceIn(0, 2)
         glassMat = sp.getInt("glassMat", 2).coerceIn(0, 2)
         glassColour = sp.getFloat("glassColour", 0.70f).coerceIn(0f, 1f)
         glassFrost = sp.getFloat("glassFrost", 4f).coerceIn(0f, 24f)
@@ -182,7 +186,7 @@ object Pal {
     fun save(c: Context) {
         c.getSharedPreferences("vame", Context.MODE_PRIVATE).edit()
             .putFloat("themeHue", hue).putFloat("themeSat", sat).putInt("themeMode", mode)
-            .putInt("themeLook", look)
+            .putInt("themeLook", look).putInt("appStyle", style)
             .putInt("glassMat", glassMat).putFloat("glassColour", glassColour)
             .putFloat("glassFrost", glassFrost).putFloat("glassTint", glassTint)
             .putFloat("glassFilm", glassFilm).putFloat("glassActive", glassActive)

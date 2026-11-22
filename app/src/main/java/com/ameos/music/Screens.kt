@@ -55,7 +55,7 @@ fun ScreenTitle(text: String, trailing: @Composable () -> Unit = {}) {
         Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text, fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Pal.fg,
+        Text(text, fontSize = St.titleSp.sp, fontWeight = FontWeight.Bold, color = Pal.fg,
             letterSpacing = (-0.6).sp, modifier = Modifier.weight(1f))
         trailing()
     }
@@ -230,12 +230,20 @@ private fun HomeList(vm: MainViewModel) {
             }
         }
         // ---- Dashboard: tiles you use most, now playing strip, quick picks, mixes ----
-        item { HeroCarousel(vm) }
-        item { MadeForYou(vm) }
-        item { RecentStrip(vm) }
-        item { ShelfTitle("Jump in") }
-        item { DashGrid(vm) }
-        item { DashQuickPicks(vm) }
+        // step73: Spotify style opens with quick-play tiles; Material and Apple open with the big hero card
+        if (Pal.style == 2) {
+            item { DashGrid(vm) }
+            item { MadeForYou(vm) }
+            item { RecentStrip(vm) }
+            item { DashQuickPicks(vm) }
+        } else {
+            item { HeroCarousel(vm) }
+            item { MadeForYou(vm) }
+            item { RecentStrip(vm) }
+            item { ShelfTitle("Jump in") }
+            item { DashGrid(vm) }
+            item { DashQuickPicks(vm) }
+        }
         if (forYou && vm.dials.isNotEmpty()) {
             item { SpeedDialShelf(vm) }
         }
@@ -710,7 +718,7 @@ private val Moods = listOf(
 // mood tile: cover with a colour wash and the name at the bottom left (like the design)
 @Composable
 private fun MoodTile(m: Mood, cover: String?, modifier: Modifier, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(20.dp)
+    val shape = RoundedCornerShape(St.cardR)
     Box(
         modifier
             .height(96.dp)

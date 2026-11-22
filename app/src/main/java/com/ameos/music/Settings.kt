@@ -269,7 +269,11 @@ fun SettingsScreen(vm: MainViewModel) {
 
             if (cat.intValue == 1) {
             // ---------------- player ----------------
-            KitHeader(Icons.Filled.MusicNote, "Player", "Small player, tablet and Standby")
+            KitHeader(Icons.Filled.MusicNote, "Player", "Canvas, small player, tablet and Standby")
+            KitCard {
+                CanvasSection()
+            }
+            Spacer(Modifier.height(10.dp))
             KitCard {
                 KitLabel(
                     "Tablet small player" + (if (tabletNow) "" else " (turn the tablet sideways to see it)"),

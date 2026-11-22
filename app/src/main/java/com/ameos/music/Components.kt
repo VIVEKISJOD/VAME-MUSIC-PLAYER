@@ -38,6 +38,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
@@ -316,7 +317,7 @@ fun SongRow(song: Song, vm: MainViewModel, list: List<Song>, radio: Boolean = fa
             .padding(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Cover(song.cover, Modifier.size(52.dp), RoundedCornerShape(10.dp))
+        Cover(song.cover, Modifier.size(52.dp), RoundedCornerShape(St.coverR))
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(
@@ -359,11 +360,25 @@ fun MiniPlayer(
     // tablet held sideways: the side player and the small floating box replace the pill on every page
     // (force = true is used by the tablet pill and by the pill on top of Settings)
     if (!force && isTabletLandscape()) return
-    val shape = RoundedCornerShape(if (Pal.flat) 22.dp else 32.dp)
+    // step73: three mini players. Material = tonal card, Apple = frosted bar, Spotify = bar in the cover colour with a heart
+    val style = Pal.style
+    val shape = RoundedCornerShape(St.miniR)
     val tick = rememberTick()
-    val ink = inkColor()
+    val spotify = style == 2 && !Pal.light
+    val ink = if (spotify) Color.White else inkColor()
+    val tint = rememberCoverTint(song.cover)
     val enter = remember { Animatable(0f) }
     LaunchedEffect(Unit) { enter.animateTo(1f, spring(dampingRatio = 0.8f, stiffness = 300f)) }
+    // thin progress line (read only while drawing)
+    var frac by remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
+    LaunchedEffect(song.url) {
+        while (true) {
+            val d = vm.durMs()
+            frac = if (d > 0L) (vm.posMs().toFloat() / d.toFloat()).coerceIn(0f, 1f) else 0f
+            delay(500)
+        }
+    }
+    val lineColor = if (spotify) Color.White else Pal.accent
     // last known spots; track = false while the dock is folded (the slim row owns PillPos then)
     val last = remember { arrayOfNulls<androidx.compose.ui.geometry.Rect>(2) }
     LaunchedEffect(track) {
@@ -385,7 +400,19 @@ fun MiniPlayer(
                 translationY = (1f - enter.value) * 80f
             }
             .pressScale(0.97f)
-            .glassBar(shape, blur = true)
+            .then(
+                if (spotify) Modifier.clip(shape).background(androidx.compose.ui.graphics.lerp(tint, Color.Black, 0.45f))
+                else if (style == 0) Modifier.clip(shape).background(Pal.surface2)
+                else Modifier.glassBar(shape, blur = true)
+            )
+            .drawBehind {
+                val h = 3.dp.toPx()
+                drawRect(
+                    lineColor.copy(alpha = 0.9f),
+                    topLeft = androidx.compose.ui.geometry.Offset(0f, size.height - h),
+                    size = androidx.compose.ui.geometry.Size(size.width * frac, h)
+                )
+            }
             .clickable {
                 tick()
                 val go = onOpen
@@ -404,7 +431,7 @@ fun MiniPlayer(
                 last[1] = it.boundsInRoot()
                 if (track) PillPos.rect = last[1]
             },
-            RoundedCornerShape(12.dp)
+            RoundedCornerShape(St.coverR)
         )
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
@@ -416,6 +443,14 @@ fun MiniPlayer(
                 song.artist, fontSize = 13.sp, color = ink.copy(alpha = 0.6f),
                 maxLines = 1, overflow = TextOverflow.Ellipsis
             )
+        }
+        if (spotify) {
+            IconButton(onClick = { vm.toggleLike(song) }) {
+                Icon(
+                    if (vm.isLiked(song)) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                    null, tint = if (vm.isLiked(song)) Pal.accent else ink, modifier = Modifier.size(26.dp)
+                )
+            }
         }
         IconButton(onClick = {
             tick()
@@ -432,8 +467,10 @@ fun MiniPlayer(
                 }
             }
         }
-        IconButton(onClick = { vm.next() }) {
-            Icon(Icons.Filled.SkipNext, null, tint = ink, modifier = Modifier.size(30.dp))
+        if (!spotify) {
+            IconButton(onClick = { vm.next() }) {
+                Icon(Icons.Filled.SkipNext, null, tint = ink, modifier = Modifier.size(30.dp))
+            }
         }
     }
 }
@@ -462,36 +499,55 @@ fun goTab(vm: MainViewModel, id: Int) {
 
 @Composable
 fun BottomBar(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
-    val shape = RoundedCornerShape(32.dp)
+    // step73: Material = pill indicator, Apple = frosted bar with accent label, Spotify = plain dark bar, selected = white
+    val style = Pal.style
+    val shape = RoundedCornerShape(St.barR)
     val tick = rememberTick()
     val ink = inkColor()
+    val base = modifier.fillMaxWidth().height(if (style == 0) 72.dp else 66.dp)
     Row(
-        modifier
-            .fillMaxWidth()
-            .height(68.dp)
-            .glassBar(shape, blur = true)
+        (if (style == 2) base.clip(shape).background(Pal.bgBot.copy(alpha = 0.97f)) else base.glassBar(shape, blur = true))
             .padding(horizontal = 4.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         NavTabs.forEach { item ->
             val on = item.id == selected
-            val col = if (on) (if (Pal.light) ink else Pal.accent) else ink.copy(alpha = if (Pal.flat) 0.55f else 0.78f)
+            val col = when (style) {
+                0 -> if (on) ink else ink.copy(alpha = 0.62f)
+                1 -> if (on) Pal.accent else ink.copy(alpha = 0.55f)
+                else -> if (on) ink else ink.copy(alpha = 0.55f)
+            }
             Box(
                 Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .clip(RoundedCornerShape(28.dp))
+                    .clip(RoundedCornerShape(24.dp))
                     .clickable {
                         tick()
                         onSelect(item.id)
                     },
                 contentAlignment = Alignment.Center
             ) {
-                if (on && !Pal.flat) Box(Modifier.matchParentSize().glassActiveTab(RoundedCornerShape(28.dp)))
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(item.icon, null, tint = col, modifier = Modifier.size(if (UiOpts.tabLabels) 26.dp else 28.dp))
+                    if (style == 0) {
+                        Box(
+                            Modifier
+                                .width(58.dp)
+                                .height(30.dp)
+                                .clip(RoundedCornerShape(15.dp))
+                                .background(if (on) Pal.accent.copy(alpha = 0.30f) else Color.Transparent),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(item.icon, null, tint = col, modifier = Modifier.size(24.dp))
+                        }
+                    } else {
+                        Icon(item.icon, null, tint = col, modifier = Modifier.size(if (style == 1) 24.dp else 26.dp))
+                    }
                     if (UiOpts.tabLabels) {
-                        Text(item.label, fontSize = 11.sp, color = col, fontWeight = if (on) FontWeight.Bold else FontWeight.Medium)
+                        Text(
+                            item.label, fontSize = if (style == 1) 10.sp else 11.sp, color = col,
+                            fontWeight = if (on) FontWeight.Bold else FontWeight.Medium
+                        )
                     }
                 }
             }
